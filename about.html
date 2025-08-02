@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About Jack In The Shop | Custom Laser Engraving & Woodworking</title>
+<meta name="description" content="Learn the story behind Jack In The Shop — handcrafted laser engraved woodworking and metalwork made in Pennsylvania.">
+<link rel="canonical" href="https://www.jackintheshop.com/about.html" />
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="About Jack In The Shop">
+<meta property="og:description" content="Our journey in creating unique custom laser engraved wood and metal art.">
+<meta property="og:url" content="https://www.jackintheshop.com/about.html">
+<meta property="og:site_name" content="Jack In The Shop">
+<meta property="og:image" content="https://www.jackintheshop.com/JITS-Clear-BG.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  @keyframes woodgrain {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .wood-texture {
+    background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+    background-size: 300%;
+    animation: woodgrain 30s infinite linear;
+  }
+  .glow:hover {
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.7);
+    transition: all 0.3s ease;
+  }
+  .shine-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(30deg);
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+  .shine-effect:hover::after {
+    opacity: 1;
+    left: 100%;
+  }
+</style>
+</head>
+<body class="bg-gray-100 font-body">
+
+<!-- Header -->
+<header class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between relative">
+    <div class="flex items-center space-x-4 mb-4 md:mb-0">
+      <a href="index.html" class="flex items-center space-x-2">
+        <img src="JITS Clear BG.png" alt="Jack In The Shop Logo" class="h-12 md:h-16 w-auto" />
+        <div>
+          <h1 class="font-header text-xl md:text-2xl font-bold">Jack In The Shop</h1>
+          <p class="text-xs md:text-sm text-gray-300">Custom Laser Engraving & Woodworking</p>
+        </div>
+      </a>
+    </div>
+    <nav class="hidden md:flex space-x-6">
+      <a href="index.html" class="hover:text-yellow-400 transition duration-300 font-medium">Home</a>
+      <a href="shop.html" class="hover:text-yellow-400 transition duration-300 font-medium">Shop</a>
+      <a href="custom-work.html" class="hover:text-yellow-400 transition duration-300 font-medium">Custom Work</a>
+      <a href="testimonials.html" class="hover:text-yellow-400 transition duration-300 font-medium">Testimonials</a>
+      <a href="about.html" class="text-yellow-400 font-medium">About</a>
+    </nav>
+  </div>
+</header>
+
+<!-- About Section -->
+<section class="py-16 bg-white relative overflow-hidden">
+  <div class="wood-texture absolute inset-0 opacity-10"></div>
+  <div class="container mx-auto px-4 relative z-10">
+    <div class="text-center mb-12">
+      <h2 class="font-header text-3xl md:text-4xl font-bold mb-4">About <span class="text-yellow-600">Jack In The Shop</span></h2>
+      <div class="w-24 h-1 bg-yellow-500 mx-auto mb-6"></div>
+      <p class="text-gray-600 max-w-2xl mx-auto">The story of how craftsmanship, creativity, and a love for tradition came together.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <img src="workshop.jpg" alt="Jack in the shop working" class="rounded-lg shadow-lg border-4 border-yellow-500">
+      </div>
+      <div>
+        <p class="mb-4 text-gray-700 leading-relaxed">
+          At Jack In The Shop, every piece starts with a story. What began as a small passion project in my workshop has grown into a full-time craft, creating custom laser-engraved wood and metal art for customers all over the country.
+        </p>
+        <p class="mb-4 text-gray-700 leading-relaxed">
+          I blend traditional woodworking skills with modern laser technology, giving each item both heart and precision. From unique home décor to personalized gifts, my goal is to create something you’ll be proud to display or give.
+        </p>
+        <p class="mb-4 text-gray-700 leading-relaxed">
+          Every product is handcrafted here in North Carolina, using carefully selected hardwoods and durable metals that stand the test of time. I believe in making things the right way, built to last, with attention to detail that’s hard to find in mass-produced goods.
+        </p>
+        <p class="mb-4 text-gray-700 leading-relaxed">
+          Whether you’re looking for a one-of-a-kind gift or a custom creation for your own collection, I’m here to bring your ideas to life. Thank you for supporting small business and American craftsmanship.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Newsletter -->
+<section class="py-16 bg-yellow-700 bg-opacity-10 relative overflow-hidden">
+  <div class="container mx-auto px-4">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
+      <div class="md:flex">
+        <div class="md:w-1/2 p-8 md:p-12 text-center md:text-left flex flex-col justify-center">
+          <h2 class="font-header text-2xl md:text-3xl font-bold mb-4">Join Our <span class="text-yellow-600">Woodworking Community</span></h2>
+          <p class="text-gray-600 mb-6">Get exclusive discounts, new product announcements, and behind-the-scenes looks at our creative process.</p>
+          <form action="https://formsubmit.co/jack@jackintheshop.com" method="POST" class="mt-4">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_next" value="https://jackintheshop.com/thank-you.html">
+            <input type="hidden" name="_subject" value="New Newsletter Signup">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="email" name="email" placeholder="Your email address" required class="flex-grow px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+              <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold px-6 py-3 rounded-lg transition duration-300 shine-effect">
+                Subscribe
+              </button>
+            </div>
+          </form>
+          <p class="text-xs text-gray-500 mt-3">We respect your privacy. Unsubscribe at any time.</p>
+        </div>
+        <div class="md:w-1/2 bg-gray-100 hidden md:block">
+          <img src="https://images.unsplash.com/photo-1608500218874-ed5bb5042899?auto=format&fit=crop&w=800&q=80" alt="Woodworking workshop" class="w-full h-full object-cover">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-white pt-16 pb-8 relative overflow-hidden">
+  <div class="container mx-auto px-4 relative z-10">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+      <div>
+        <img src="JITS Clear BG.png" alt="Jack In The Shop Logo" class="h-16 w-auto mb-4">
+        <p class="text-gray-400 mb-4">Handcrafted laser engraved woodwork and metalwork with precision.</p>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+        <ul class="space-y-2">
+          <li><a href="index.html" class="text-gray-400 hover:text-yellow-400">Home</a></li>
+          <li><a href="shop.html" class="text-gray-400 hover:text-yellow-400">Shop</a></li>
+          <li><a href="custom-work.html" class="text-gray-400 hover:text-yellow-400">Custom Work</a></li>
+          <li><a href="about.html" class="text-gray-400 hover:text-yellow-400">About</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-4">Customer Service</h3>
+        <ul class="space-y-2">
+          <li><a href="contact.html" class="text-gray-400 hover:text-yellow-400">Contact Us</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-yellow-400">Returns & Exchanges</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-4">Contact</h3>
+        <ul class="space-y-2 text-gray-400">
+          <li class="flex items-start"><i class="fas fa-map-marker-alt mt-1 mr-3 text-yellow-500"></i>Dallas NC</li>
+          <li class="flex items-center"><i class="fas fa-envelope mr-3 text-yellow-500"></i><a href="mailto:Jack@JackInTheShop.com" class="hover:text-yellow-400">Jack@JackInTheShop.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+      &copy; 2025 Jack In The Shop. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
