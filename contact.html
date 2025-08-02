@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Custom Work Request | Jack In The Shop</title>
+<meta name="description" content="Request a custom laser engraving or woodworking project from Jack In The Shop. Personalized, handcrafted, and built to your vision.">
+<link rel="canonical" href="https://www.jackintheshop.com/custom-work.html" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Custom Work Request | Jack In The Shop" />
+<meta property="og:description" content="Request a custom laser engraving or woodworking project from Jack In The Shop. Personalized, handcrafted, and built to your vision." />
+<meta property="og:url" content="https://www.jackintheshop.com/custom-work.html" />
+<meta property="og:site_name" content="Jack In The Shop" />
+<meta property="og:image" content="https://www.jackintheshop.com/JITS-Clear-BG.png" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Open Sans', sans-serif; background-color: #f9fafb; }
+  header, footer { background-color: #1a202c; color: white; }
+  .font-header { font-family: 'Playfair Display', serif; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="sticky top-0 z-50 shadow-lg">
+  <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center space-x-2">
+      <img src="JITS Clear BG.png" alt="Jack In The Shop Logo" class="h-12 w-auto" />
+      <div>
+        <h1 class="font-header text-2xl font-bold">Jack In The Shop</h1>
+        <p class="text-yellow-500 text-sm">Custom Laser Engraving & Woodworking</p>
+      </div>
+    </a>
+    <nav class="hidden md:flex space-x-6 text-white font-semibold">
+      <a href="https://youtube.com/jackintheshop" class="hover:text-yellow-400 transition">YouTube</a>
+      <a href="https://jackintheshop.etsy.com" class="hover:text-yellow-400 transition">Shop</a>
+      <a href="contact.html" class="text-yellow-400">Custom Work</a>
+      <a href="https://www.facebook.com/profile.php?id=100089834354983" class="hover:text-yellow-400 transition">FaceBook</a>
+      <a href="about.html" class="hover:text-yellow-400 transition">About</a>
+
+    </nav>
+  </div>
+</header>
+
+<!-- Page Hero -->
+<section class="bg-gray-900 text-white py-20">
+  <div class="container mx-auto px-4 text-center">
+    <h1 class="font-header text-4xl md:text-5xl font-bold mb-4">Request Custom Work</h1>
+    <p class="text-gray-300 max-w-2xl mx-auto">
+      Whether it’s a personalized gift, a unique home décor piece, or a corporate order, I’ll work with you to bring your vision to life.
+    </p>
+  </div>
+</section>
+
+<!-- Contact Form -->
+<section class="py-16 bg-gray-100">
+  <div class="container mx-auto px-4 max-w-3xl">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+      <h2 class="font-header text-2xl font-bold mb-6 text-center">Tell Me About Your Project</h2>
+
+       <form action="https://formsubmit.co/jack@jackintheshop.com" method="POST">
+  <!-- Prevent spam -->
+  <input type="hidden" name="_captcha" value="false">
+  <!-- Redirect after submission -->
+  <input type="hidden" name="_next" value="https://jackintheshop.com/thank-you.html">
+
+  <div class="space-y-4">
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
+      <input type="text" name="name" id="name" required
+        class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block w-full p-2.5"
+        placeholder="John Smith">
+    </div>
+    <div>
+      <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
+      <input type="email" name="email" id="email" required
+        class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block w-full p-2.5"
+        placeholder="john@example.com">
+    </div>
+    <div>
+      <label for="project" class="block text-sm font-medium text-gray-300 mb-1">Project Description</label>
+      <textarea name="message" id="project" rows="4" required
+        class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block w-full p-2.5"
+        placeholder="Tell us about your custom project..."></textarea>
+    </div>
+    <button type="submit"
+      class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition duration-300">
+      Send Request
+    </button>
+  </div>
+</form>
+
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-white py-10 mt-20">
+  <div class="container mx-auto px-4 text-center text-gray-400 text-sm">
+    &copy; 2025 Jack In The Shop. All rights reserved.
+  </div>
+</footer>
+
+</body>
+</html>
