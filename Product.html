@@ -1,771 +1,388 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Laser Engraving / CNC Profit Planner</title>
-<style>
-  :root{
-    --bg:#0b0f12;
-    --panel:#0f1720;
-    --accent:#7c5cff;
-    --muted:#9aa6b2;
-    --input:#12151a;
-    --input-border:#22272d;
-    --success:#22c55e;
-    --danger:#ff6b6b;
-    --glass: rgba(255,255,255,0.03);
-  }
-  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#071018 0%, #071520 60%);color:#e6eef6}
-  .app{
-    display:flex;
-    height:100vh;
-    gap:18px;
-    padding:18px;
-  }
-  /* Left fixed column */
-  .left{
-    width:420px;
-    min-width:320px;
-    background:linear-gradient(180deg,var(--panel), #07121a);
-    border-radius:12px;
-    padding:18px;
-    box-shadow: 0 8px 30px rgba(2,6,12,0.6);
-    position:sticky;
-    top:18px;
-    height:calc(100vh - 36px);
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{
-    width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3a7bff);
-    display:flex;align-items:center;justify-content:center;font-weight:700;color:white;box-shadow:0 6px 20px rgba(124,92,255,0.15)
-  }
-  h1{font-size:16px;margin:0}
-  p.lead{margin:0;color:var(--muted);font-size:13px}
-  .card{
-    background:var(--glass);
-    border-radius:10px;
-    padding:12px;
-    border:1px solid rgba(255,255,255,0.03);
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Laser / CNC Profit Planner</title>
+  <style>
+    :root{
+      --bg:#0b0f12; --panel:#0f1418; --muted:#98a0a6; --accent:#6ee7b7; --input:#121519; --card:#0e1316;
+      --glass: rgba(255,255,255,0.03);
+      --width-input: 140px;
+    }
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071017 0%,#071217 60%);color:#e6eef1}
+    a{color:var(--accent)}
+    .app{display:flex;min-height:100vh}
 
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  input[type="text"], input[type="number"] , select {
-    width:100%;
-    background:var(--input);
-    border:1px solid var(--input-border);
-    color:#e6eef6;
-    padding:8px 10px;
-    border-radius:8px;
-    outline:none;
-    font-size:13px;
-  }
-  input[type="number"]::-webkit-inner-spin-button {opacity:0.4}
-  .row{display:flex;gap:10px}
-  .col{flex:1}
-  .small{width:120px;min-width:90px}
-  .tiny{width:80px;min-width:70px}
+    /* LEFT (fixed) */
+    .left{width:420px;flex-shrink:0;padding:28px;border-right:1px solid rgba(255,255,255,0.03);position:sticky;top:0;height:100vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    .logo{font-weight:700;font-size:18px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+    .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 6px 18px rgba(3,6,8,0.6)}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input[type=text], input[type=number]{background:var(--input);border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:#e6eef1;width:100%;outline:none}
+    .row{display:flex;gap:10px;align-items:center}
+    .two{display:flex;gap:10px}
+    .small{width:110px}
+    .field-inline{display:flex;flex-direction:column}
+    .muted{font-size:12px;color:var(--muted)}
 
-  /* Right area */
-  .right{
-    flex:1;
-    height:calc(100vh - 36px);
-    overflow:auto;
-    padding:12px;
-    background:transparent;
-  }
-  .products{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-  .product{
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    padding:12px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.03);
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-  }
-  .product-left{flex:1;min-width:0}
-  .product-right{width:320px;display:flex;flex-direction:column;gap:8px}
-  .product .title-row{
-    display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
-  }
-  .btn{
-    display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,#17202d,#0b1116);border:1px solid rgba(255,255,255,0.03);color:#e6eef6;cursor:pointer;font-size:13px;
-  }
-  .btn.primary{background:linear-gradient(90deg,var(--accent),#3a7bff);color:white;border:none}
-  .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,0.03)}
-  .controls{display:flex;gap:8px;flex-wrap:wrap}
-  .muted{color:var(--muted);font-size:13px}
-  .small-muted{font-size:12px;color:var(--muted)}
-  .stats{display:flex;flex-direction:column;gap:8px}
-  .stat-row{display:flex;justify-content:space-between;align-items:center}
-  .big{font-size:20px;font-weight:700}
-  .progress{
-    height:12px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.02)
-  }
-  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#3a7bff);width:0%}
+    /* RIGHT (products) */
+    .right{flex:1;padding:26px;overflow:auto}
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .products{display:flex;flex-direction:column;gap:12px}
+    .product{background:var(--glass);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+    .prod-top{display:flex;gap:12px;align-items:center}
+    .prod-grid{display:flex;flex-wrap:wrap;gap:8px}
+    .prod-grid .field-inline{min-width:140px}
 
-  .right-top{
-    display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
-  }
+    /* condensed inputs */
+    .compact input{width:var(--width-input)}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--accent);cursor:pointer}
+    .btn:hover{filter:brightness(1.1)}
+    .danger{color:#ff7b7b;border-color:rgba(255,123,123,0.12)}
 
-  /* compact input group row inside product */
-  .compact-row{display:flex;gap:8px;flex-wrap:wrap}
-  .compact-row > div{flex:1;min-width:110px}
-  .label-inline{font-size:12px;color:var(--muted);margin-bottom:6px}
+    /* summary */
+    .bignum{font-size:22px;font-weight:700}
+    .progress{height:12px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#4cc1ff);width:0%}
 
-  .footer{
-    margin-top:auto;text-align:center;font-size:12px;color:var(--muted)
-  }
+    footer{font-size:12px;color:var(--muted);margin-top:18px}
 
-  /* responsive adjustments */
-  @media (max-width:980px){
-    .app{flex-direction:column;padding:12px}
-    .left{position:relative;width:100%;height:auto;top:auto}
-    .right{height:auto}
-    .product-right{width:100%}
-  }
-</style>
+    /* responsive */
+    @media (max-width:920px){.left{position:relative;width:100%;height:auto}.app{flex-direction:column}.right{padding:12px}}
+
+    /* small helpers */
+    .row-between{display:flex;justify-content:space-between;align-items:center}
+    .tiny{font-size:12px;color:var(--muted)}
+    .iconbtn{background:none;border:none;color:var(--muted);cursor:pointer;padding:6px}
+  </style>
 </head>
 <body>
-<div class="app">
-  <aside class="left">
-    <div class="brand">
+  <div class="app">
+    <aside class="left">
       <div class="logo">
-  <img src="JITS Clear BG.png" alt="Business Logo" style="width:100%; height:100%; object-fit:contain; border-radius:10px;">
+  <img src="JITS Clear BG.png" alt="My Logo" style="height:32px; width:auto; border-radius:6px; margin-right:8px;">
+  Laser & CNC Profit Planner
 </div>
-      <div>
-        <h1>Shop Profit Planner</h1>
-        <p class="lead">Laser Engraving / CNC — monthly planning</p>
-      </div>
-    </div>
 
-    <div class="card">
-      <label for="monthlyGoal">Monthly profit goal (USD)</label>
-      <input id="monthlyGoal" type="number" min="0" step="0.01" value="10000.00" />
-    </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 8px 0">Rates — Labor & Machine</h3>
-      <div class="row">
-        <div class="col">
-          <label class="small-muted">Labor rate ($/hour)</label>
-          <input id="laborRate" type="number" min="0" step="0.01" value="20.00" />
-        </div>
-        <div class="col">
-          <label class="small-muted">Machine rate ($/hour)</label>
-          <input id="machineRate" type="number" min="0" step="0.01" value="10.00" />
-        </div>
+      <div class="card">
+        <label>Monthly profit goal</label>
+        <input id="goal" type="number" step="0.01" value="10000" />
       </div>
 
-      <div style="height:8px"></div>
-
-      <label class="small-muted">Default design time (min)</label>
-      <div class="row">
-        <input id="designMin" type="number" class="tiny" min="0" step="1" value="10" />
-        <input id="setupMin" type="number" class="tiny" min="0" step="1" value="5" />
-        <input id="finishMin" type="number" class="tiny" min="0" step="1" value="5" />
-        <input id="packMin" type="number" class="tiny" min="0" step="1" value="2" />
+      <div class="card">
+        <label>Man-hour (labor) rate $ / hour</label>
+        <input id="manRate" type="number" step="0.01" value="25" />
       </div>
-      <div class="small-muted" style="margin-top:6px">Design · Setup · Finishing · Packing (minutes)</div>
-    </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 8px 0">Platform & Fees (%)</h3>
-      <div class="row">
-        <div class="col">
-          <label class="small-muted">Etsy fees (%)</label>
-          <input id="etsyFee" type="number" min="0" max="100" step="0.01" value="6.0" />
+      <div class="card">
+        <label>Machine hourly rate $ / hour</label>
+        <input id="machineRate" type="number" step="0.01" value="40" />
+      </div>
+
+      <div class="card">
+        <label>Platform & fees (percent of sale)</label>
+        <div class="two">
+          <div style="flex:1"><label class="tiny">Etsy / Platform %</label><input id="etsyFee" type="number" step="0.01" value="6.5"/></div>
+          <div style="flex:1"><label class="tiny">Bank / Processing %</label><input id="bankFee" type="number" step="0.01" value="2.9"/></div>
         </div>
-        <div class="col">
-          <label class="small-muted">Bank / CC (%)</label>
-          <input id="bankFee" type="number" min="0" max="100" step="0.01" value="3.0" />
+        <div class="two" style="margin-top:8px">
+          <div style="flex:1"><label class="tiny">Website Fee %</label><input id="siteFee" type="number" step="0.01" value="0.0"/></div>
+          <div style="flex:1"><label class="tiny">Marketing %</label><input id="marketingFee" type="number" step="0.01" value="5.0"/></div>
         </div>
       </div>
-      <div style="height:8px"></div>
-      <div class="row">
-        <div class="col">
-          <label class="small-muted">Website fees (%)</label>
-          <input id="siteFee" type="number" min="0" max="100" step="0.01" value="2.0" />
-        </div>
-        <div class="col">
-          <label class="small-muted">Marketing (%)</label>
-          <input id="marketingFee" type="number" min="0" max="100" step="0.01" value="5.0" />
-        </div>
-      </div>
-    </div>
 
-    <div class="card stats">
-      <div class="stat-row">
-        <div class="small-muted">Total monthly profit</div>
-        <div class="big" id="totalMonthly">$0.00</div>
+      <div class="card">
+        <div class="row-between"><div><div class="tiny">Overall monthly progress</div><div class="bignum" id="totalMonthly">$0.00</div></div>
+          <div class="tiny">Goal: <span id="goalShow">$10,000.00</span></div></div>
+        <div style="margin-top:8px" class="progress"><i id="progressBar"></i></div>
+        <div style="margin-top:8px" class="tiny">Total unit profit: <span id="totalUnitProfit">$0.00</span></div>
       </div>
-      <div class="stat-row">
-        <div class="small-muted">Remaining to goal</div>
-        <div id="remaining" class="big">$0.00</div>
-      </div>
-      <div>
-        <div class="small-muted" style="margin-bottom:6px">Progress</div>
-        <div class="progress"><i id="progressBar" style="width:0%"></i></div>
-      </div>
-      <div class="small-muted" style="margin-top:8px">Per-product totals are shown on the product cards. Numbers update live.</div>
-    </div>
 
-    <div class="card">
+      <div class="card">
+        <div class="row-between"><strong>Data</strong>
+          <div>
+            <button class="btn" id="exportBtn">Export CSV</button>
+            <button class="btn" id="importBtn">Import CSV</button>
+            <input id="importFile" type="file" accept="text/csv" style="display:none" />
+          </div>
+        </div>
+      </div>
+      <footer>Tip: All input boxes share the same color. Add products on the right. Calculations update live.</footer>
+    </aside>
+
+    <main class="right">
       <div class="controls">
-        <button class="btn" id="btnExport">Export CSV</button>
-        <label class="btn" style="cursor:pointer">
-          Import CSV
-          <input id="csvFile" type="file" accept=".csv" style="display:none" />
-        </label>
-        <button class="btn ghost" id="btnClear">Clear All</button>
-      </div>
-    </div>
-
-    <div class="footer">© 2025 Jack In The Shop. All rights reserved.</div>
-  </aside>
-
-  <main class="right">
-    <div class="right-top">
-      <div>
-        <h2 style="margin:0">Products</h2>
-        <div class="small-muted">Add products on the right. Per-unit & monthly profit calculates automatically.</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn primary" id="addProduct">+ Add Product</button>
-      </div>
-    </div>
-
-    <div class="products" id="productsList">
-      <!-- product cards go here -->
-    </div>
-
-    <div style="height:40px"></div>
-  </main>
-</div>
-
-<script>
-/*
-  Assumptions made (reasonable defaults):
-  - Labor & machine times are interpreted as minutes PER UNIT.
-  - Setup fee is a per-product fixed cost that will be prorated across units per month (setupFee / units).
-  - Platform fees are percentages applied to the selling price (sum of percentages).
-  - If units = 0, per-unit setup allocation = 0 and monthly profit = 0
-  - Export CSV stores settings first then product rows.
-*/
-
-const state = {
-  monthlyGoal: 10000,
-  laborRate: 20,
-  machineRate: 10,
-  defaultTimes: {design:10, setup:5, finish:5, pack:2},
-  fees: {etsy:6, bank:3, site:2, marketing:5},
-  products: []
-};
-
-const $ = id => document.getElementById(id);
-
-function money(v){
-  return (typeof v !== 'number' || !isFinite(v)) ? '$0.00' : '$' + v.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-}
-
-function num(v, fallback=0){
-  const n = parseFloat(v);
-  return isNaN(n) ? fallback : n;
-}
-
-function readSettings(){
-  state.monthlyGoal = num($('monthlyGoal').value, 0);
-  state.laborRate = num($('laborRate').value, 0);
-  state.machineRate = num($('machineRate').value, 0);
-  state.defaultTimes.design = num($('designMin').value, 0);
-  state.defaultTimes.setup = num($('setupMin').value, 0);
-  state.defaultTimes.finish = num($('finishMin').value, 0);
-  state.defaultTimes.pack = num($('packMin').value, 0);
-  state.fees.etsy = num($('etsyFee').value, 0);
-  state.fees.bank = num($('bankFee').value, 0);
-  state.fees.site = num($('siteFee').value, 0);
-  state.fees.marketing = num($('marketingFee').value, 0);
-}
-
-function calcProduct(product){
-  // each product object fields: id,name, price, setupFee, units, materialName, materialCost, shipName, shipCost, designMin, setupMin, finishMin, packMin, machineMin
-  const price = num(product.price);
-  const units = Math.max(0, Math.round(num(product.units)));
-  const materialCost = num(product.materialCost);
-  const shipCost = num(product.shipCost);
-  const setupFee = num(product.setupFee);
-  // times (minutes)
-  const design = num(product.designMin);
-  const setup = num(product.setupMin);
-  const finish = num(product.finishMin);
-  const pack = num(product.packMin);
-  const machineMin = num(product.machineMin);
-
-  // labor cost per unit (hours = minutes/60)
-  const laborHours = (design + setup + finish + pack) / 60;
-  const laborCostPerUnit = laborHours * state.laborRate;
-
-  // machine cost per unit
-  const machineCostPerUnit = (machineMin / 60) * state.machineRate;
-
-  // setup fee allocation per unit
-  const setupAlloc = units>0 ? (setupFee / units) : 0;
-
-  // platform fees percent sum
-  const feePercentTotal = (state.fees.etsy + state.fees.bank + state.fees.site + state.fees.marketing) / 100;
-  const platformFeesPerUnit = feePercentTotal * price;
-
-  const totalCostPerUnit = materialCost + shipCost + laborCostPerUnit + machineCostPerUnit + setupAlloc + platformFeesPerUnit;
-
-  const profitPerUnit = price - totalCostPerUnit;
-
-  const monthlyProfit = profitPerUnit * units;
-
-  return {
-    price, units, materialCost, shipCost, setupFee,
-    laborCostPerUnit, machineCostPerUnit, setupAlloc,
-    platformFeesPerUnit, totalCostPerUnit, profitPerUnit, monthlyProfit
-  };
-}
-
-function renderProductCard(product){
-  const container = document.createElement('div');
-  container.className = 'product';
-  container.dataset.id = product.id;
-
-  const left = document.createElement('div'); left.className = 'product-left';
-  const right = document.createElement('div'); right.className = 'product-right';
-
-  // left content: condensed rows
-  left.innerHTML = `
-    <div class="title-row">
-      <div style="display:flex;flex-direction:column">
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" class="prod-name" placeholder="Product name" value="${escapeHTML(product.name||'')}" style="font-weight:600;min-width:220px"/>
-          <button class="btn ghost btn-remove" title="Remove">Remove</button>
+        <div><strong>Products</strong><div class="tiny">Add as many product lines as needed</div></div>
+        <div>
+          <button class="btn" id="addProduct">+ Add product</button>
+          <button class="btn" id="clearAll">Clear all</button>
         </div>
-        <div class="small-muted" style="margin-top:6px">Selling price · Setup fee · Units / month</div>
       </div>
-    </div>
 
-    <div class="compact-row" style="margin-top:8px">
-      <div>
-        <label class="label-inline">Price (USD)</label>
-        <input type="number" class="prod-price" step="0.01" min="0" value="${num(product.price,0)}"/>
-      </div>
-      <div>
-        <label class="label-inline">Setup fee (USD)</label>
-        <input type="number" class="prod-setup" step="0.01" min="0" value="${num(product.setupFee,0)}"/>
-      </div>
-      <div>
-        <label class="label-inline">Units / mo</label>
-        <input type="number" class="prod-units" step="1" min="0" value="${num(product.units,0)}"/>
-      </div>
-    </div>
+      <div class="products" id="products"></div>
 
-    <div style="height:8px"></div>
+      <template id="productTpl">
+        <div class="product">
+          <div class="prod-top row-between">
+            <div style="display:flex;gap:10px;align-items:center">
+              <input class="prod-name" type="text" placeholder="Product name" style="width:220px;background:var(--input);border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03)" />
+              <button class="iconbtn remove">✖</button>
+            </div>
+            <div class="tiny">Monthly profit: <strong class="prod-monthly">$0.00</strong></div>
+          </div>
 
-    <div class="compact-row">
-      <div>
-        <label class="label-inline">Material</label>
-        <input type="text" class="prod-material-name" placeholder="Material name" value="${escapeHTML(product.materialName||'')}"/>
-      </div>
-      <div>
-        <label class="label-inline">Mat. cost / unit</label>
-        <input type="number" class="prod-material-cost" step="0.01" min="0" value="${num(product.materialCost,0)}"/>
-      </div>
-      <div>
-        <label class="label-inline">Ship cost / unit</label>
-        <input type="number" class="prod-ship-cost" step="0.01" min="0" value="${num(product.shipCost,0)}"/>
-      </div>
-    </div>
+          <div class="prod-grid">
+            <div class="field-inline compact"><label>Sell price $</label><input class="sellPrice" type="number" step="0.01" value="25" /></div>
+            <div class="field-inline compact"><label>Setup fee $</label><input class="setupFee" type="number" step="0.01" value="0" /></div>
+            <div class="field-inline compact"><label>Units / month</label><input class="units" type="number" step="1" value="10" /></div>
 
-    <div style="height:10px"></div>
+            <div class="field-inline compact"><label>Material</label><input class="materialName" type="text" placeholder="e.g., maple" /></div>
+            <div class="field-inline compact"><label>Material cost $</label><input class="materialCost" type="number" step="0.01" value="3" /></div>
 
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <div style="flex:1;min-width:140px">
-        <label class="label-inline">Design (min)</label>
-        <input type="number" class="prod-design" step="1" min="0" value="${num(product.designMin,state.defaultTimes.design)}"/>
-      </div>
-      <div style="flex:1;min-width:140px">
-        <label class="label-inline">Setup (min)</label>
-        <input type="number" class="prod-setupmin" step="1" min="0" value="${num(product.setupMin,state.defaultTimes.setup)}"/>
-      </div>
-      <div style="flex:1;min-width:140px">
-        <label class="label-inline">Finishing (min)</label>
-        <input type="number" class="prod-finish" step="1" min="0" value="${num(product.finishMin,state.defaultTimes.finish)}"/>
-      </div>
-      <div style="flex:1;min-width:140px">
-        <label class="label-inline">Packing (min)</label>
-        <input type="number" class="prod-pack" step="1" min="0" value="${num(product.packMin,state.defaultTimes.pack)}"/>
-      </div>
-    </div>
+            <div class="field-inline compact"><label>Ship mat</label><input class="shipMat" type="text" placeholder="box, mailer" /></div>
+            <div class="field-inline compact"><label>Ship cost $</label><input class="shipCost" type="number" step="0.01" value="2" /></div>
 
-  `;
+            <div class="field-inline compact"><label>Design (min)</label><input class="designMin" type="number" step="1" value="5" /></div>
+            <div class="field-inline compact"><label>Setup (min)</label><input class="setupMin" type="number" step="1" value="5" /></div>
+            <div class="field-inline compact"><label>Finish (min)</label><input class="finishMin" type="number" step="1" value="5" /></div>
+            <div class="field-inline compact"><label>Packing (min)</label><input class="packMin" type="number" step="1" value="5" /></div>
+            <div class="field-inline compact"><label>Machine (min)</label><input class="machineMin" type="number" step="1" value="10" /></div>
 
-  // right content: machine time and results
-  right.innerHTML = `
-    <div>
-      <label class="label-inline">Machine time (min / unit)</label>
-      <input type="number" class="prod-machine" step="1" min="0" value="${num(product.machineMin,0)}"/>
-    </div>
+            <div class="field-inline compact"><label>Notes</label><input class="notes" type="text" placeholder="optional" /></div>
+          </div>
+        </div>
+      </template>
 
-    <div style="height:8px"></div>
+    </main>
+  </div>
 
-    <div class="card" style="padding:8px">
-      <div style="display:flex;justify-content:space-between">
-        <div class="small-muted">Profit Per Unit</div>
-        <div id="profitUnit" class="big">${money(0)}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px">
-        <div class="small-muted">Monthly profit</div>
-        <div id="profitMonth" class="big">${money(0)}</div>
-      </div>
-      <div style="margin-top:8px" class="small-muted" id="calcSummary"></div>
-    </div>
-  `;
+  <script>
+    // Utilities
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-  container.appendChild(left);
-  container.appendChild(right);
+    const productsEl = document.getElementById('products');
+    const tpl = document.getElementById('productTpl');
 
-  // attach events
-  container.querySelector('.btn-remove').addEventListener('click', e=>{
-    const id = container.dataset.id;
-    removeProduct(id);
-  });
-
-  // all inputs in left and right: update product object and recalc
-  const inputs = container.querySelectorAll('input');
-  inputs.forEach(inp=>{
-    inp.addEventListener('input', ()=>{
-      // map values back to product
-      product.name = container.querySelector('.prod-name').value;
-      product.price = num(container.querySelector('.prod-price').value,0);
-      product.setupFee = num(container.querySelector('.prod-setup').value,0);
-      product.units = Math.max(0, Math.round(num(container.querySelector('.prod-units').value,0)));
-      product.materialName = container.querySelector('.prod-material-name').value;
-      product.materialCost = num(container.querySelector('.prod-material-cost').value,0);
-      product.shipName = ''; // not storing ship name in UI for brevity
-      product.shipCost = num(container.querySelector('.prod-ship-cost').value,0);
-      product.designMin = Math.max(0,num(container.querySelector('.prod-design').value, state.defaultTimes.design));
-      product.setupMin = Math.max(0,num(container.querySelector('.prod-setupmin').value, state.defaultTimes.setup));
-      product.finishMin = Math.max(0,num(container.querySelector('.prod-finish').value, state.defaultTimes.finish));
-      product.packMin = Math.max(0,num(container.querySelector('.prod-pack').value, state.defaultTimes.pack));
-      product.machineMin = Math.max(0,num(container.querySelector('.prod-machine').value,0));
-      // re-render stats for this product
-      renderProductStats(container, product);
-      renderSummary(); // update overall
-    });
-  });
-
-  // initial stats render
-  setTimeout(()=>renderProductStats(container, product), 0);
-
-  return container;
-}
-
-function renderProductStats(container, product){
-  readSettings();
-  const res = calcProduct(product);
-  container.querySelector('#profitUnit').textContent = money(res.profitPerUnit);
-  container.querySelector('#profitMonth').textContent = money(res.monthlyProfit);
-
-
-}
-
-function renderProducts(){
-  const list = $('productsList');
-  list.innerHTML = '';
-  state.products.forEach(p=>{
-    list.appendChild(renderProductCard(p));
-  });
-}
-
-function addProduct(template){
-  const id = 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-  const product = Object.assign({
-    id,
-    name: '',
-    price: 0,
-    setupFee: 0,
-    units: 0,
-    materialName: '',
-    materialCost: 0,
-    shipName: '',
-    shipCost: 0,
-    designMin: state.defaultTimes.design,
-    setupMin: state.defaultTimes.setup,
-    finishMin: state.defaultTimes.finish,
-    packMin: state.defaultTimes.pack,
-    machineMin: 0
-  }, template || {});
-  state.products.push(product);
-  renderProducts();
-  renderSummary();
-}
-
-function removeProduct(id){
-  const idx = state.products.findIndex(p=>p.id===id);
-  if (idx>=0){ state.products.splice(idx,1); renderProducts(); renderSummary(); }
-}
-
-function renderSummary(){
-  readSettings();
-  let totalMonthly = 0;
-  state.products.forEach(p=>{
-    const r = calcProduct(p);
-    totalMonthly += r.monthlyProfit;
-  });
-
-  $('totalMonthly').textContent = money(totalMonthly);
-  const remaining = state.monthlyGoal - totalMonthly;
-  $('remaining').textContent = money(Math.max(0,remaining));
-  const percent = state.monthlyGoal>0 ? Math.min(100, (totalMonthly / state.monthlyGoal)*100) : 0;
-  $('progressBar').style.width = percent + '%';
-
-  // update product cards stats in case settings changed
-  const cards = document.querySelectorAll('.product');
-  cards.forEach(card=>{
-    const id = card.dataset.id;
-    const prod = state.products.find(p=>p.id===id);
-    if (prod) renderProductStats(card, prod);
-  });
-}
-
-// export CSV: include settings then products
-function exportCSV(){
-  readSettings();
-  let rows = [];
-  rows.push(['key','value'].join(','));
-  rows.push(['monthlyGoal', state.monthlyGoal]);
-  rows.push(['laborRate', state.laborRate]);
-  rows.push(['machineRate', state.machineRate]);
-  rows.push(['designMin', state.defaultTimes.design]);
-  rows.push(['setupMin', state.defaultTimes.setup]);
-  rows.push(['finishMin', state.defaultTimes.finish]);
-  rows.push(['packMin', state.defaultTimes.pack]);
-  rows.push(['etsyFee', state.fees.etsy]);
-  rows.push(['bankFee', state.fees.bank]);
-  rows.push(['siteFee', state.fees.site]);
-  rows.push(['marketingFee', state.fees.marketing]);
-  rows.push([]); // blank line
-  rows.push(['productId','name','price','setupFee','units','materialName','materialCost','shipCost','designMin','setupMin','finishMin','packMin','machineMin'].join(','));
-  state.products.forEach(p=>{
-    const line = [
-      p.id,
-      '"' + (p.name||'').replace(/"/g,'""') + '"',
-      num(p.price,0),
-      num(p.setupFee,0),
-      num(p.units,0),
-      '"' + (p.materialName||'').replace(/"/g,'""') + '"',
-      num(p.materialCost,0),
-      num(p.shipCost,0),
-      num(p.designMin,0),
-      num(p.setupMin,0),
-      num(p.finishMin,0),
-      num(p.packMin,0),
-      num(p.machineMin,0)
-    ];
-    rows.push(line.join(','));
-  });
-
-  const csv = rows.map(r=> (Array.isArray(r) ? r.join(',') : r)).join('\\n');
-
-  // create blob and download
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'shop_planner_export_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-// import CSV - tries to be forgiving
-function importCSV(file){
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const text = e.target.result;
-    parseCSV(text);
-  };
-  reader.readAsText(file);
-}
-
-function parseCSV(text){
-  // naive but robust CSV parse for our expected format
-  const lines = text.split(/\\r?\\n/);
-  const settings = {};
-  const products = [];
-
-  let i = 0;
-  // read key,value pairs until blank line
-  while(i < lines.length){
-    const ln = lines[i].trim();
-    if (ln === ''){ i++; break; }
-    const parts = splitCsvLine(lines[i]);
-    if (parts.length>=2){
-      settings[parts[0]] = parts[1];
-    }
-    i++;
-  }
-  // skip empty lines until header row
-  while(i<lines.length && lines[i].trim()==='') i++;
-  // next should be header
-  const header = lines[i] ? splitCsvLine(lines[i]) : null;
-  i++;
-  if (header && header[0]==='productId'){
-    // read products
-    while(i<lines.length){
-      const ln = lines[i];
-      if (!ln || ln.trim()===''){ i++; continue; }
-      const cols = splitCsvLine(ln);
-      if (cols.length < 1){ i++; continue; }
-      const p = {
-        id: cols[0] || ('p_' + Date.now() + '_' + i),
-        name: (cols[1]||'').replace(/^"|"$/g,'').replace(/""/g,'"'),
-        price: num(cols[2],0),
-        setupFee: num(cols[3],0),
-        units: Math.max(0,Math.round(num(cols[4],0))),
-        materialName: (cols[5]||'').replace(/^"|"$/g,'').replace(/""/g,'"'),
-        materialCost: num(cols[6],0),
-        shipCost: num(cols[7],0),
-        designMin: num(cols[8], state.defaultTimes.design),
-        setupMin: num(cols[9], state.defaultTimes.setup),
-        finishMin: num(cols[10], state.defaultTimes.finish),
-        packMin: num(cols[11], state.defaultTimes.pack),
-        machineMin: num(cols[12],0)
+    // Default: create one product
+    function createProduct(data = {}){
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      productsEl.appendChild(node);
+      const el = productsEl.lastElementChild;
+      const map = {
+        name: el.querySelector('.prod-name'), price: el.querySelector('.sellPrice'), setupFee: el.querySelector('.setupFee'), units: el.querySelector('.units'),
+        materialName: el.querySelector('.materialName'), materialCost: el.querySelector('.materialCost'), shipMat: el.querySelector('.shipMat'), shipCost: el.querySelector('.shipCost'),
+        designMin: el.querySelector('.designMin'), setupMin: el.querySelector('.setupMin'), finishMin: el.querySelector('.finishMin'), packMin: el.querySelector('.packMin'), machineMin: el.querySelector('.machineMin'),
+        notes: el.querySelector('.notes'), monthlyDisplay: el.querySelector('.prod-monthly')
       };
-      products.push(p);
-      i++;
+
+      // set defaults
+      map.name.value = data.name || '';
+      map.price.value = data.price ?? 25;
+      map.setupFee.value = data.setupFee ?? 0;
+      map.units.value = data.units ?? 10;
+      map.materialName.value = data.materialName || '';
+      map.materialCost.value = data.materialCost ?? 3;
+      map.shipMat.value = data.shipMat || '';
+      map.shipCost.value = data.shipCost ?? 2;
+      map.designMin.value = data.designMin ?? 5;
+      map.setupMin.value = data.setupMin ?? 5;
+      map.finishMin.value = data.finishMin ?? 5;
+      map.packMin.value = data.packMin ?? 5;
+      map.machineMin.value = data.machineMin ?? 10;
+      map.notes.value = data.notes || '';
+
+      function attach(){
+        ['input'].forEach(evt => el.addEventListener(evt, recalc));
+        el.querySelector('.remove').addEventListener('click', ()=>{el.remove();recalc();});
+      }
+      attach();
+      recalc();
+      return el;
     }
-  }
 
-  // apply settings to UI
-  if (settings.monthlyGoal) $('monthlyGoal').value = settings.monthlyGoal;
-  if (settings.laborRate) $('laborRate').value = settings.laborRate;
-  if (settings.machineRate) $('machineRate').value = settings.machineRate;
-  if (settings.designMin) $('designMin').value = settings.designMin;
-  if (settings.setupMin) $('setupMin').value = settings.setupMin;
-  if (settings.finishMin) $('finishMin').value = settings.finishMin;
-  if (settings.packMin) $('packMin').value = settings.packMin;
-  if (settings.etsyFee) $('etsyFee').value = settings.etsyFee;
-  if (settings.bankFee) $('bankFee').value = settings.bankFee;
-  if (settings.siteFee) $('siteFee').value = settings.siteFee;
-  if (settings.marketingFee) $('marketingFee').value = settings.marketingFee;
+    // add controls
+    $('#addProduct').addEventListener('click', ()=>createProduct());
+    $('#clearAll').addEventListener('click', ()=>{productsEl.innerHTML='';recalc();});
 
-  state.products = products;
-  renderProducts();
-  renderSummary();
-}
-
-// simple CSV line splitter that respects quotes
-function splitCsvLine(line){
-  const out = [];
-  let cur = '', inQuotes=false;
-  for (let i=0;i<line.length;i++){
-    const ch = line[i];
-    if (ch === '"' ){
-      if (inQuotes && line[i+1] === '"'){ cur += '"'; i++; } // escaped quote
-      else inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes){
-      out.push(cur);
-      cur = '';
-    } else {
-      cur += ch;
+    // export/import
+    function gatherState(){
+      const settings = {
+        goal: parseFloat($('#goal').value)||0,
+        manRate: parseFloat($('#manRate').value)||0,
+        machineRate: parseFloat($('#machineRate').value)||0,
+        etsyFee: parseFloat($('#etsyFee').value)||0,
+        bankFee: parseFloat($('#bankFee').value)||0,
+        siteFee: parseFloat($('#siteFee').value)||0,
+        marketingFee: parseFloat($('#marketingFee').value)||0
+      };
+      const products = [];
+      productsEl.querySelectorAll('.product').forEach(p=>{
+        products.push({
+          name: p.querySelector('.prod-name').value,
+          price: parseFloat(p.querySelector('.sellPrice').value)||0,
+          setupFee: parseFloat(p.querySelector('.setupFee').value)||0,
+          units: parseInt(p.querySelector('.units').value)||0,
+          materialName: p.querySelector('.materialName').value,
+          materialCost: parseFloat(p.querySelector('.materialCost').value)||0,
+          shipMat: p.querySelector('.shipMat').value,
+          shipCost: parseFloat(p.querySelector('.shipCost').value)||0,
+          designMin: parseFloat(p.querySelector('.designMin').value)||0,
+          setupMin: parseFloat(p.querySelector('.setupMin').value)||0,
+          finishMin: parseFloat(p.querySelector('.finishMin').value)||0,
+          packMin: parseFloat(p.querySelector('.packMin').value)||0,
+          machineMin: parseFloat(p.querySelector('.machineMin').value)||0,
+          notes: p.querySelector('.notes').value
+        });
+      });
+      return {settings,products};
     }
-  }
-  out.push(cur);
-  return out;
-}
 
-function escapeHTML(s){
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/>/g,'&gt;');
-}
+    function exportCSV(){
+      const state = gatherState();
+      // CSV format: first block SETTINGS,key,value per line; then a blank line; then PRODUCTS header and rows
+      let lines = [];
+      lines.push('SETTINGS');
+      for(const k in state.settings) lines.push(`${k},${state.settings[k]}`);
+      lines.push('');
+      lines.push('PRODUCTS');
+      const header = ['name','price','setupFee','units','materialName','materialCost','shipMat','shipCost','designMin','setupMin','finishMin','packMin','machineMin','notes'];
+      lines.push(header.join(','));
+      state.products.forEach(p=>{
+        lines.push(header.map(h=>`"${String(p[h] ?? '')}"`).join(','));
+      });
+      const blob = new Blob([lines.join('\n')],{type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'laser_cnc_plan.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
 
-// wire up UI
-document.addEventListener('DOMContentLoaded', ()=>{
-  // initial read of UI
-  $('monthlyGoal').addEventListener('input', ()=>{ readSettings(); renderSummary(); });
-  $('laborRate').addEventListener('input', ()=>{ readSettings(); renderSummary(); });
-  $('machineRate').addEventListener('input', ()=>{ readSettings(); renderSummary(); });
-  ['designMin','setupMin','finishMin','packMin','etsyFee','bankFee','siteFee','marketingFee'].forEach(id=>{
-    $(id).addEventListener('input', ()=>{ readSettings(); renderSummary(); });
-  });
+    function importCSV(file){
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const txt = e.target.result;
+        const rows = txt.split(/\r?\n/).map(r=>r.trim());
+        // simple parser
+        let i=0; const settings = {};
+        if(rows[i]==='SETTINGS'){i++; while(i<rows.length && rows[i]!==''){ const [k,v]=rows[i].split(','); if(k) settings[k]=parseFloat(v); i++; }}
+        // find PRODUCTS
+        while(i<rows.length && rows[i]!=='PRODUCTS') i++;
+        i++;// skip PRODUCTS
+        const header = rows[i] ? rows[i].split(',') : []; i++;
+        const prods = [];
+        for(;i<rows.length;i++){
+          const row = rows[i]; if(!row) continue;
+          // split by comma but remove surrounding quotes
+          const cols = row.match(/("[^"]*"|[^,]+)/g).map(c=>c.replace(/^"|"$/g, ''));
+          const obj = {};
+          header.forEach((h,idx)=>{ obj[h]=cols[idx] ?? ''; });
+          // convert numeric fields
+          ['price','setupFee','units','materialCost','shipCost','designMin','setupMin','finishMin','packMin','machineMin'].forEach(k=>{ obj[k]=parseFloat(obj[k])||0; });
+          prods.push(obj);
+        }
+        // apply
+        if(settings.goal!=null) $('#goal').value = settings.goal||0;
+        if(settings.manRate!=null) $('#manRate').value = settings.manRate||0;
+        if(settings.machineRate!=null) $('#machineRate').value = settings.machineRate||0;
+        if(settings.etsyFee!=null) $('#etsyFee').value = settings.etsyFee||0;
+        if(settings.bankFee!=null) $('#bankFee').value = settings.bankFee||0;
+        if(settings.siteFee!=null) $('#siteFee').value = settings.siteFee||0;
+        if(settings.marketingFee!=null) $('#marketingFee').value = settings.marketingFee||0;
 
-  $('addProduct').addEventListener('click', ()=> addProduct());
+        productsEl.innerHTML='';
+        prods.forEach(p=>createProduct(p));
+        recalc();
+      };
+      reader.readAsText(file);
+    }
 
-  $('btnExport').addEventListener('click', exportCSV);
-  $('csvFile').addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if (f) importCSV(f);
-    e.target.value = '';
-  });
+    $('#exportBtn').addEventListener('click', exportCSV);
+    $('#importBtn').addEventListener('click', ()=>$('#importFile').click());
+    $('#importFile').addEventListener('change', e=>{ if(e.target.files[0]) importCSV(e.target.files[0]); e.target.value=''; });
 
-  $('btnClear').addEventListener('click', ()=>{
-    if (!confirm('Clear all products and reset settings to defaults?')) return;
-    // reset to defaults
-    $('monthlyGoal').value = 10000.00;
-    $('laborRate').value = 20.00;
-    $('machineRate').value = 10.00;
-    $('designMin').value = 10;
-    $('setupMin').value = 5;
-    $('finishMin').value = 5;
-    $('packMin').value = 2;
-    $('etsyFee').value = 6;
-    $('bankFee').value = 3;
-    $('siteFee').value = 2;
-    $('marketingFee').value = 5;
-    state.products = [];
-    renderProducts();
-    renderSummary();
-  });
+    // core calc
+    function recalc(){
+      const manRate = parseFloat($('#manRate').value)||0;
+      const machineRate = parseFloat($('#machineRate').value)||0;
+      const etsy = (parseFloat($('#etsyFee').value)||0)/100;
+      const bank = (parseFloat($('#bankFee').value)||0)/100;
+      const site = (parseFloat($('#siteFee').value)||0)/100;
+      const marketing = (parseFloat($('#marketingFee').value)||0)/100;
 
-  // start with a sample product
-  addProduct({
-    name: 'Sample Keychain',
-    price: 18.00,
-    setupFee: 10.00,
-    units: 200,
-    materialName: 'Acrylic',
-    materialCost: 1.20,
-    shipCost: 1.50,
-    designMin: 5,
-    setupMin: 2,
-    finishMin: 3,
-    packMin: 1,
-    machineMin: 6
-  });
+      let totalMonthly = 0; let totalUnitProfit = 0; let totalUnits = 0;
 
-  // second sample
-  addProduct({
-    name: 'Custom Sign',
-    price: 45.00,
-    setupFee: 15.00,
-    units: 60,
-    materialName: 'Wood',
-    materialCost: 8.00,
-    shipCost: 6.00,
-    designMin: 10,
-    setupMin: 5,
-    finishMin: 10,
-    packMin: 3,
-    machineMin: 30
-  });
+      productsEl.querySelectorAll('.product').forEach(p=>{
+        const price = parseFloat(p.querySelector('.sellPrice').value)||0;
+        const setupFee = parseFloat(p.querySelector('.setupFee').value)||0;
+        const units = parseInt(p.querySelector('.units').value)||0;
+        const materialCost = parseFloat(p.querySelector('.materialCost').value)||0;
+        const shipCost = parseFloat(p.querySelector('.shipCost').value)||0;
+        const designMin = parseFloat(p.querySelector('.designMin').value)||0;
+        const setupMin = parseFloat(p.querySelector('.setupMin').value)||0;
+        const finishMin = parseFloat(p.querySelector('.finishMin').value)||0;
+        const packMin = parseFloat(p.querySelector('.packMin').value)||0;
+        const machineMin = parseFloat(p.querySelector('.machineMin').value)||0;
 
-  renderSummary();
-});
-</script>
+        // fees on sale
+        const fees = price * (etsy + bank + site + marketing);
+        // per-unit setup amortized
+        const perUnitSetup = units>0 ? (setupFee / units) : setupFee;
+        // labor cost
+        const laborCost = ((designMin + setupMin + finishMin + packMin)/60) * manRate;
+        // machine cost
+        const mCost = (machineMin/60) * machineRate;
+
+        const unitProfit = price - materialCost - shipCost - perUnitSetup - laborCost - mCost - fees;
+        const monthly = unitProfit * units;
+
+        p.querySelector('.prod-monthly').textContent = `$${monthly.toFixed(2)}`;
+        totalMonthly += monthly;
+        totalUnitProfit += unitProfit * units; // same as monthly but summing for safety
+        totalUnits += units;
+      });
+
+      totalUnitProfit = totalUnits>0 ? (totalUnitProfit / totalUnits) : 0;
+
+      $('#totalMonthly').textContent = `$${totalMonthly.toFixed(2)}`;
+      $('#goalShow').textContent = `$${(parseFloat($('#goal').value)||0).toFixed(2)}`;
+      $('#totalUnitProfit').textContent = `$${totalUnitProfit.toFixed(2)}`;
+
+      const goal = parseFloat($('#goal').value)||0;
+      const pct = goal>0 ? Math.min(100, (totalMonthly/goal)*100) : 0;
+      $('#progressBar').style.width = pct + '%';
+    }
+
+    // initial
+    createProduct();
+
+    // live recalc on left inputs
+    ['goal','manRate','machineRate','etsyFee','bankFee','siteFee','marketingFee'].forEach(id=>$('#'+id).addEventListener('input', recalc));
+
+    // observe product changes
+    productsEl.addEventListener('input', recalc);
+
+    // keyboard: allow duplicate product by ctrl+d when focused
+    document.addEventListener('keydown', e=>{
+      if(e.ctrlKey && e.key.toLowerCase()==='d'){
+        const active = document.activeElement.closest('.product');
+        if(active){
+          const p = {};
+          ['prod-name','sellPrice','setupFee','units','materialName','materialCost','shipMat','shipCost','designMin','setupMin','finishMin','packMin','machineMin','notes'].forEach(k=>{
+            const el = active.querySelector('.'+k);
+            if(el) p[k.replace('prod-name','name').replace('sellPrice','price')] = el.value;
+          });
+          createProduct(p);
+        }
+      }
+    });
+
+    // ensure inputs share same styling color - already via CSS
+    // initial calc
+    recalc();
+  </script>
 </body>
 </html>
