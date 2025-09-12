@@ -423,14 +423,14 @@ function renderProductCard(product){
 
     <div class="card" style="padding:8px">
       <div style="display:flex;justify-content:space-between">
-        <div class="small-muted">Profit / unit</div>
+        <div class="small-muted">Profit Per Unit</div>
         <div id="profitUnit" class="big">${money(0)}</div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:6px">
         <div class="small-muted">Monthly profit</div>
         <div id="profitMonth" class="big">${money(0)}</div>
       </div>
-      <div style="margin-top:8px" class="small-muted" id="calcSummary">Costs breakdown</div>
+      <div style="margin-top:8px" class="small-muted" id="calcSummary"></div>
     </div>
   `;
 
@@ -479,10 +479,7 @@ function renderProductStats(container, product){
   container.querySelector('#profitUnit').textContent = money(res.profitPerUnit);
   container.querySelector('#profitMonth').textContent = money(res.monthlyProfit);
 
-  const summary = `
-    Price ${money(res.price)} · Cost/unit ${money(res.totalCostPerUnit)} · Platform fees ${money(res.platformFeesPerUnit)} · Labor ${money(res.laborCostPerUnit)} · Machine ${money(res.machineCostPerUnit)} · Setup alloc ${money(res.setupAlloc)} · Units ${res.units}
-  `;
-  container.querySelector('#calcSummary').textContent = summary;
+
 }
 
 function renderProducts(){
