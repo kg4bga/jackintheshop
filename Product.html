@@ -1,9 +1,10 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Laser / CNC Profit Planner</title>
+  <title>Profit Planner</title>
   <style>
     :root{
       --bg:#0b0f12; --panel:#0f1418; --muted:#98a0a6; --accent:#6ee7b7; --input:#121519; --card:#0e1316;
@@ -62,7 +63,7 @@
   <div class="app">
     <aside class="left">
       <div class="logo">
-  <img src="JITS Clear BG.png" alt="My Logo" style="height:52px; width:auto; border-radius:6px; margin-right:8px;">
+  <img src="JITS Clear BG.png" alt="My Logo" style="height:62px; width:auto; border-radius:6px; margin-right:8px;">
   Laser & CNC Profit Planner
 </div>
 
@@ -85,7 +86,7 @@
       <div class="card">
         <label>Platform & fees (percent of sale)</label>
         <div class="two">
-          <div style="flex:1"><label class="tiny">Etsy / Platform %</label><input id="etsyFee" type="number" step="0.01" value="6.5"/></div>
+          <div style="flex:1"><label class="tiny">Platform / Etsy %</label><input id="etsyFee" type="number" step="0.01" value="6.5"/></div>
           <div style="flex:1"><label class="tiny">Bank / Processing %</label><input id="bankFee" type="number" step="0.01" value="2.9"/></div>
         </div>
         <div class="two" style="margin-top:8px">
@@ -131,19 +132,19 @@
               <input class="prod-name" type="text" placeholder="Product name" style="width:220px;background:var(--input);border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03)" />
               <button class="iconbtn remove">✖</button>
             </div>
-            <div class="tiny">Monthly profit: <strong class="prod-monthly">$0.00</strong></div>
+            <div class="tiny">Monthly Profit: <strong class="prod-monthly">$0.00</strong></div>
           </div>
 
           <div class="prod-grid">
-            <div class="field-inline compact"><label>Sell price $</label><input class="sellPrice" type="number" step="0.01" value="25" /></div>
-            <div class="field-inline compact"><label>Setup fee $</label><input class="setupFee" type="number" step="0.01" value="0" /></div>
-            <div class="field-inline compact"><label>Units / month</label><input class="units" type="number" step="1" value="10" /></div>
+            <div class="field-inline compact"><label>Sell Price $</label><input class="sellPrice" type="number" step="0.01" value="25" /></div>
+            <div class="field-inline compact"><label>Setup Fee $</label><input class="setupFee" type="number" step="0.01" value="0" /></div>
+            <div class="field-inline compact"><label>Units Per Month</label><input class="units" type="number" step="1" value="10" /></div>
 
             <div class="field-inline compact"><label>Material</label><input class="materialName" type="text" placeholder="e.g., maple" /></div>
-            <div class="field-inline compact"><label>Material cost $</label><input class="materialCost" type="number" step="0.01" value="3" /></div>
+            <div class="field-inline compact"><label>Material Cost $</label><input class="materialCost" type="number" step="0.01" value="3" /></div>
 
-            <div class="field-inline compact"><label>Ship mat</label><input class="shipMat" type="text" placeholder="box, mailer" /></div>
-            <div class="field-inline compact"><label>Ship cost $</label><input class="shipCost" type="number" step="0.01" value="2" /></div>
+            <div class="field-inline compact"><label>Shipping Matterial</label><input class="shipMat" type="text" placeholder="box, mailer" /></div>
+            <div class="field-inline compact"><label>Shipping Cost $</label><input class="shipCost" type="number" step="0.01" value="2" /></div>
 
             <div class="field-inline compact"><label>Design (min)</label><input class="designMin" type="number" step="1" value="5" /></div>
             <div class="field-inline compact"><label>Setup (min)</label><input class="setupMin" type="number" step="1" value="5" /></div>
