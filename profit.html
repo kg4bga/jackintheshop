@@ -1,0 +1,1143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Profit Calculator</title>
+<style>
+  :root{
+    --bg:#0f1720;
+    --panel:#0b1220;
+    --muted:#9aa5b1;
+    --card:#0e1620;
+    --accent:#7c5cff;
+    --accent-2:#33c3a5;
+    --danger:#ff6b6b;
+    --success:#4cd964;
+    --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --pad:12px;
+    --radius:12px;
+    --shadow: 0 6px 18px rgba(2,6,23,0.6);
+    --max-width:1200px;
+    --gutter:16px;
+  }
+  html,body{height:100%;background:linear-gradient(180deg,#071018 0%, #071018 35%, #081322 100%);color:#dbe7ef;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;line-height:1.25;margin:0;padding:24px;box-sizing:border-box}
+  .app{max-width:var(--max-width);margin:0 auto;display:grid;grid-template-columns:320px 1fr;gap:var(--gutter);min-height:75vh}
+  /* Left sticky column */
+  .left{
+    position:sticky;top:24px;height:calc(100vh - 48px);overflow:auto;padding:18px;background:linear-gradient(180deg,var(--card),var(--panel));border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.02)
+  }
+  /* Right column scrollable */
+  .right{
+    height:calc(100vh - 48px);overflow:auto;padding:18px;background:linear-gradient(180deg,var(--panel),#06101a);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.02)
+  }
+  h1{font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px}
+  p.muted{color:var(--muted);margin:6px 0 12px 0;font-size:13px}
+  .group{margin-bottom:16px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input[type="text"], input[type="number"], select{
+    width:100%;padding:8px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:inherit;font-size:14px;box-sizing:border-box
+  }
+  input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{opacity:0.5}
+  .row{display:flex;gap:10px;align-items:center}
+  .compact-row{display:flex;gap:8px;flex-wrap:wrap}
+  .small{flex:1 1 50%;min-width:88px}
+  .xs{flex:1 1 32%;min-width:72px}
+  .xxs{flex:1 1 20%;min-width:58px}
+  .control{margin-bottom:8px}
+  .summary-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .big-num{font-size:20px;font-weight:700}
+  .muted-sm{font-size:12px;color:var(--muted)}
+  button{background:linear-gradient(90deg,var(--accent),#9b80ff);border:none;padding:10px 12px;border-radius:10px;color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(124,92,255,0.15)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);box-shadow:none}
+  .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{padding:8px 12px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+  .tab.active{background:linear-gradient(90deg, rgba(124,92,255,0.12), rgba(51,195,165,0.04));border-color:rgba(124,92,255,0.18)}
+  .section{background:var(--glass-2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);margin-bottom:12px}
+  .products{display:flex;flex-direction:column;gap:10px}
+  .product-row{display:flex;gap:8px;align-items:flex-start;padding:10px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .product-left{flex:1;display:flex;flex-direction:column;gap:8px;min-width:280px}
+  .product-right{flex:1;display:flex;flex-direction:column;gap:8px;min-width:320px}
+  .product-controls{display:flex;gap:8px;align-items:center}
+  .icon-btn{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:8px;cursor:pointer}
+  .mini{font-size:12px;color:var(--muted)}
+  .breakdown{font-size:13px;color:var(--muted-sm);display:flex;flex-direction:column;gap:4px;padding-top:6px}
+  .mini-stat{display:flex;justify-content:space-between;align-items:center}
+  .progress-wrap{background:rgba(255,255,255,0.03);border-radius:10px;padding:6px}
+  .progress{height:12px;border-radius:10px;background:linear-gradient(90deg, rgba(124,92,255,0.9), rgba(51,195,165,0.9));width:0%}
+  .validation{font-size:12px;color:var(--danger);margin-top:4px}
+  .success{color:var(--success)}
+  .csv-readme{font-size:12px;color:var(--muted);background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin-top:8px}
+  fieldset{border:1px dashed rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin:6px 0}
+  .table{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:13px}
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr; padding:12px}
+    .left{position:relative;height:auto;order:2}
+    .right{order:1}
+  }
+  /* small helper so inputs don't stretch full width in product rows */
+  .field{display:flex;flex-direction:column;min-width:88px}
+  .field input{min-width:64px}
+  .muted-inline{color:var(--muted);font-size:12px}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Profit Calculator">
+  <aside class="left" aria-labelledby="summaryTitle">
+    <h1 id="summaryTitle">
+      <!-- icon -->
+<img src="JITS Clear BG.png" alt="My Logo" style="height:62px; width:auto; border-radius:6px; margin-right:8px;">
+      Profit Calculator
+    </h1>
+    <p class="muted"></p>
+
+    <div class="group">
+      <label for="monthlyGoal">Profit Goal (USD)</label>
+      <input id="monthlyGoal" aria-label="Monthly profit goal" type="number" min="0" step="0.01" value="10000.00" />
+      <div class="muted-sm"></div>
+    </div>
+
+    <div class="group summary-card" aria-live="polite">
+      <div class="mini-stat"><div class="muted-sm">Gross Monthly Profit</div><div id="sumMonthlyProfit" class="big-num">$0.00</div></div>
+      <div class="mini-stat"><div class="muted-sm">Marketing Costs</div><div id="sumMarketing" class="big-num">$0.00</div></div>
+      <div class="mini-stat"><div class="muted-sm">Net Monthly Profit</div><div id="netMonthlyProfit" class="big-num">$0.00</div></div>
+      <div class="mini-stat" style="margin-top:8px"><div class="muted-sm">Difference to Goal</div><div id="diffToGoal" class="big-num muted-sm">$0.00</div></div>
+      <div style="margin-top:10px">
+        <div class="progress-wrap" aria-hidden="true">
+          <div id="goalProgress" class="progress" style="width:0%"></div>
+        </div>
+        <div class="muted-sm" style="margin-top:6px">Progress toward goal</div>
+      </div>
+    </div>
+
+    <div class="group">
+
+      <div class="section">
+        <label for="manRate">Man-hour rate ($/hour)</label>
+        <input id="manRate" type="number" step="0.01" min="0" value="25.00" aria-describedby="manRateHelp" />
+
+
+        <label for="machineRate" style="margin-top:8px">Machine rate ($/hour)</label>
+        <input id="machineRate" type="number" step="0.01" min="0" value="12.00" /><p>
+
+
+        <div class="compact-row">
+          <div class="field xs">
+            <label for="etsyPct">Etsy fee %</label>
+            <input id="etsyPct" type="number" step="0.01" min="0" value="6.50" aria-label="Etsy fee percent"/>
+          </div>
+          <div class="field xs">
+            <label for="bankPct">Bank fee %</label>
+            <input id="bankPct" type="number" step="0.01" min="0" value="2.90" />
+          </div>
+          <div class="field xs">
+            <label for="marketingPct">Marketing fee %</label>
+            <input id="marketingPct" type="number" step="0.01" min="0" value="1.00" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="btn-row">
+        <button id="exportCsv" title="Export current data to CSV">Export CSV</button>
+        <label for="importFile" class="icon-btn" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6 10l6-6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Import CSV
+        </label>
+        <input aria-label="Import CSV file" id="importFile" type="file" accept=".csv" class="sr-only"/>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button id="resetExample" class="ghost" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Reset to example data</button>
+        <button id="clearAll" class="ghost" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)">Clear all</button>
+      </div>
+    </div>
+
+    <div class="group">
+
+
+    </div>
+
+    <div style="margin-top:12px">
+
+    </div>
+  </aside>
+
+  <main class="right" aria-labelledby="appTitle">
+
+
+    <div class="tabs" role="tablist" aria-label="Main tabs">
+      <button class="tab active" data-tab="product" role="tab" aria-selected="true">Product</button>
+      <button class="tab" data-tab="marketing" role="tab" aria-selected="false">Marketing</button>
+      <button class="tab" data-tab="events" role="tab" aria-selected="false">Events &amp; Shows</button>
+      <button class="tab" data-tab="summary" role="tab" aria-selected="false">Summary</button>
+      <button class="tab" data-tab="labor" role="tab" aria-selected="false">Labor</button>
+    </div>
+
+    <!-- PRODUCT TAB -->
+    <section id="tab-product" class="section" role="tabpanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <h2 style="margin:0">Products</h2>
+
+        </div>
+        <div>
+          <button id="addProduct">+ Add Product</button>
+        </div>
+      </div>
+
+      <div id="products" class="products" aria-live="polite"></div>
+    </section>
+
+    <!-- MARKETING TAB -->
+    <section id="tab-marketing" class="section" role="tabpanel" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Digital Advertising</h2>
+        <button id="addCampaign">+ Add Campaign</button>
+      </div>
+
+      <div id="campaigns" class="products"></div>
+    </section>
+
+    <!-- EVENTS TAB -->
+    <section id="tab-events" class="section" role="tabpanel" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Events & Shows</h2>
+        <button id="addEvent">+ Add Event</button>
+      </div>
+
+      <div id="events" class="products"></div>
+    </section>
+
+    <!-- SUMMARY TAB -->
+    <section id="tab-summary" class="section" role="tabpanel" hidden>
+      <h2 style="margin:0 0 8px 0">Marketing Summary</h2>
+      <div class="table" aria-hidden="false" style="grid-template-columns: 1fr 1fr 1fr 1fr;align-items:center;font-size:13px;margin-bottom:8px">
+        <div style="font-weight:600">Name</div><div style="font-weight:600">Type</div><div style="font-weight:600">Cost</div><div style="font-weight:600">Est Acq / CPA</div>
+      </div>
+      <div id="marketingList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+        <div class="summary-card" style="flex:1;min-width:200px">
+          <div class="muted-sm">Digital spend</div><div id="digitalSpend" class="big-num">$0.00</div>
+        </div>
+        <div class="summary-card" style="flex:1;min-width:200px">
+          <div class="muted-sm">Events spend</div><div id="eventsSpend" class="big-num">$0.00</div>
+        </div>
+        <div class="summary-card" style="flex:1;min-width:200px">
+          <div class="muted-sm">Total marketing</div><div id="totalMarketing" class="big-num">$0.00</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:6px">Marketing vs. Goal</h3>
+      <div class="progress-wrap" style="margin-bottom:8px">
+        <div id="marketingProgress" class="progress" style="width:0%"></div>
+      </div>
+
+    </section>
+
+    <!-- LABOR TAB -->
+    <section id="tab-labor" class="section" role="tabpanel" hidden>
+      <h2 style="margin:0 0 8px 0">Labor Summary</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="summary-card" style="flex:1;min-width:190px">
+          <div class="muted-sm">Total man-hours (monthly)</div><div id="totalManHours" class="big-num">0.0</div>
+        </div>
+        <div class="summary-card" style="flex:1;min-width:190px">
+          <div class="muted-sm">Total man-hour cost</div><div id="totalManCost" class="big-num">$0.00</div>
+        </div>
+        <div class="summary-card" style="flex:1;min-width:190px">
+          <div class="muted-sm">Total machine hours (monthly)</div><div id="totalMachineHours" class="big-num">0.0</div>
+        </div>
+        <div class="summary-card" style="flex:1;min-width:190px">
+          <div class="muted-sm">Total machine cost</div><div id="totalMachineCost" class="big-num">$0.00</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/*
+Monthly Profit Calculator
+- All calculations happen client-side.
+- Formulas (recap):
+  - minutes_to_hours = minutes / 60
+  - labor_cost_per_unit = (design + setup + finish + pack minutes converted to hours) * man_hour_rate
+  - machine_cost_per_unit = (machine_minutes / 60) * machine_hourly_rate
+  - platform_fees_per_unit = selling_price * (etsy_pct + bank_pct + marketing_pct) / 100
+  - setup_fee_per_unit = setup_fee / units_per_month (if units_per_month > 0)
+  - unit_profit = selling_price - (material_cost + shipping_cost + labor_cost_per_unit + machine_cost_per_unit + platform_fees_per_unit + setup_fee_per_unit)
+  - monthly_profit_per_product = unit_profit * units_per_month
+  - net_monthly_profit = sum(monthly_profit_per_product) - total_marketing_spend
+- CSV format: single CSV, 'type' column with values product,ad,event.
+*/
+
+(function(){
+  // --- Data storage (in-memory) ---
+  let products = [];
+  let campaigns = [];
+  let eventsList = [];
+
+  // --- DOM references ---
+  const monthlyGoalEl = document.getElementById('monthlyGoal');
+  const manRateEl = document.getElementById('manRate');
+  const machineRateEl = document.getElementById('machineRate');
+  const etsyPctEl = document.getElementById('etsyPct');
+  const bankPctEl = document.getElementById('bankPct');
+  const marketingPctEl = document.getElementById('marketingPct');
+
+  const productsContainer = document.getElementById('products');
+  const campaignsContainer = document.getElementById('campaigns');
+  const eventsContainer = document.getElementById('events');
+
+  const sumMonthlyProfitEl = document.getElementById('sumMonthlyProfit');
+  const sumMarketingEl = document.getElementById('sumMarketing');
+  const netMonthlyProfitEl = document.getElementById('netMonthlyProfit');
+  const diffToGoalEl = document.getElementById('diffToGoal');
+  const goalProgressEl = document.getElementById('goalProgress');
+
+  const digitalSpendEl = document.getElementById('digitalSpend');
+  const eventsSpendEl = document.getElementById('eventsSpend');
+  const totalMarketingEl = document.getElementById('totalMarketing');
+  const marketingListEl = document.getElementById('marketingList');
+  const marketingProgressEl = document.getElementById('marketingProgress');
+
+  const totalManHoursEl = document.getElementById('totalManHours');
+  const totalManCostEl = document.getElementById('totalManCost');
+  const totalMachineHoursEl = document.getElementById('totalMachineHours');
+  const totalMachineCostEl = document.getElementById('totalMachineCost');
+
+  // file inputs & buttons
+  const exportBtn = document.getElementById('exportCsv');
+  const importFileInput = document.getElementById('importFile');
+  const resetBtn = document.getElementById('resetExample');
+  const clearBtn = document.getElementById('clearAll');
+
+  // tabs logic
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=> {
+      document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected','true');
+      const tabName = tab.dataset.tab;
+      document.querySelectorAll('[role="tabpanel"]').forEach(panel=>{
+        panel.hidden = (panel.id !== 'tab-'+tabName);
+      });
+    });
+  });
+
+  // helpers
+  function currency(v){ return (Number(v)||0).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+  function asNum(v){ return (v===''||v===null||isNaN(Number(v)))?0:Number(v); }
+  function clampNonNeg(n){return n<0?0:n}
+
+  function createElementFromHTML(html){
+    const div = document.createElement('div'); div.innerHTML = html.trim(); return div.firstElementChild;
+  }
+
+  // --- Product UI creation ---
+  function addProduct(prodData){
+    const id = 'p'+Date.now() + Math.floor(Math.random()*99);
+    const p = Object.assign({
+      id,
+      name:'New Product',
+      selling_price:0,
+      setup_fee:0,
+      units_per_month:0,
+      material:'Material',
+      material_cost:0,
+      shipping_material:'Pack',
+      shipping_cost:0,
+      design_min:0, setup_min:0, finish_min:0, pack_min:0,
+      machine_min:0
+    }, prodData||{});
+    products.push(p);
+    renderProductRow(p);
+    recalcAll();
+  }
+
+  function renderProductRow(product){
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.dataset.id = product.id;
+    row.innerHTML = `
+      <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
+        <div class="field" style="flex:1 1 220px">
+          <label for="${product.id}-name">Product Name</label>
+          <input id="${product.id}-name" data-key="name" type="text" value="${escapeHtml(product.name)}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${product.id}-price">Selling Price</label>
+          <input id="${product.id}-price" data-key="selling_price" type="number" min="0" step="0.01" value="${product.selling_price}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${product.id}-setup">Setup Fee</label>
+          <input id="${product.id}-setup" data-key="setup_fee" type="number" min="0" step="0.01" value="${product.setup_fee}" />
+        </div>
+        <div class="field" style="width:110px">
+          <label for="${product.id}-units">Units / month</label>
+          <input id="${product.id}-units" data-key="units_per_month" type="number" min="0" step="1" value="${product.units_per_month}" />
+        </div>
+
+        <div class="field" style="width:180px">
+          <label for="${product.id}-material">Materials (short)</label>
+          <input id="${product.id}-material" data-key="material" type="text" value="${escapeHtml(product.material)}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${product.id}-material_cost">Material Cost</label>
+          <input id="${product.id}-material_cost" data-key="material_cost" type="number" min="0" step="0.01" value="${product.material_cost}" />
+        </div>
+
+        <div class="field" style="width:180px">
+          <label for="${product.id}-shipping_mat">Ship Mat (short)</label>
+          <input id="${product.id}-shipping_mat" data-key="shipping_material" type="text" value="${escapeHtml(product.shipping_material)}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${product.id}-shipping_cost">Shipping Cost</label>
+          <input id="${product.id}-shipping_cost" data-key="shipping_cost" type="number" min="0" step="0.01" value="${product.shipping_cost}" />
+        </div>
+
+        <fieldset style="flex:1 1 100%;margin-top:6px">
+          <legend style="font-size:13px;color:var(--muted);padding:0 4px">Labor & Machine (minutes)</legend>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="field" style="width:92px">
+              <label for="${product.id}-design">Design (min)</label>
+              <input id="${product.id}-design" data-key="design_min" type="number" min="0" step="1" value="${product.design_min}" />
+            </div>
+            <div class="field" style="width:92px">
+              <label for="${product.id}-setupmin">Setup (min)</label>
+              <input id="${product.id}-setupmin" data-key="setup_min" type="number" min="0" step="1" value="${product.setup_min}" />
+            </div>
+            <div class="field" style="width:92px">
+              <label for="${product.id}-finish">Finish (min)</label>
+              <input id="${product.id}-finish" data-key="finish_min" type="number" min="0" step="1" value="${product.finish_min}" />
+            </div>
+            <div class="field" style="width:92px">
+              <label for="${product.id}-pack">Pack (min)</label>
+              <input id="${product.id}-pack" data-key="pack_min" type="number" min="0" step="1" value="${product.pack_min}" />
+            </div>
+            <div class="field" style="width:110px">
+              <label for="${product.id}-machine">Machine min / unit</label>
+              <input id="${product.id}-machine" data-key="machine_min" type="number" min="0" step="1" value="${product.machine_min}" />
+            </div>
+          </div>
+        </fieldset>
+
+      </div>
+
+      <div style="width:280px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="muted-sm">Unit Profit</div>
+          <div id="${product.id}-unitprofit" class="big-num">$0.00</div>
+        </div>
+        <div class="muted-sm">Monthly Profit</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600" id="${product.id}-monthlycount">0 units</div>
+          <div id="${product.id}-monthlyprofit" class="big-num">$0.00</div>
+        </div>
+        <div class="breakdown" aria-hidden="false">
+          <div class="mini-stat"><div class="muted-sm">Revenue / unit</div><div id="${product.id}-revenue">${currency(product.selling_price)}</div></div>
+          <div class="mini-stat"><div class="muted-sm">Var costs / unit</div><div id="${product.id}-varcost">${currency(0)}</div></div>
+          <div class="mini-stat"><div class="muted-sm">Platform fees / unit</div><div id="${product.id}-pf">${currency(0)}</div></div>
+          <div class="mini-stat"><div class="muted-sm">Setup prorated / unit</div><div id="${product.id}-setuppr">${currency(0)}</div></div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="icon-btn" data-action="duplicate" title="Duplicate product" aria-label="Duplicate product">⎘</button>
+          <button class="icon-btn" data-action="remove" title="Remove product" aria-label="Remove product">✕</button>
+        </div>
+
+        <div id="${product.id}-warning" class="validation" style="display:none"></div>
+      </div>
+    `;
+
+    // append
+    productsContainer.appendChild(row);
+
+    // attach listeners for inputs (don't re-render whole row so focus doesn't get lost)
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', (e)=>{
+        const key = inp.dataset.key;
+        if(key){
+          // update product object in products array
+          const val = (inp.type === 'number') ? (inp.value === '' ? '' : Number(inp.value)) : inp.value;
+          const prodObj = products.find(p=>p.id === product.id);
+          if(prodObj){
+            prodObj[key] = val;
+            // validation
+            if(inp.type === 'number' && Number(val) < 0){
+              showValidation(inp, 'Value must be 0 or greater');
+            } else {
+              clearValidation(inp);
+            }
+            recalcAll();
+          }
+        }
+      });
+    });
+
+    // action buttons
+    row.querySelectorAll('.icon-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const action = btn.dataset.action;
+        if(action === 'remove'){
+          products = products.filter(p=>p.id!==product.id);
+          row.remove();
+          recalcAll();
+        } else if(action === 'duplicate'){
+          const copy = JSON.parse(JSON.stringify(product));
+          delete copy.id;
+          addProduct(copy);
+        }
+      });
+    });
+  }
+
+  // --- Campaign UI ---
+  function addCampaign(c){
+    const id = 'c'+Date.now()+Math.floor(Math.random()*99);
+    const cam = Object.assign({id,name:'Campaign',cost_per_click:0.5,conversion_pct:2,clicks_planned:0,monthly_spend_override:''}, c||{});
+    campaigns.push(cam);
+    renderCampaign(cam);
+    recalcAll();
+  }
+
+  function renderCampaign(cam){
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.dataset.id = cam.id;
+    row.innerHTML = `
+      <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
+        <div class="field" style="flex:1 1 200px">
+          <label for="${cam.id}-name">Campaign Name</label>
+          <input id="${cam.id}-name" data-key="name" type="text" value="${escapeHtml(cam.name)}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${cam.id}-cpc">Cost / Click</label>
+          <input id="${cam.id}-cpc" data-key="cost_per_click" type="number" min="0" step="0.01" value="${cam.cost_per_click}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${cam.id}-conv">Conversion %</label>
+          <input id="${cam.id}-conv" data-key="conversion_pct" type="number" min="0" step="0.01" value="${cam.conversion_pct}" />
+        </div>
+
+        <div class="field" style="width:120px">
+          <label for="${cam.id}-clicks">Clicks planned</label>
+          <input id="${cam.id}-clicks" data-key="clicks_planned" type="number" min="0" step="1" value="${cam.clicks_planned}" />
+        </div>
+        <div class="field" style="width:140px">
+          <label for="${cam.id}-spend">Monthly spend (override)</label>
+          <input id="${cam.id}-spend" data-key="monthly_spend_override" type="number" min="0" step="0.01" value="${cam.monthly_spend_override}" placeholder="auto" />
+        </div>
+      </div>
+      <div style="width:260px;display:flex;flex-direction:column;gap:6px">
+        <div class="mini-stat"><div class="muted-sm">Cost per acquisition (CPA)</div><div id="${cam.id}-cpa" class="big-num">$0.00</div></div>
+        <div class="mini-stat"><div class="muted-sm">Monthly spend</div><div id="${cam.id}-mspend" class="big-num">$0.00</div></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="icon-btn" data-action="remove">✕</button>
+        </div>
+      </div>
+    `;
+    campaignsContainer.appendChild(row);
+
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const key = inp.dataset.key;
+        const camObj = campaigns.find(cc=>cc.id===cam.id);
+        if(camObj){
+          camObj[key] = (inp.type==='number') ? (inp.value === '' ? '' : Number(inp.value)) : inp.value;
+          recalcAll();
+        }
+      });
+    });
+    row.querySelector('[data-action="remove"]').addEventListener('click', ()=>{
+      campaigns = campaigns.filter(cc=>cc.id!==cam.id);
+      row.remove();
+      recalcAll();
+    });
+  }
+
+  // --- Event UI ---
+  function addEvent(e){
+    const id = 'e'+Date.now()+Math.floor(Math.random()*99);
+    const ev = Object.assign({id,name:'Event',event_cost:0,booth_traffic:0,conversion_pct:1}, e||{});
+    eventsList.push(ev);
+    renderEvent(ev);
+    recalcAll();
+  }
+
+  function renderEvent(ev){
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.dataset.id = ev.id;
+    row.innerHTML = `
+      <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
+        <div class="field" style="flex:1 1 200px">
+          <label for="${ev.id}-name">Event Name</label>
+          <input id="${ev.id}-name" data-key="name" type="text" value="${escapeHtml(ev.name)}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${ev.id}-cost">Event Cost</label>
+          <input id="${ev.id}-cost" data-key="event_cost" type="number" min="0" step="0.01" value="${ev.event_cost}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${ev.id}-traffic">Booth traffic</label>
+          <input id="${ev.id}-traffic" data-key="booth_traffic" type="number" min="0" step="1" value="${ev.booth_traffic}" />
+        </div>
+        <div class="field" style="width:120px">
+          <label for="${ev.id}-conv">Conversion %</label>
+          <input id="${ev.id}-conv" data-key="conversion_pct" type="number" min="0" step="0.01" value="${ev.conversion_pct}" />
+        </div>
+      </div>
+      <div style="width:260px;display:flex;flex-direction:column;gap:6px">
+        <div class="mini-stat"><div class="muted-sm">Expected sales</div><div id="${ev.id}-expected" class="big-num">0</div></div>
+        <div class="mini-stat"><div class="muted-sm">Cost per sale</div><div id="${ev.id}-cps" class="big-num">$0.00</div></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="icon-btn" data-action="remove">✕</button>
+        </div>
+      </div>
+    `;
+    eventsContainer.appendChild(row);
+
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const key = inp.dataset.key;
+        const evObj = eventsList.find(x=>x.id===ev.id);
+        if(evObj){
+          evObj[key] = (inp.type==='number') ? (inp.value === '' ? '' : Number(inp.value)) : inp.value;
+          recalcAll();
+        }
+      });
+    });
+    row.querySelector('[data-action="remove"]').addEventListener('click', ()=>{
+      eventsList = eventsList.filter(x=>x.id!==ev.id);
+      row.remove();
+      recalcAll();
+    });
+  }
+
+  // escape helper for injecting values into HTML safely
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+  // validation helpers
+  function showValidation(inp, msg){
+    // below the input is not guaranteed — show .validation area if exists
+    const row = inp.closest('.product-row');
+    if(!row) return;
+    const warn = row.querySelector('.validation');
+    if(warn){
+      warn.style.display = 'block';
+      warn.textContent = msg;
+    }
+  }
+  function clearValidation(inp){
+    const row = inp.closest('.product-row');
+    if(!row) return;
+    const warn = row.querySelector('.validation');
+    if(warn){
+      warn.style.display = 'none';
+      warn.textContent = '';
+    }
+  }
+
+  // --- Recalculation logic (single source of truth, updates UI without re-creating inputs) ---
+  function recalcAll(){
+    // Get global rates
+    const manRate = clampNonNeg(asNum(manRateEl.value));
+    const machineRate = clampNonNeg(asNum(machineRateEl.value));
+    const etsyPct = clampNonNeg(asNum(etsyPctEl.value));
+    const bankPct = clampNonNeg(asNum(bankPctEl.value));
+    const marketingPct = clampNonNeg(asNum(marketingPctEl.value));
+    const platformPctSum = (etsyPct + bankPct + marketingPct) / 100;
+
+    // per-product calculations, also sum totals
+    let sumMonthlyProfit = 0;
+    let totalManHours = 0;
+    let totalMachineHours = 0;
+    let totalManCost = 0;
+    let totalMachineCost = 0;
+
+    products.forEach(p=>{
+      // ensure numeric fields
+      p.selling_price = clampNonNeg(asNum(p.selling_price));
+      p.setup_fee = clampNonNeg(asNum(p.setup_fee));
+      p.units_per_month = Math.max(0, Math.trunc(asNum(p.units_per_month) || 0));
+      p.material_cost = clampNonNeg(asNum(p.material_cost));
+      p.shipping_cost = clampNonNeg(asNum(p.shipping_cost));
+      p.design_min = clampNonNeg(asNum(p.design_min));
+      p.setup_min = clampNonNeg(asNum(p.setup_min));
+      p.finish_min = clampNonNeg(asNum(p.finish_min));
+      p.pack_min = clampNonNeg(asNum(p.pack_min));
+      p.machine_min = clampNonNeg(asNum(p.machine_min));
+
+      // Convert minutes->hours
+      const laborMinutes = (p.design_min + p.setup_min + p.finish_min + p.pack_min);
+      const laborHoursPerUnit = laborMinutes / 60; // minutes -> hours
+
+      // Labor cost per unit:
+      const laborCostPerUnit = laborHoursPerUnit * manRate;
+      // Machine cost per unit:
+      const machineCostPerUnit = (p.machine_min / 60) * machineRate;
+      // Platform fees per unit:
+      const platformFeesPerUnit = p.selling_price * platformPctSum;
+      // Setup fee prorated per unit:
+      let setupPerUnit = 0;
+      let setupOneTimeRemaining = 0;
+      if(p.units_per_month > 0){
+        setupPerUnit = p.setup_fee / p.units_per_month;
+      } else {
+        // treat as full one-time cost — we'll show a warning and handle monthly profit as negative of setup if needed
+        setupPerUnit = 0;
+        setupOneTimeRemaining = p.setup_fee;
+      }
+
+      // total variable cost per unit:
+      const totalVarCostPerUnit = p.material_cost + p.shipping_cost + laborCostPerUnit + machineCostPerUnit + platformFeesPerUnit;
+
+      // unit profit:
+      const unitProfit = p.selling_price - totalVarCostPerUnit - setupPerUnit;
+
+      // monthly profit:
+      let monthlyProfit = unitProfit * p.units_per_month;
+      // if setup not prorated (units_per_month == 0), subtract one-time setup cost now (user must be warned)
+      if(p.units_per_month === 0 && setupOneTimeRemaining > 0){
+        monthlyProfit -= setupOneTimeRemaining;
+      }
+
+      // accumulate totals
+      sumMonthlyProfit += monthlyProfit;
+
+      const manHoursThisProduct = laborHoursPerUnit * p.units_per_month;
+      const machineHoursThisProduct = (p.machine_min / 60) * p.units_per_month;
+      totalManHours += manHoursThisProduct;
+      totalMachineHours += machineHoursThisProduct;
+      totalManCost += manHoursThisProduct * manRate;
+      totalMachineCost += machineHoursThisProduct * machineRate;
+
+      // update UI for this product row if present
+      const row = document.querySelector(`[data-id="${p.id}"]`);
+      if(row){
+        row.querySelector(`#${p.id}-unitprofit`).textContent = currency(unitProfit);
+        row.querySelector(`#${p.id}-monthlycount`).textContent = `${p.units_per_month} units`;
+        row.querySelector(`#${p.id}-monthlyprofit`).textContent = currency(monthlyProfit);
+        row.querySelector(`#${p.id}-revenue`).textContent = currency(p.selling_price);
+        row.querySelector(`#${p.id}-varcost`).textContent = currency(totalVarCostPerUnit);
+        row.querySelector(`#${p.id}-pf`).textContent = currency(platformFeesPerUnit);
+        row.querySelector(`#${p.id}-setuppr`).textContent = currency(setupPerUnit);
+        // warning if units zero but setup exists
+        const warn = row.querySelector(`#${p.id}-warning`);
+        if(p.setup_fee > 0 && p.units_per_month === 0){
+          warn.style.display = 'block';
+          warn.textContent = 'Setup fee present but units per month is 0 — setup treated as one-time cost.';
+        } else {
+          warn.style.display = 'none';
+          warn.textContent = '';
+        }
+      }
+    });
+
+    // Campaigns: compute CPA and monthly spend
+    let digitalSpend = 0;
+    campaigns.forEach(c=>{
+      c.cost_per_click = clampNonNeg(asNum(c.cost_per_click));
+      c.conversion_pct = clampNonNeg(asNum(c.conversion_pct));
+      c.clicks_planned = Math.max(0, Math.trunc(asNum(c.clicks_planned) || 0));
+      // cost per acquisition (CPA) = cost_per_click / conversion_rate_decimal
+      const convDecimal = c.conversion_pct / 100;
+      const cpa = convDecimal > 0 ? (c.cost_per_click / convDecimal) : 0;
+      // monthly spend = clicks_planned * cost_per_click OR override if provided
+      let monthlySpend = c.monthly_spend_override !== '' && !isNaN(Number(c.monthly_spend_override)) ? Number(c.monthly_spend_override) : (c.clicks_planned * c.cost_per_click);
+      digitalSpend += monthlySpend;
+
+      // update UI
+      const row = document.querySelector(`[data-id="${c.id}"]`);
+      if(row){
+        row.querySelector(`#${c.id}-cpa`).textContent = currency(cpa);
+        row.querySelector(`#${c.id}-mspend`).textContent = currency(monthlySpend);
+      }
+    });
+
+    // Events:
+    let eventsSpend = 0;
+    eventsList.forEach(ev=>{
+      ev.event_cost = clampNonNeg(asNum(ev.event_cost));
+      ev.booth_traffic = Math.max(0, Math.trunc(asNum(ev.booth_traffic)||0));
+      ev.conversion_pct = clampNonNeg(asNum(ev.conversion_pct));
+      const expectedSales = Math.floor(ev.booth_traffic * ev.conversion_pct / 100);
+      const costPerSale = expectedSales > 0 ? ev.event_cost / expectedSales : ev.event_cost;
+      eventsSpend += ev.event_cost;
+
+      const row = document.querySelector(`[data-id="${ev.id}"]`);
+      if(row){
+        row.querySelector(`#${ev.id}-expected`).textContent = expectedSales;
+        row.querySelector(`#${ev.id}-cps`).textContent = currency(costPerSale);
+      }
+    });
+
+    // Marketing totals
+    const totalMarketing = digitalSpend + eventsSpend;
+
+    // Net monthly profit
+    const netMonthlyProfit = sumMonthlyProfit - totalMarketing;
+
+    // set left summary UI (format numbers)
+    sumMonthlyProfitEl.textContent = currency(sumMonthlyProfit);
+    sumMarketingEl.textContent = currency(totalMarketing);
+    netMonthlyProfitEl.textContent = currency(netMonthlyProfit);
+
+    // Difference to goal coloring
+    const goal = clampNonNeg(asNum(monthlyGoalEl.value));
+    const diff = netMonthlyProfit - goal;
+    diffToGoalEl.textContent = (diff >= 0 ? '+' : '') + currency(diff);
+    diffToGoalEl.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+
+    // progress bar percent - cap 0..200%
+    const pct = goal === 0 ? 0 : Math.min(200, Math.round((netMonthlyProfit / goal) * 100));
+    goalProgressEl.style.width = Math.max(0, Math.min(200, pct)) + '%';
+
+    // marketing summary UI
+    digitalSpendEl.textContent = currency(digitalSpend);
+    eventsSpendEl.textContent = currency(eventsSpend);
+    totalMarketingEl.textContent = currency(totalMarketing);
+    marketingProgressEl.style.width = goal === 0 ? '0%' : Math.min(100, Math.round((totalMarketing / goal) * 100)) + '%';
+
+    // marketing list rows
+    marketingListEl.innerHTML = '';
+    campaigns.forEach(c=>{
+      const convDecimal = c.conversion_pct/100;
+      const cpa = convDecimal>0 ? (c.cost_per_click/convDecimal) : 0;
+      const monthlySpend = c.monthly_spend_override !== '' && !isNaN(Number(c.monthly_spend_override)) ? Number(c.monthly_spend_override) : (c.clicks_planned * c.cost_per_click);
+      const el = document.createElement('div');
+      el.className = 'table';
+      el.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+      el.innerHTML = `<div>${escapeHtml(c.name)}</div><div>Digital</div><div>${currency(monthlySpend)}</div><div>${Math.round(monthlySpend/(cpa||1))} acq / ${currency(cpa)}</div>`;
+      marketingListEl.appendChild(el);
+    });
+    eventsList.forEach(ev=>{
+      const expectedSales = Math.floor(ev.booth_traffic * ev.conversion_pct / 100);
+      const costPerSale = expectedSales > 0 ? ev.event_cost/expectedSales : ev.event_cost;
+      const el = document.createElement('div');
+      el.className = 'table';
+      el.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+      el.innerHTML = `<div>${escapeHtml(ev.name)}</div><div>Event</div><div>${currency(ev.event_cost)}</div><div>${expectedSales} est / ${currency(costPerSale)}</div>`;
+      marketingListEl.appendChild(el);
+    });
+
+    // labor tab totals
+    totalManHoursEl.textContent = (Math.round(totalManHours*100)/100).toFixed(2);
+    totalManCostEl.textContent = currency(totalManCost);
+    totalMachineHoursEl.textContent = (Math.round(totalMachineHours*100)/100).toFixed(2);
+    totalMachineCostEl.textContent = currency(totalMachineCost);
+  }
+
+  // --- Export CSV ---
+  function buildCsv(){
+    // single CSV with type column
+    const header = ['type','name','selling_price','setup_fee','units_per_month','material','material_cost','shipping_material','shipping_cost','design_min','setup_min','finish_min','pack_min','machine_min','man_hour_rate','machine_hour_rate','etsy_fee_pct','bank_fee_pct','marketing_fee_pct','campaign_cost_per_click','campaign_conversion_pct','campaign_clicks','campaign_monthly_spend','event_cost','booth_traffic','event_conversion_pct','monthly_goal'];
+    const rows = [];
+    products.forEach(p=>{
+      rows.push([
+        'product',
+        quote(p.name),
+        p.selling_price || '',
+        p.setup_fee || '',
+        p.units_per_month || '',
+        quote(p.material || ''),
+        p.material_cost || '',
+        quote(p.shipping_material || ''),
+        p.shipping_cost || '',
+        p.design_min || '',
+        p.setup_min || '',
+        p.finish_min || '',
+        p.pack_min || '',
+        p.machine_min || '',
+        asNum(manRateEl.value) || '',
+        asNum(machineRateEl.value) || '',
+        asNum(etsyPctEl.value) || '',
+        asNum(bankPctEl.value) || '',
+        asNum(marketingPctEl.value) || '',
+        '', '', '', '', '', '', '', asNum(monthlyGoalEl.value) || ''
+      ]);
+    });
+    campaigns.forEach(c=>{
+      rows.push([
+        'ad',
+        quote(c.name),
+        '', '', '', '', '', '', '', '', '', '', '', '', asNum(manRateEl.value)||'', asNum(machineRateEl.value)||'', asNum(etsyPctEl.value)||'', asNum(bankPctEl.value)||'', asNum(marketingPctEl.value)||'',
+        c.cost_per_click || '',
+        c.conversion_pct || '',
+        c.clicks_planned || '',
+        c.monthly_spend_override || '',
+        '', '', '', ''
+      ]);
+    });
+    eventsList.forEach(ev=>{
+      rows.push(['event',quote(ev.name),'','','','','','','','','','','','','',asNum(manRateEl.value)||'',asNum(machineRateEl.value)||'',asNum(etsyPctEl.value)||'',asNum(bankPctEl.value)||'',asNum(marketingPctEl.value)||'','','','','',ev.event_cost||'',ev.booth_traffic||'',ev.conversion_pct||'',asNum(monthlyGoalEl.value)||'']);
+    });
+
+    return header.join(',')+'\n'+rows.map(r=>r.join(',')).join('\n');
+  }
+
+  function quote(s){ if(s === undefined || s === null) return ''; const ss = String(s); return ss.includes(',') || ss.includes('"') || ss.includes('\n') ? `"${ss.replace(/"/g,'""')}"` : ss; }
+
+  exportBtn.addEventListener('click', ()=>{
+    const csv = buildCsv();
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'monthly_profit_export.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  // --- Import CSV ---
+  importFileInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const text = ev.target.result;
+        parseAndLoadCsv(text);
+      } catch(err){
+        alert('Error parsing CSV: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    // reset input so same file can be re-selected later
+    importFileInput.value = '';
+  });
+
+  function parseAndLoadCsv(text){
+    // basic CSV parser (supports quoted fields)
+    const rows = parseCSV(text);
+    if(!rows || rows.length === 0) return;
+    const header = rows[0].map(h=>h.trim());
+    const typeIdx = header.indexOf('type');
+    if(typeIdx === -1){
+      alert('CSV must include "type" column in header.');
+      return;
+    }
+
+    // clear existing
+    products = []; campaigns = []; eventsList = [];
+    productsContainer.innerHTML = ''; campaignsContainer.innerHTML = ''; eventsContainer.innerHTML = '';
+
+    for(let i=1;i<rows.length;i++){
+      const row = rows[i];
+      if(row.length === 0) continue;
+      const type = (row[typeIdx]||'').toLowerCase();
+      if(type === 'product'){
+        // map columns using header names
+        const get = (name)=> {
+          const idx = header.indexOf(name);
+          return idx>-1?row[idx]:'';
+        };
+        addProduct({
+          name: get('name') || 'Imported product',
+          selling_price: Number(get('selling_price')||0),
+          setup_fee: Number(get('setup_fee')||0),
+          units_per_month: Number(get('units_per_month')||0),
+          material: get('material') || '',
+          material_cost: Number(get('material_cost')||0),
+          shipping_material: get('shipping_material') || '',
+          shipping_cost: Number(get('shipping_cost')||0),
+          design_min: Number(get('design_min')||0),
+          setup_min: Number(get('setup_min')||0),
+          finish_min: Number(get('finish_min')||0),
+          pack_min: Number(get('pack_min')||0),
+          machine_min: Number(get('machine_min')||0)
+        });
+      } else if(type === 'ad' || type === 'campaign'){
+        const get = (name)=> {
+          const idx = header.indexOf(name);
+          return idx>-1?row[idx]:'';
+        };
+        addCampaign({
+          name: get('name') || 'Imported campaign',
+          cost_per_click: Number(get('campaign_cost_per_click')||get('cost_per_click')||0),
+          conversion_pct: Number(get('campaign_conversion_pct')||get('conversion_pct')||0),
+          clicks_planned: Number(get('campaign_clicks')||get('clicks_planned')||0),
+          monthly_spend_override: Number(get('campaign_monthly_spend')||get('monthly_spend')||get('campaign_monthly_spend')||'') || ''
+        });
+      } else if(type === 'event'){
+        const get = (name)=> {
+          const idx = header.indexOf(name);
+          return idx>-1?row[idx]:'';
+        };
+        addEvent({
+          name: get('name') || 'Imported event',
+          event_cost: Number(get('event_cost')||0),
+          booth_traffic: Number(get('booth_traffic')||0),
+          conversion_pct: Number(get('event_conversion_pct')||get('conversion_pct')||0)
+        });
+      } else {
+        // skip unknown types
+        console.warn('Skipping unknown type:', type, 'row:', row);
+      }
+    }
+
+    // also try to load global fields if present (man rates and fees, monthly_goal)
+    const firstRowHeader = rows[0].map(h=>h.trim());
+    const monthlyGoalIndex = firstRowHeader.indexOf('monthly_goal');
+    if(monthlyGoalIndex !== -1){
+      // find any non-empty monthly_goal in rows
+      for(let i=1;i<rows.length;i++){
+        if(rows[i][monthlyGoalIndex] && rows[i][monthlyGoalIndex].trim() !== ''){
+          monthlyGoalEl.value = Number(rows[i][monthlyGoalIndex]) || monthlyGoalEl.value;
+          break;
+        }
+      }
+    }
+    const manIdx = firstRowHeader.indexOf('man_hour_rate');
+    const machineIdx = firstRowHeader.indexOf('machine_hour_rate');
+    const etsyIdx = firstRowHeader.indexOf('etsy_fee_pct');
+    const bankIdx = firstRowHeader.indexOf('bank_fee_pct');
+    const mkIdx = firstRowHeader.indexOf('marketing_fee_pct');
+    if(manIdx !== -1 || machineIdx !== -1 || etsyIdx !== -1 || bankIdx !== -1 || mkIdx !== -1){
+      const row = rows[1] || rows[rows.length-1];
+      if(row){
+        if(manIdx !== -1 && row[manIdx] !== undefined) manRateEl.value = Number(row[manIdx]) || manRateEl.value;
+        if(machineIdx !== -1 && row[machineIdx] !== undefined) machineRateEl.value = Number(row[machineIdx]) || machineRateEl.value;
+        if(etsyIdx !== -1 && row[etsyIdx] !== undefined) etsyPctEl.value = Number(row[etsyIdx]) || etsyPctEl.value;
+        if(bankIdx !== -1 && row[bankIdx] !== undefined) bankPctEl.value = Number(row[bankIdx]) || bankPctEl.value;
+        if(mkIdx !== -1 && row[mkIdx] !== undefined) marketingPctEl.value = Number(row[mkIdx]) || marketingPctEl.value;
+      }
+    }
+    recalcAll();
+  }
+
+  // Basic CSV parser: supports quoted fields with commas and double quotes escape.
+  function parseCSV(text){
+    const rows = [];
+    let i = 0, cur = '', inQuotes = false, row = [];
+    while(i < text.length){
+      const ch = text[i];
+      if(inQuotes){
+        if(ch === '"'){
+          if(text[i+1] === '"'){ cur += '"'; i += 2; continue; } // escaped quote
+          inQuotes = false;
+          i++;
+          continue;
+        } else {
+          cur += ch; i++; continue;
+        }
+      } else {
+        if(ch === ','){ row.push(cur); cur=''; i++; continue; }
+        if(ch === '"'){ inQuotes = true; i++; continue; }
+        if(ch === '\r'){ i++; continue; }
+        if(ch === '\n'){ row.push(cur); rows.push(row); row = []; cur=''; i++; continue; }
+        cur += ch; i++;
+      }
+    }
+    // final push
+    if(cur !== '' || row.length > 0){ row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  // --- Reset & Clear ---
+  resetBtn.addEventListener('click', ()=>{
+    // load example: two products, one ad, one event
+    products = []; campaigns = []; eventsList = [];
+    productsContainer.innerHTML = ''; campaignsContainer.innerHTML = ''; eventsContainer.innerHTML = '';
+    monthlyGoalEl.value = 10000.00;
+    manRateEl.value = 25.00;
+    machineRateEl.value = 12.00;
+    etsyPctEl.value = 6.5;
+    bankPctEl.value = 2.9;
+    marketingPctEl.value = 1.0;
+
+    addProduct({
+      name:'Wood Keychain',
+      selling_price:12.00,
+      setup_fee:40.0,
+      units_per_month:400,
+      material:'Wood',
+      material_cost:1.20,
+      shipping_material:'Pouch',
+      shipping_cost:0.8,
+      design_min:10, setup_min:5, finish_min:6, pack_min:2, machine_min:1
+    });
+    addProduct({
+      name:'Leather Wallet',
+      selling_price:65.00,
+      setup_fee:120.0,
+      units_per_month:60,
+      material:'Leather',
+      material_cost:12.00,
+      shipping_material:'Box',
+      shipping_cost:3.5,
+      design_min:20, setup_min:15, finish_min:12, pack_min:5, machine_min:10
+    });
+
+    addCampaign({
+      name:'Social Ads',
+      cost_per_click:0.7,
+      conversion_pct:2.5,
+      clicks_planned:2000
+    });
+
+    addEvent({
+      name:'Local Craft Fair',
+      event_cost:1200,
+      booth_traffic:2000,
+      conversion_pct:1.5
+    });
+
+    recalcAll();
+    // show product tab
+    document.querySelector('[data-tab="product"]').click();
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    if(!confirm('Clear all products, campaigns, and events?')) return;
+    products = []; campaigns = []; eventsList = [];
+    productsContainer.innerHTML = ''; campaignsContainer.innerHTML = ''; eventsContainer.innerHTML = '';
+    recalcAll();
+  });
+
+  // initial example on first load for demonstration
+  (function init(){
+    // start empty but prefill monthly goal default already set in HTML
+    // Leave empty to let user start adding; but populate one product skeleton as helpful
+    addProduct({
+      name:'Example Product',
+      selling_price:20.00,
+      setup_fee:50.00,
+      units_per_month:100,
+      material:'Basic',
+      material_cost:3.00,
+      shipping_material:'Envelope',
+      shipping_cost:1.50,
+      design_min:10, setup_min:5, finish_min:5, pack_min:2, machine_min:3
+    });
+  })();
+
+  // add product/campaign/event buttons
+  document.getElementById('addProduct').addEventListener('click', ()=>addProduct());
+  document.getElementById('addCampaign').addEventListener('click', ()=>addCampaign());
+  document.getElementById('addEvent').addEventListener('click', ()=>addEvent());
+
+  // global inputs change handlers
+  [monthlyGoalEl, manRateEl, machineRateEl, etsyPctEl, bankPctEl, marketingPctEl].forEach(el=>{
+    el.addEventListener('input', ()=> { recalcAll(); });
+  });
+
+  // Utility: prevent focus loss on typing — we don't re-create inputs; we only update textContent of display fields
+
+  // Expose parse function to window for debugging (developer)
+  window._mpc = { products, campaigns, eventsList, recalcAll };
+
+})();
+</script>
+</body>
+</html>
