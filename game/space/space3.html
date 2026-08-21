@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Space Dodge - Web Edition</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e17;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: white;
+    overflow: hidden;
+  }
+  #gameContainer {
+    position: relative;
+    box-shadow: 0 0 40px rgba(0, 150, 255, 0.3);
+  }
+  canvas {
+    display: block;
+    background: #0a192f;
+  }
+  #ui {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    pointer-events: none;
+    text-shadow: 0 0 6px black;
+  }
+  #ui div { margin-bottom: 6px; font-size: 18px; }
+  .status { color: #7fdbff; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #overlay h1 { font-size: 48px; margin-bottom: 12px; }
+  #overlay p { font-size: 22px; margin: 8px 0; }
+  #overlay .hint { font-size: 16px; color: #aaa; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="1000" height="800"></canvas>
+  <div id="ui">
+    <div id="time">Time: 0s</div>
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 3</div>
+    <div id="status" class="status"></div>
+  </div>
+  <div id="overlay">
+    <h1 id="overlayTitle">Space Dodge</h1>
+    <p id="overlayScore"></p>
+    <p class="hint">Press ENTER to Start / Restart<br>Press ESC to Pause</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  AUDIO SYSTEM
+// ============================================================
+const sounds = {};
+
+function loadSound(name, volume = 0.4) {
+  try {
+    const audio = new Audio(name);
+    audio.volume = volume;
+    audio.preload = 'auto';
+    sounds[name] = audio;
+  } catch (e) {
+    sounds[name] = null;
+  }
+}
+
+// Load all sounds
+loadSound('single.mp3', 0.35);   // Single shot
+loadSound('double.mp3', 0.35);   // Double shot
+loadSound('triple.mp3', 0.35);   // Triple shot
+loadSound('shoot.mp3', 0.30);    // Fallback / Spread / Missiles
+loadSound('explode.mp3', 0.40);
+loadSound('crash.mp3', 0.55);
+loadSound('shield.mp3', 0.50);
+loadSound('powerup.mp3', 0.45);
+loadSound('bomb.mp3', 0.50);
+loadSound('startup.mp3', 0.50);
+loadSound('gameover.mp3', 0.60);
+
+function playSound(name) {
+  const s = sounds[name];
+  if (!s) return;
+  try {
+    const clone = s.cloneNode();
+    clone.volume = s.volume;
+    clone.play().catch(() => {});
+  } catch (e) {}
+}
+
+// ============================================================
+//  CORE SETUP
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const WIDTH = 1000;
+const HEIGHT = 800;
+
+const uiTime = document.getElementById('time');
+const uiScore = document.getElementById('score');
+const uiLives = document.getElementById('lives');
+const uiStatus = document.getElementById('status');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayScore = document.getElementById('overlayScore');
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+let gameState = 'start';
+let score = 0;
+let lives = 3;
+let elapsed = 0;
+let lastTime = 0;
+let keys = {};
+let shake = 0;
+let invulnerableUntil = 0;
+let lastShot = 0;
+
+let shieldActive = false;
+let doubleTimer = 0;
+let tripleTimer = 0;
+let spreadTimer = 0;
+let missileTimer = 0;
+
+let player = { x: WIDTH/2 - 25, y: HEIGHT - 70, w: 50, h: 60 };
+let stars = [];
+let kamikazes = [];
+let lasers = [];
+let spreadLasers = [];
+let missiles = [];
+let bossLasers = [];
+let powerups = [];
+let particles = [];
+let boss = null;
+let nextBossScore = 100;
+
+let starTimer = 0;
+let starInterval = 2200;
+let kamikazeTimer = 0;
+let nextKamikaze = 9000;
+let powerupTimer = 0;
+let nextPowerup = 10000;
+
+// ============================================================
+//  INPUT
+// ============================================================
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Enter') {
+    if (gameState === 'start' || gameState === 'gameover') startGame();
+    if (gameState === 'paused') {
+      gameState = 'playing';
+      hideOverlay();
+    }
+  }
+  if (e.code === 'Escape') {
+    if (gameState === 'playing') {
+      gameState = 'paused';
+      showOverlay('Paused', 'Press ENTER to Resume');
+    } else if (gameState === 'paused') {
+      gameState = 'playing';
+      hideOverlay();
+    }
+  }
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// ============================================================
+//  UTILITY
+// ============================================================
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function dist(x1,y1,x2,y2) { return Math.hypot(x2-x1, y2-y1); }
+function now() { return performance.now(); }
+
+function rectsCollide(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x &&
+         a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// ============================================================
+//  PARTICLES
+// ============================================================
+function spawnExplosion(x, y, intensity = 1) {
+  for (let i = 0; i < 18 * intensity; i++) {
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(2.5, 7) * intensity;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - rand(1, 3),
+      size: rand(2.5, 5.5),
+      life: randInt(25, 50),
+      maxLife: 50,
+      color: ['#ffdc32', '#ff8c00', '#ff5014', '#ffffb4'][randInt(0,3)],
+      gravity: 0.12, drag: 0.96
+    });
+  }
+  for (let i = 0; i < 12 * intensity; i++) {
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(0.8, 3.5) * intensity;
+    const g = randInt(60, 140);
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: rand(4, 9),
+      life: randInt(40, 80),
+      maxLife: 80,
+      color: `rgb(${g},${g},${g + randInt(0,30)})`,
+      gravity: 0.08, drag: 0.94
+    });
+  }
+}
+
+function spawnHitExplosion(x, y, intensity = 1, isShield = false) {
+  if (isShield) {
+    for (let i = 0; i < 22 * intensity; i++) {
+      const angle = rand(0, Math.PI * 2);
+      const speed = rand(2, 6.5) * intensity;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - rand(0.5, 2.5),
+        size: rand(2.5, 5.5),
+        life: randInt(25, 45),
+        maxLife: 45,
+        color: ['#64dcff', '#32b4ff', '#b4ffff', '#c8f0ff'][randInt(0,3)],
+        gravity: 0.1, drag: 0.95
+      });
+    }
+  } else {
+    for (let i = 0; i < 28 * intensity; i++) {
+      const angle = rand(0, Math.PI * 2);
+      const speed = rand(3, 9) * intensity;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - rand(1.5, 4),
+        size: rand(3, 6.5),
+        life: randInt(30, 55),
+        maxLife: 55,
+        color: ['#ff3c1e', '#ff8c00', '#ffdc50', '#ffffc8'][randInt(0,3)],
+        gravity: 0.18, drag: 0.96
+      });
+    }
+  }
+}
+
+// ============================================================
+//  DRAWING HELPERS
+// ============================================================
+function drawPlayer(x, y) {
+  ctx.save();
+  ctx.translate(x + 25, y + 30);
+  ctx.fillStyle = '#4682c8';
+  ctx.beginPath();
+  ctx.moveTo(0, -30);
+  ctx.lineTo(21, 22);
+  ctx.lineTo(6, 12);
+  ctx.lineTo(-6, 12);
+  ctx.lineTo(-21, 22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#b4dcff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#96e6ff';
+  ctx.beginPath();
+  ctx.ellipse(0, -12, 8, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ff8c28';
+  ctx.fillRect(-7, 20, 14, 8);
+  ctx.fillStyle = '#ffdc50';
+  ctx.fillRect(-4, 22, 8, 5);
+  ctx.restore();
+}
+
+function drawEnemy(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  ctx.fillStyle = '#aa2828';
+  ctx.beginPath();
+  ctx.moveTo(0, h/2);
+  ctx.lineTo(w/2 - 2, -h/2 + 8);
+  ctx.lineTo(5, -h/2 + 16);
+  ctx.lineTo(-5, -h/2 + 16);
+  ctx.lineTo(-w/2 + 2, -h/2 + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#ff9c8c';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawKamikaze(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  ctx.fillStyle = '#dc5a14';
+  ctx.beginPath();
+  ctx.moveTo(0, h/2);
+  ctx.lineTo(w/2 - 1, -h/2 + 6);
+  ctx.lineTo(4, -h/2 + 14);
+  ctx.lineTo(-4, -h/2 + 14);
+  ctx.lineTo(-w/2 + 1, -h/2 + 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#ffc832';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBoss(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  ctx.fillStyle = '#5a1470';
+  ctx.beginPath();
+  ctx.moveTo(0, h/2);
+  ctx.lineTo(w/2 - 6, 10);
+  ctx.lineTo(w/2 - 10, -h/2 + 20);
+  ctx.lineTo(20, -h/2 + 6);
+  ctx.lineTo(-20, -h/2 + 6);
+  ctx.lineTo(-w/2 + 10, -h/2 + 20);
+  ctx.lineTo(-w/2 + 6, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#e68cff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#ff505a';
+  ctx.beginPath();
+  ctx.ellipse(0, 10, 16, 17, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMissile(x, y) {
+  ctx.fillStyle = '#b43cff';
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y);
+  ctx.lineTo(x + 8, y + 14);
+  ctx.lineTo(x + 4, y + 18);
+  ctx.lineTo(x, y + 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ff7828';
+  ctx.fillRect(x + 2, y + 15, 4, 3);
+}
+
+// ============================================================
+//  GAME CONTROL
+// ============================================================
+function startGame() {
+  gameState = 'playing';
+  score = 0;
+  lives = 3;
+  elapsed = 0;
+  lastTime = now();
+  player = { x: WIDTH/2 - 25, y: HEIGHT - 70, w: 50, h: 60 };
+  stars = [];
+  kamikazes = [];
+  lasers = [];
+  spreadLasers = [];
+  missiles = [];
+  bossLasers = [];
+  powerups = [];
+  particles = [];
+  boss = null;
+  nextBossScore = 100;
+  shieldActive = false;
+  doubleTimer = tripleTimer = spreadTimer = missileTimer = 0;
+  invulnerableUntil = 0;
+  starTimer = 0;
+  starInterval = 2200;
+  kamikazeTimer = 0;
+  nextKamikaze = 9000;
+  powerupTimer = 0;
+  nextPowerup = 10000;
+  shake = 0;
+  hideOverlay();
+  playSound('startup.mp3');
+}
+
+function showOverlay(title, scoreText = '') {
+  overlayTitle.textContent = title;
+  overlayScore.textContent = scoreText;
+  overlay.classList.add('visible');
+}
+
+function hideOverlay() {
+  overlay.classList.remove('visible');
+}
+
+function hurtPlayer() {
+  if (now() < invulnerableUntil) return;
+
+  if (shieldActive) {
+    shieldActive = false;
+    spawnHitExplosion(player.x + 25, player.y + 30, 0.7, true);
+    invulnerableUntil = now() + 1500;
+    shake = Math.max(shake, 12);
+    playSound('shield.mp3');
+    playSound('crash.mp3');
+  } else {
+    lives--;
+    invulnerableUntil = now() + 1500;
+    shake = Math.max(shake, 18);
+    playSound('crash.mp3');
+    if (lives <= 0) {
+      gameState = 'gameover';
+      spawnHitExplosion(player.x + 25, player.y + 30, 1.6);
+      shake = 25;
+      playSound('gameover.mp3');
+      showOverlay('You Lost!', `Final Score: ${score}`);
+    } else {
+      spawnHitExplosion(player.x + 25, player.y + 30, 1.0);
+      playSound('explode.mp3');
+    }
+  }
+}
+
+// ============================================================
+//  MAIN UPDATE
+// ============================================================
+function update(dt) {
+  if (gameState !== 'playing') return;
+
+  elapsed += dt / 1000;
+  const t = now();
+
+  if (shake > 0) shake = Math.max(0, shake - 60 * dt / 1000);
+
+  // Movement
+  if (keys['ArrowLeft'] || keys['KeyA']) player.x = Math.max(0, player.x - 5);
+  if (keys['ArrowRight'] || keys['KeyD']) player.x = Math.min(WIDTH - player.w, player.x + 5);
+
+  // ---------- SHOOTING with separate sounds ----------
+  const cooldown = (t < missileTimer) ? 450 : 300;
+  if ((keys['Space'] || keys['KeyZ']) && t - lastShot > cooldown) {
+    lastShot = t;
+
+    if (t < missileTimer) {
+      // Homing missiles
+      missiles.push({ x: player.x + 8, y: player.y, w: 8, h: 18, vx: -1.5, vy: -9, life: 90 });
+      missiles.push({ x: player.x + 34, y: player.y, w: 8, h: 18, vx: 1.5, vy: -9, life: 90 });
+      playSound('shoot.mp3');
+    }
+    else if (t < spreadTimer) {
+      // Spread shot
+      const cx = player.x + 23;
+      spreadLasers.push({ x: cx - 12, y: player.y, w: 4, h: 15, vx: -3 });
+      spreadLasers.push({ x: cx, y: player.y, w: 4, h: 15, vx: 0 });
+      spreadLasers.push({ x: cx + 12, y: player.y, w: 4, h: 15, vx: 3 });
+      playSound('shoot.mp3');
+    }
+    else if (t < tripleTimer) {
+      // Triple shot
+      lasers.push({ x: player.x + 6, y: player.y, w: 4, h: 15 });
+      lasers.push({ x: player.x + 23, y: player.y, w: 4, h: 15 });
+      lasers.push({ x: player.x + 40, y: player.y, w: 4, h: 15 });
+      playSound('triple.mp3');          // ← Triple sound
+    }
+    else if (t < doubleTimer) {
+      // Double shot
+      lasers.push({ x: player.x + 6, y: player.y, w: 4, h: 15 });
+      lasers.push({ x: player.x + 40, y: player.y, w: 4, h: 15 });
+      playSound('double.mp3');          // ← Double sound
+    }
+    else {
+      // Single shot
+      lasers.push({ x: player.x + 23, y: player.y, w: 4, h: 15 });
+      playSound('single.mp3');          // ← Single sound
+    }
+  }
+
+  // Spawning
+  starTimer += dt;
+  if (starTimer > starInterval && stars.length < 8) {
+    const count = Math.min(2, 8 - stars.length);
+    for (let i = 0; i < count; i++) {
+      stars.push({ x: randInt(0, WIDTH - 34), y: -42, w: 34, h: 42 });
+    }
+    starInterval = Math.max(550, starInterval - 35);
+    starTimer = 0;
+  }
+
+  kamikazeTimer += dt;
+  if (kamikazeTimer > nextKamikaze && kamikazes.length < 3) {
+    kamikazes.push({ x: randInt(0, WIDTH - 28), y: -36, w: 28, h: 36, vx: 0, vy: 6.5 });
+    kamikazeTimer = 0;
+    nextKamikaze = randInt(7000, 14000);
+  }
+
+  powerupTimer += dt;
+  if (powerupTimer > nextPowerup) {
+    const types = ['shield', 'double', 'triple', 'spread', 'bomb', 'missile'];
+    powerups.push({
+      x: randInt(0, WIDTH - 25), y: -25, w: 25, h: 25,
+      type: types[randInt(0, types.length - 1)]
+    });
+    powerupTimer = 0;
+    nextPowerup = randInt(8000, 12000);
+  }
+
+  if (!boss && score >= nextBossScore) {
+    boss = { x: WIDTH/2 - 55, y: -130, w: 110, h: 130, health: 20, dir: Math.random() < 0.5 ? -1 : 1, lastShot: 0 };
+    nextBossScore += 100;
+  }
+
+  // Update boss
+  if (boss) {
+    if (boss.y < 60) boss.y += 1;
+    else {
+      boss.x += 3 * boss.dir;
+      if (boss.x <= 0 || boss.x + boss.w >= WIDTH) boss.dir *= -1;
+      if (t - boss.lastShot > 1100) {
+        bossLasers.push({ x: boss.x + 14, y: boss.y + boss.h - 20, w: 6, h: 20 });
+        bossLasers.push({ x: boss.x + boss.w - 20, y: boss.y + boss.h - 20, w: 6, h: 20 });
+        boss.lastShot = t;
+      }
+    }
+  }
+
+  // Move entities
+  for (const s of stars) s.y += 4;
+  stars = stars.filter(s => s.y < HEIGHT);
+
+  for (const k of kamikazes) {
+    const dx = (player.x + 25) - (k.x + 14);
+    k.vx = clamp(dx * 0.08, -4.5, 4.5);
+    k.x += k.vx;
+    k.y += k.vy;
+  }
+  kamikazes = kamikazes.filter(k => k.y < HEIGHT);
+
+  for (const l of lasers) l.y -= 10;
+  lasers = lasers.filter(l => l.y > -20);
+
+  for (const sl of spreadLasers) {
+    sl.y -= 10;
+    sl.x += sl.vx;
+  }
+  spreadLasers = spreadLasers.filter(sl => sl.y > -20 && sl.x > -30 && sl.x < WIDTH + 30);
+
+  for (const m of missiles) {
+    m.life--;
+    let target = null, minD = Infinity;
+    for (const s of stars) {
+      const d = dist(m.x, m.y, s.x + 17, s.y + 21);
+      if (d < minD) { minD = d; target = s; }
+    }
+    for (const k of kamikazes) {
+      const d = dist(m.x, m.y, k.x + 14, k.y + 18);
+      if (d < minD) { minD = d; target = k; }
+    }
+    if (boss) {
+      const d = dist(m.x, m.y, boss.x + 55, boss.y + 65);
+      if (d < minD) { minD = d; target = boss; }
+    }
+    if (target) {
+      const dx = (target.x + target.w/2) - (m.x + 4);
+      const dy = (target.y + target.h/2) - (m.y + 9);
+      const d = Math.hypot(dx, dy) || 1;
+      m.vx += ((dx / d) * 9 - m.vx) * 0.18;
+      m.vy += ((dy / d) * 9 - m.vy) * 0.18;
+    }
+    m.x += m.vx;
+    m.y += m.vy;
+  }
+  missiles = missiles.filter(m => m.life > 0 && m.y > -40 && m.y < HEIGHT + 40);
+
+  for (const bl of bossLasers) bl.y += 7;
+  bossLasers = bossLasers.filter(bl => bl.y < HEIGHT);
+
+  for (const pu of powerups) pu.y += 3;
+  powerups = powerups.filter(pu => pu.y < HEIGHT);
+
+  // Particles
+  for (const p of particles) {
+    p.vy += p.gravity;
+    p.vx *= p.drag;
+    p.vy *= p.drag;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    p.size = Math.max(1, p.size * (p.life / p.maxLife));
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // Collisions (lasers, spread, missiles, boss, player...)
+  for (let i = lasers.length - 1; i >= 0; i--) {
+    const l = lasers[i];
+    let hit = false;
+    for (let j = stars.length - 1; j >= 0; j--) {
+      if (rectsCollide(l, stars[j])) {
+        spawnExplosion(stars[j].x + 17, stars[j].y + 21);
+        stars.splice(j, 1);
+        lasers.splice(i, 1);
+        score += 1;
+        playSound('explode.mp3');
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    for (let j = kamikazes.length - 1; j >= 0; j--) {
+      if (rectsCollide(l, kamikazes[j])) {
+        spawnExplosion(kamikazes[j].x + 14, kamikazes[j].y + 18, 1.2);
+        kamikazes.splice(j, 1);
+        lasers.splice(i, 1);
+        score += 2;
+        playSound('explode.mp3');
+        break;
+      }
+    }
+  }
+
+  for (let i = spreadLasers.length - 1; i >= 0; i--) {
+    const sl = spreadLasers[i];
+    let hit = false;
+    for (let j = stars.length - 1; j >= 0; j--) {
+      if (rectsCollide(sl, stars[j])) {
+        spawnExplosion(stars[j].x + 17, stars[j].y + 21);
+        stars.splice(j, 1);
+        spreadLasers.splice(i, 1);
+        score += 1;
+        playSound('explode.mp3');
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    for (let j = kamikazes.length - 1; j >= 0; j--) {
+      if (rectsCollide(sl, kamikazes[j])) {
+        spawnExplosion(kamikazes[j].x + 14, kamikazes[j].y + 18, 1.2);
+        kamikazes.splice(j, 1);
+        spreadLasers.splice(i, 1);
+        score += 2;
+        playSound('explode.mp3');
+        break;
+      }
+    }
+  }
+
+  for (let i = missiles.length - 1; i >= 0; i--) {
+    const m = missiles[i];
+    let hit = false;
+    for (let j = stars.length - 1; j >= 0; j--) {
+      if (rectsCollide(m, stars[j])) {
+        spawnExplosion(stars[j].x + 17, stars[j].y + 21, 1.4);
+        stars.splice(j, 1);
+        missiles.splice(i, 1);
+        score += 2;
+        playSound('explode.mp3');
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    for (let j = kamikazes.length - 1; j >= 0; j--) {
+      if (rectsCollide(m, kamikazes[j])) {
+        spawnExplosion(kamikazes[j].x + 14, kamikazes[j].y + 18, 1.5);
+        kamikazes.splice(j, 1);
+        missiles.splice(i, 1);
+        score += 3;
+        playSound('explode.mp3');
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    if (boss && rectsCollide(m, boss)) {
+      missiles.splice(i, 1);
+      boss.health -= 2;
+      spawnExplosion(m.x + 4, m.y + 9, 0.9);
+      playSound('explode.mp3');
+      if (boss.health <= 0) {
+        spawnHitExplosion(boss.x + 55, boss.y + 65, 2.2);
+        spawnExplosion(boss.x + 55, boss.y + 65, 2);
+        score += 25;
+        boss = null;
+        bossLasers = [];
+        shake = Math.max(shake, 22);
+      }
+    }
+  }
+
+  if (boss) {
+    for (let i = lasers.length - 1; i >= 0; i--) {
+      if (rectsCollide(lasers[i], boss)) {
+        lasers.splice(i, 1);
+        boss.health -= 1;
+        playSound('explode.mp3');
+        if (boss.health <= 0) {
+          spawnHitExplosion(boss.x + 55, boss.y + 65, 2.2);
+          score += 25;
+          boss = null;
+          bossLasers = [];
+          shake = Math.max(shake, 22);
+        }
+        break;
+      }
+    }
+  }
+  if (boss) {
+    for (let i = spreadLasers.length - 1; i >= 0; i--) {
+      if (rectsCollide(spreadLasers[i], boss)) {
+        spreadLasers.splice(i, 1);
+        boss.health -= 1;
+        playSound('explode.mp3');
+        if (boss.health <= 0) {
+          spawnHitExplosion(boss.x + 55, boss.y + 65, 2.2);
+          score += 25;
+          boss = null;
+          bossLasers = [];
+          shake = Math.max(shake, 22);
+        }
+        break;
+      }
+    }
+  }
+
+  // Player collisions
+  for (let i = stars.length - 1; i >= 0; i--) {
+    if (rectsCollide(player, stars[i])) {
+      stars.splice(i, 1);
+      hurtPlayer();
+    }
+  }
+  for (let i = kamikazes.length - 1; i >= 0; i--) {
+    if (rectsCollide(player, kamikazes[i])) {
+      kamikazes.splice(i, 1);
+      hurtPlayer();
+    }
+  }
+  if (boss && rectsCollide(player, boss)) hurtPlayer();
+
+  for (let i = bossLasers.length - 1; i >= 0; i--) {
+    if (rectsCollide(player, bossLasers[i])) {
+      bossLasers.splice(i, 1);
+      hurtPlayer();
+    }
+  }
+
+  // Power-ups
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const pu = powerups[i];
+    if (rectsCollide(player, pu)) {
+      playSound('powerup.mp3');
+      if (pu.type === 'shield') {
+        shieldActive = true;
+        playSound('shield.mp3');
+      } else if (pu.type === 'double') {
+        doubleTimer = t + 5000;
+      } else if (pu.type === 'triple') {
+        tripleTimer = t + 5000;
+      } else if (pu.type === 'spread') {
+        spreadTimer = t + 5000;
+      } else if (pu.type === 'missile') {
+        missileTimer = t + 7000;
+      } else if (pu.type === 'bomb') {
+        for (const s of stars) spawnExplosion(s.x + 17, s.y + 21, 1.3);
+        for (const k of kamikazes) spawnExplosion(k.x + 14, k.y + 18, 1.3);
+        score += stars.length + kamikazes.length * 2;
+        stars = [];
+        kamikazes = [];
+        shake = Math.max(shake, 20);
+        playSound('bomb.mp3');
+        playSound('explode.mp3');
+      }
+      powerups.splice(i, 1);
+    }
+  }
+
+  // UI
+  uiTime.textContent = `Time: ${Math.floor(elapsed)}s`;
+  uiScore.textContent = `Score: ${score}`;
+  uiLives.textContent = `Lives: ${lives}`;
+
+  let status = [];
+  if (shieldActive) status.push('SHIELD');
+  if (t < missileTimer) status.push(`MISSILES ${((missileTimer - t)/1000).toFixed(1)}s`);
+  else if (t < spreadTimer) status.push(`SPREAD ${((spreadTimer - t)/1000).toFixed(1)}s`);
+  else if (t < tripleTimer) status.push(`TRIPLE ${((tripleTimer - t)/1000).toFixed(1)}s`);
+  else if (t < doubleTimer) status.push(`DOUBLE ${((doubleTimer - t)/1000).toFixed(1)}s`);
+  uiStatus.textContent = status.join('  |  ');
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function draw() {
+  let ox = 0, oy = 0;
+  if (shake > 0) {
+    ox = randInt(-shake, shake);
+    oy = randInt(-shake, shake);
+  }
+
+  ctx.save();
+  ctx.translate(ox, oy);
+
+  ctx.fillStyle = '#0a192f';
+  ctx.fillRect(-20, -20, WIDTH + 40, HEIGHT + 40);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  for (let i = 0; i < 60; i++) {
+    const sx = (i * 137) % WIDTH;
+    const sy = (i * 97 + elapsed * 20) % HEIGHT;
+    ctx.fillRect(sx, sy, 1.5, 1.5);
+  }
+
+  for (const s of stars) drawEnemy(s.x, s.y, s.w, s.h);
+  for (const k of kamikazes) drawKamikaze(k.x, k.y, k.w, k.h);
+
+  if (boss) {
+    drawBoss(boss.x, boss.y, boss.w, boss.h);
+    const ratio = Math.max(0, boss.health / 20);
+    ctx.fillStyle = '#3c1414';
+    ctx.fillRect(boss.x, boss.y - 16, boss.w, 10);
+    ctx.fillStyle = '#ff3c3c';
+    ctx.fillRect(boss.x, boss.y - 16, boss.w * ratio, 10);
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(boss.x, boss.y - 16, boss.w, 10);
+    ctx.fillStyle = '#ff64ff';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('BOSS', boss.x + boss.w/2, boss.y - 22);
+  }
+
+  if (now() >= invulnerableUntil || Math.floor(now() / 100) % 2 === 0) {
+    drawPlayer(player.x, player.y);
+  }
+  if (shieldActive) {
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(player.x - 8, player.y - 8, player.w + 16, player.h + 16);
+  }
+
+  ctx.fillStyle = '#ffff00';
+  for (const l of lasers) ctx.fillRect(l.x, l.y, l.w, l.h);
+  ctx.fillStyle = '#ffd700';
+  for (const sl of spreadLasers) ctx.fillRect(sl.x, sl.y, sl.w, sl.h);
+  ctx.fillStyle = '#ff3cc8';
+  for (const bl of bossLasers) ctx.fillRect(bl.x, bl.y, bl.w, bl.h);
+  for (const m of missiles) drawMissile(m.x, m.y);
+
+  const colors = {
+    shield: '#00ffff', double: '#00ff64', triple: '#e650ff',
+    spread: '#ffd700', bomb: '#ff9b00', missile: '#b450ff'
+  };
+  const labels = { shield: 'S', double: 'D', triple: 'T', spread: 'F', bomb: 'B', missile: 'M' };
+  for (const pu of powerups) {
+    ctx.fillStyle = colors[pu.type] || '#00ff00';
+    ctx.fillRect(pu.x, pu.y, pu.w, pu.h);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[pu.type] || '?', pu.x + 12.5, pu.y + 18);
+  }
+
+  for (const p of particles) {
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+// ============================================================
+//  GAME LOOP
+// ============================================================
+function loop(timestamp) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+// Start
+showOverlay('Space Dodge', 'Press ENTER to Start');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
