@@ -151,20 +151,19 @@ let powerups = [];
 let particles = [];
 let boss = null;
 
-// Level control
 let bossSpawnedThisLevel = false;
 let starTimer = 0;
-let starInterval = 2600;          // slower at start
+let starInterval = 2600;
 let kamikazeTimer = 0;
 let nextKamikaze = 11000;
 let powerupTimer = 0;
 let nextPowerup = 10000;
 
-// Difficulty multipliers
+// Difficulty
 function getEnemySpeed() {
-  if (level === 1) return 2.8;        // slower than original
+  if (level === 1) return 2.8;
   if (level === 2) return 4.2;
-  return 4.0 + (level - 2) * 0.4;     // keeps increasing
+  return 4.0 + (level - 2) * 0.4;
 }
 function getKamikazeSpeed() {
   if (level === 1) return 5.0;
@@ -263,7 +262,7 @@ function spawnHitExplosion(x, y, intensity = 1, isShield = false) {
 }
 
 // ============================================================
-//  DRAWING (same improved ships)
+//  DRAWING
 // ============================================================
 function drawPlayer(x, y) {
   ctx.save();
@@ -360,18 +359,56 @@ function drawBoss(x, y, w, h) {
   ctx.restore();
 }
 
-function drawMissile(x, y) {
+// ----- NEW: Rotating Missile -----
+function drawMissile(x, y, vx = 0, vy = -1) {
+  const angle = Math.atan2(vy, vx) + Math.PI / 2; // art points up
+
+  ctx.save();
+  ctx.translate(x + 4, y + 9); // center of missile
+  ctx.rotate(angle);
+
+  // Body
   ctx.fillStyle = '#9c27b0';
   ctx.beginPath();
-  ctx.moveTo(x+4, y); ctx.lineTo(x+7, y+12); ctx.lineTo(x+4, y+18); ctx.lineTo(x+1, y+12); ctx.closePath();
+  ctx.moveTo(0, -9);
+  ctx.lineTo(3, 3);
+  ctx.lineTo(0, 9);
+  ctx.lineTo(-3, 3);
+  ctx.closePath();
   ctx.fill();
+
+  // Nose
   ctx.fillStyle = '#e1bee7';
-  ctx.beginPath(); ctx.moveTo(x+4,y); ctx.lineTo(x+6,y+5); ctx.lineTo(x+2,y+5); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, -9);
+  ctx.lineTo(2, -4);
+  ctx.lineTo(-2, -4);
+  ctx.closePath();
+  ctx.fill();
+
+  // Fins
   ctx.fillStyle = '#6a1b9a';
-  ctx.beginPath(); ctx.moveTo(x+1,y+12); ctx.lineTo(x-2,y+16); ctx.lineTo(x+1,y+15); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x+7,y+12); ctx.lineTo(x+10,y+16); ctx.lineTo(x+7,y+15); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ff6d00'; ctx.fillRect(x+2, y+16, 4, 4);
-  ctx.fillStyle = '#ffea00'; ctx.fillRect(x+3, y+17, 2, 3);
+  ctx.beginPath();
+  ctx.moveTo(-3, 3);
+  ctx.lineTo(-6, 7);
+  ctx.lineTo(-3, 6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(3, 3);
+  ctx.lineTo(6, 7);
+  ctx.lineTo(3, 6);
+  ctx.closePath();
+  ctx.fill();
+
+  // Exhaust
+  ctx.fillStyle = '#ff6d00';
+  ctx.fillRect(-2, 7, 4, 4);
+  ctx.fillStyle = '#ffea00';
+  ctx.fillRect(-1, 8, 2, 3);
+
+  ctx.restore();
 }
 
 // ============================================================
@@ -400,7 +437,6 @@ function startGame() {
   nextPowerup = 10000;
   shake = 0;
 
-  // Show Level 1 announcement
   levelAnnounceText = 'LEVEL 1';
   levelAnnounceTimer = 2.2;
 
@@ -413,15 +449,12 @@ function levelUp() {
   bossSpawnedThisLevel = false;
   boss = null;
   bossLasers = [];
-
-  // Clear most enemies for a clean start to the new level
   stars = [];
   kamikazes = [];
 
   levelAnnounceText = `LEVEL ${level}`;
   levelAnnounceTimer = 2.5;
 
-  // Slightly reset spawn timing
   starInterval = getSpawnInterval();
   starTimer = 0;
 }
@@ -471,11 +504,7 @@ function update(dt) {
   elapsed += dt / 1000;
   const t = now();
 
-  // Level announcement timer
-  if (levelAnnounceTimer > 0) {
-    levelAnnounceTimer -= dt / 1000;
-  }
-
+  if (levelAnnounceTimer > 0) levelAnnounceTimer -= dt / 1000;
   if (shake > 0) shake = Math.max(0, shake - 60 * dt / 1000);
 
   // Movement
@@ -511,16 +540,13 @@ function update(dt) {
     }
   }
 
-  // ----- Spawning -----
+  // Spawning
   starTimer += dt;
   if (starTimer > starInterval && stars.length < 8) {
     const count = Math.min(2, 8 - stars.length);
     for (let i = 0; i < count; i++) {
       stars.push({
-        x: randInt(0, WIDTH-34),
-        y: -42,
-        w: 34, h: 42,
-        // Level 3+ zigzag behavior
+        x: randInt(0, WIDTH-34), y: -42, w:34, h:42,
         zigzag: level >= 3,
         zigDir: Math.random() < 0.5 ? -1 : 1,
         zigTimer: 0
@@ -551,13 +577,12 @@ function update(dt) {
     nextPowerup = randInt(8000, 12000);
   }
 
-  // Boss spawn logic
+  // Boss spawn
   if (!boss && !bossSpawnedThisLevel) {
     if (level === 1 && score >= 100) {
       boss = { x: WIDTH/2-55, y: -130, w:110, h:130, health: 18, dir: Math.random()<0.5?-1:1, lastShot:0 };
       bossSpawnedThisLevel = true;
     } else if (level >= 2 && score >= level * 120) {
-      // Later levels also get a boss
       boss = { x: WIDTH/2-55, y: -130, w:110, h:130, health: 18 + level * 3, dir: Math.random()<0.5?-1:1, lastShot:0 };
       bossSpawnedThisLevel = true;
     }
@@ -577,12 +602,10 @@ function update(dt) {
     }
   }
 
-  // Move regular enemies
+  // Move enemies
   const enemySpeed = getEnemySpeed();
   for (const s of stars) {
     s.y += enemySpeed;
-
-    // Level 3+ zigzag behavior
     if (s.zigzag) {
       s.zigTimer += dt;
       if (s.zigTimer > 600) {
@@ -595,7 +618,6 @@ function update(dt) {
   }
   stars = stars.filter(s => s.y < HEIGHT);
 
-  // Kamikazes
   for (const k of kamikazes) {
     const dx = (player.x + 25) - (k.x + 14);
     k.vx = clamp(dx * 0.08, -4.5, 4.5);
@@ -633,7 +655,8 @@ function update(dt) {
       m.vx += ((dx/d)*9 - m.vx) * 0.18;
       m.vy += ((dy/d)*9 - m.vy) * 0.18;
     }
-    m.x += m.vx; m.y += m.vy;
+    m.x += m.vx;
+    m.y += m.vy;
   }
   missiles = missiles.filter(m => m.life > 0 && m.y > -40 && m.y < HEIGHT+40);
 
@@ -651,7 +674,7 @@ function update(dt) {
   }
   particles = particles.filter(p => p.life > 0);
 
-  // Collisions (same structure as before)
+  // Collisions
   for (let i = lasers.length-1; i >= 0; i--) {
     const l = lasers[i];
     let hit = false;
@@ -722,7 +745,7 @@ function update(dt) {
         score += 25;
         boss = null; bossLasers = [];
         shake = Math.max(shake, 22);
-        levelUp();                     // ← Go to next level after boss
+        levelUp();
       }
     }
   }
@@ -860,7 +883,11 @@ function draw() {
   for (const sl of spreadLasers) ctx.fillRect(sl.x, sl.y, sl.w, sl.h);
   ctx.fillStyle = '#ff3cc8';
   for (const bl of bossLasers) ctx.fillRect(bl.x, bl.y, bl.w, bl.h);
-  for (const m of missiles) drawMissile(m.x, m.y);
+
+  // Rotating missiles
+  for (const m of missiles) {
+    drawMissile(m.x, m.y, m.vx, m.vy);
+  }
 
   const colors = {shield:'#00ffff', double:'#00ff64', triple:'#e650ff', spread:'#ffd700', bomb:'#ff9b00', missile:'#b450ff'};
   const labels = {shield:'S', double:'D', triple:'T', spread:'F', bomb:'B', missile:'M'};
@@ -880,7 +907,7 @@ function draw() {
   }
   ctx.globalAlpha = 1;
 
-  // ----- Level Announcement -----
+  // Level Announcement
   if (levelAnnounceTimer > 0) {
     const alpha = Math.min(1, levelAnnounceTimer * 1.5);
     ctx.globalAlpha = alpha;
