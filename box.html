@@ -11,69 +11,39 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0f14;
-      --surface: #121820;
-      --surface2: #1a2230;
-      --border: #243044;
-      --text: #e8eef7;
-      --muted: #8b9bb4;
-      --accent: #3dffa8;
-      --accent-dim: #2bc98a;
-      --warn: #ff8c42;
-      --radius: 10px;
-      --font: 'DM Sans', system-ui, sans-serif;
-      --mono: 'JetBrains Mono', monospace;
+      --bg: #0b0f14; --surface: #121820; --surface2: #1a2230; --border: #243044;
+      --text: #e8eef7; --muted: #8b9bb4; --accent: #3dffa8; --accent-dim: #2bc98a;
+      --warn: #ff8c42; --radius: 10px;
+      --font: 'DM Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
     body { display: flex; flex-direction: column; overflow: hidden; }
 
-    /* Top bar */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.65rem 1.25rem; background: var(--surface);
-      border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 1rem;
-    }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1.25rem;
+      background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 1rem; }
     .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: inherit; }
-    .brand-mark {
-      width: 28px; height: 28px; border: 1.5px solid var(--accent);
-      border-radius: 6px; display: grid; place-items: center;
-      font-size: 0.7rem; font-weight: 700; color: var(--accent);
-    }
+    .brand-mark { width: 28px; height: 28px; border: 1.5px solid var(--accent); border-radius: 6px;
+      display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; color: var(--accent); }
     .brand-name { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
     .brand-name span { color: var(--accent); }
-    .brand-tag {
-      font-size: 0.65rem; background: var(--surface2); color: var(--muted);
-      padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600;
-    }
+    .brand-tag { font-size: 0.65rem; background: var(--surface2); color: var(--muted);
+      padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; }
     .top-actions { display: flex; align-items: center; gap: 0.6rem; }
-    .seg {
-      display: flex; background: var(--surface2); border-radius: 6px;
-      border: 1px solid var(--border); overflow: hidden;
-    }
-    .seg button {
-      background: none; border: none; color: var(--muted); padding: 0.35rem 0.7rem;
-      font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit;
-      transition: all 0.15s;
-    }
+    .seg { display: flex; background: var(--surface2); border-radius: 6px; border: 1px solid var(--border); overflow: hidden; }
+    .seg button { background: none; border: none; color: var(--muted); padding: 0.35rem 0.7rem; font-size: 0.8rem;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .seg button.active { background: var(--accent); color: #0b0f14; }
 
-    /* Layout */
     .main { display: flex; flex: 1; min-height: 0; }
-    .sidebar {
-      width: 320px; background: var(--surface); border-right: 1px solid var(--border);
-      overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column;
-    }
+    .sidebar { width: 320px; background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
     .sidebar::-webkit-scrollbar { width: 6px; }
     .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
     .section { border-bottom: 1px solid var(--border); }
-    .sec-hdr {
-      width: 100%; display: flex; align-items: center; justify-content: space-between;
-      padding: 0.85rem 1.1rem; background: none; border: none; color: var(--text);
-      font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      text-align: left;
-    }
+    .sec-hdr { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.1rem;
+      background: none; border: none; color: var(--text); font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; text-align: left; }
     .sec-hdr:hover { background: var(--surface2); }
     .sec-num { color: var(--accent); margin-right: 0.45rem; font-family: var(--mono); font-size: 0.75rem; }
     .chevron { width: 16px; height: 16px; transition: transform 0.2s; opacity: 0.5; }
@@ -83,72 +53,36 @@
     .hint { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.7rem; line-height: 1.4; }
 
     .ctrl { margin-bottom: 0.9rem; }
-    .ctrl-lbl {
-      display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 0.35rem; font-size: 0.8rem; font-weight: 500;
-    }
+    .ctrl-lbl { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; font-size: 0.8rem; font-weight: 500; }
     .ctrl-val { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); }
-    input[type="range"] {
-      width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
-      background: var(--border); border-radius: 2px; outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
-    }
+    input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
+      background: var(--border); border-radius: 2px; outline: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
     .dim-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.9rem; }
     .dim-grp label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.25rem; }
-    .dim-inp {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 6px; padding: 0.45rem 0.55rem; color: var(--text);
-      font-family: var(--mono); font-size: 0.85rem; outline: none;
-    }
+    .dim-inp { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.45rem 0.55rem; color: var(--text); font-family: var(--mono); font-size: 0.85rem; outline: none; }
     .dim-inp:focus { border-color: var(--accent); }
     .btn-grp { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.8rem; }
-    .btn-grp button {
-      flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
-      color: var(--muted); padding: 0.4rem 0.5rem; border-radius: 6px;
-      font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit;
-      transition: all 0.15s;
-    }
+    .btn-grp button { flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+      padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .btn-grp button.active { background: var(--accent); color: #0b0f14; border-color: var(--accent); }
     .btn-grp button:hover:not(.active) { border-color: var(--muted); color: var(--text); }
 
-    .tog-row {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0.7rem; font-size: 0.8rem;
-    }
-    .tog { position: relative; width: 36px; height: 20px; }
-    .tog input { opacity: 0; width: 0; height: 0; }
-    .tog-track {
-      position: absolute; inset: 0; background: var(--border); border-radius: 10px;
-      transition: 0.2s; cursor: pointer;
-    }
-    .tog input:checked + .tog-track { background: var(--accent-dim); }
-    .tog-thumb {
-      position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-      background: #fff; border-radius: 50%; transition: 0.2s; pointer-events: none;
-    }
-    .tog input:checked ~ .tog-thumb { transform: translateX(16px); }
-
-    .info-box {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;
-      background: var(--surface2); border-radius: 8px; padding: 0.7rem;
-      margin-top: 0.5rem;
-    }
+    .info-box { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; background: var(--surface2);
+      border-radius: 8px; padding: 0.7rem; margin-top: 0.5rem; }
     .info-item { text-align: center; }
     .info-lbl { font-size: 0.65rem; color: var(--muted); }
     .info-val { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); margin-top: 0.1rem; }
+    .warn-box { display: none; margin-top: 0.6rem; font-size: 0.75rem; color: var(--warn);
+      border: 1px solid var(--warn); border-radius: 6px; padding: 0.45rem 0.6rem; line-height: 1.4; }
+    .warn-box.show { display: block; }
+    .joint-info { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); line-height: 1.6; }
 
-    .actions {
-      padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem;
-      margin-top: auto; border-top: 1px solid var(--border);
-    }
-    .btn {
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-      padding: 0.7rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
-      cursor: pointer; border: none; font-family: inherit; transition: all 0.15s;
-    }
+    .actions { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; margin-top: auto; border-top: 1px solid var(--border); }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.7rem 1rem; border-radius: 8px;
+      font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
     .btn-download { background: var(--accent); color: #0b0f14; }
     .btn-download:hover { background: #5dffb8; }
     .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
@@ -156,15 +90,9 @@
     .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
     .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
 
-    /* Canvas */
-    .canvas-area {
-      flex: 1; position: relative; background: #080c10;
-      min-width: 0;
-    }
+    .canvas-area { flex: 1; position: relative; background: #080c10; min-width: 0; }
     #threeCanvas { width: 100%; height: 100%; display: block; }
-    .hud {
-      position: absolute; pointer-events: none; font-size: 0.75rem;
-    }
+    .hud { position: absolute; pointer-events: none; font-size: 0.75rem; }
     .hud-tl { top: 1rem; left: 1rem; }
     .hud-tr { top: 1rem; right: 1rem; text-align: right; }
     .hud-k { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -172,58 +100,30 @@
     .stat-row { display: flex; gap: 0.6rem; justify-content: flex-end; margin-bottom: 0.2rem; }
     .stat-k { color: var(--muted); }
     .stat-v { font-family: var(--mono); color: var(--text); }
-    .canvas-hint {
-      position: absolute; bottom: 4.5rem; left: 50%; transform: translateX(-50%);
-      font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.5;
-      opacity: 0.7; pointer-events: none;
-    }
-    .dock {
-      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 0.35rem; background: rgba(18,24,32,0.9);
-      backdrop-filter: blur(8px); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.4rem; pointer-events: auto;
-    }
-    .dock button {
-      background: none; border: none; color: var(--muted); padding: 0.4rem 0.65rem;
-      border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: all 0.15s;
-    }
+    .canvas-hint { position: absolute; bottom: 4.5rem; left: 50%; transform: translateX(-50%); font-size: 0.7rem;
+      color: var(--muted); text-align: center; line-height: 1.5; opacity: 0.7; pointer-events: none; }
+    .dock { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.35rem;
+      background: rgba(18,24,32,0.9); backdrop-filter: blur(8px); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.4rem; pointer-events: auto; }
+    .dock button { background: none; border: none; color: var(--muted); padding: 0.4rem 0.65rem; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .dock button:hover, .dock button.active { background: var(--surface2); color: var(--text); }
     .dock button.active { color: var(--accent); }
 
-    /* Modal */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      z-index: 100; align-items: center; justify-content: center; padding: 1rem;
-    }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.show { display: flex; }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      width: min(900px, 95vw); max-height: 90vh; display: flex; flex-direction: column;
-      overflow: hidden;
-    }
-    .modal-hdr {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
-    }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: min(900px, 95vw);
+      max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-hdr { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
     .modal-title { font-weight: 600; font-size: 0.95rem; }
-    .modal-close {
-      background: none; border: none; color: var(--muted); font-size: 1.2rem;
-      cursor: pointer; padding: 0.2rem;
-    }
-    .modal-body {
-      flex: 1; overflow: auto; padding: 1rem; background: #0a0e14;
-      min-height: 300px; display: flex; align-items: center; justify-content: center;
-    }
-    .modal-body svg { max-width: 100%; height: auto; }
-    .modal-footer {
-      display: flex; justify-content: flex-end; gap: 0.5rem;
-      padding: 1rem 1.25rem; border-top: 1px solid var(--border);
-    }
-    .opt-row {
-      padding: 0.75rem 1.25rem; border-top: 1px solid var(--border);
-      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.8rem;
-    }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; padding: 0.2rem; }
+    .modal-body { flex: 1; overflow: auto; padding: 1rem; background: #0a0e14; min-height: 300px;
+      display: flex; align-items: center; justify-content: center; }
+    .modal-body svg { max-width: 100%; height: auto; background: #fff; border-radius: 4px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+    .opt-row { padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 1rem;
+      align-items: center; font-size: 0.8rem; }
     .opt-row label { display: flex; align-items: center; gap: 0.4rem; color: var(--muted); cursor: pointer; }
     .opt-row input[type="checkbox"] { accent-color: var(--accent); }
 
@@ -264,23 +164,18 @@
             <button id="modeO" onclick="setMode('outside')">Exterior</button>
           </div>
           <div class="dim-row">
-            <div class="dim-grp">
-              <label for="inW">Width</label>
-              <input class="dim-inp" id="inW" type="number" value="150" min="10" step="0.5" oninput="rebuild()">
-            </div>
-            <div class="dim-grp">
-              <label for="inH">Height</label>
-              <input class="dim-inp" id="inH" type="number" value="50" min="10" step="0.5" oninput="rebuild()">
-            </div>
-            <div class="dim-grp">
-              <label for="inD">Depth</label>
-              <input class="dim-inp" id="inD" type="number" value="100" min="10" step="0.5" oninput="rebuild()">
-            </div>
+            <div class="dim-grp"><label for="inW" id="lblW">Width (mm)</label>
+              <input class="dim-inp" id="inW" type="number" step="0.5" oninput="onDim()"></div>
+            <div class="dim-grp"><label for="inH" id="lblH">Height (mm)</label>
+              <input class="dim-inp" id="inH" type="number" step="0.5" oninput="onDim()"></div>
+            <div class="dim-grp"><label for="inD" id="lblD">Depth (mm)</label>
+              <input class="dim-inp" id="inD" type="number" step="0.5" oninput="onDim()"></div>
           </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
-            <input type="range" id="sldT" min="1.5" max="9" value="3" step="0.5" oninput="onThickness(this.value)">
-            <input class="dim-inp" id="inT" type="number" value="3" min="1.5" max="12" step="0.1" style="margin-top:0.35rem" oninput="onThicknessInput(this.value)">
+            <input type="range" id="sldT" min="1" max="12" step="0.1" oninput="onThicknessSlider(this.value)">
+            <input class="dim-inp" id="inT" type="number" step="0.1" style="margin-top:0.35rem" oninput="onThicknessInput(this.value)">
+            <div class="hint" style="margin-top:0.4rem">Measure your actual sheet with calipers — 3 mm plywood is often 2.8–3.2 mm.</div>
           </div>
           <div class="info-box">
             <div class="info-item"><div class="info-lbl">Ext. W</div><div class="info-val" id="iExtW">—</div></div>
@@ -288,6 +183,7 @@
             <div class="info-item"><div class="info-lbl">Ext. D</div><div class="info-val" id="iExtD">—</div></div>
             <div class="info-item"><div class="info-lbl">Volume</div><div class="info-val" id="iVol">—</div></div>
           </div>
+          <div class="warn-box" id="warnBox"></div>
         </div>
       </div>
 
@@ -299,13 +195,16 @@
         </button>
         <div class="sec-body">
           <div class="ctrl">
-            <div class="ctrl-lbl"><strong>Finger size</strong><span class="ctrl-val" id="valFinger">9.0 mm</span></div>
-            <input type="range" id="sldFinger" min="3" max="30" value="9" step="0.5" oninput="onFinger(this.value)">
+            <div class="ctrl-lbl"><strong>Finger size (target)</strong><span class="ctrl-val" id="valFinger">9.0 mm</span></div>
+            <input type="range" id="sldFinger" min="3" max="40" step="0.5" oninput="onFinger(this.value)">
+            <div class="hint" style="margin-top:0.4rem">Each edge is split into an odd number of equal fingers, so the actual width is adjusted slightly per edge.</div>
+            <div class="joint-info" id="jointInfo"></div>
           </div>
           <div class="ctrl">
-            <div class="ctrl-lbl"><strong>Kerf (tolerance)</strong><span class="ctrl-val" id="valKerf">0.10 mm</span></div>
-            <input type="range" id="sldKerf" min="0" max="0.5" value="0.1" step="0.01" oninput="onKerf(this.value)">
-            <div class="hint" style="margin-top:0.4rem">Typical laser kerf: 0.08–0.20 mm. Increase if joints are too tight.</div>
+            <div class="ctrl-lbl"><strong>Kerf (laser beam width)</strong><span class="ctrl-val" id="valKerf">0.10 mm</span></div>
+            <input type="range" id="sldKerf" min="0" max="0.5" step="0.01" oninput="onKerf(this.value)">
+            <div class="hint" style="margin-top:0.4rem">Typical: 0.08–0.20 mm. Outlines are offset by kerf/2.
+              <b>Joints too tight → lower kerf. Too loose → raise kerf.</b></div>
           </div>
         </div>
       </div>
@@ -335,9 +234,7 @@
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Assembly</strong><span class="ctrl-val" id="valAssembly">100%</span></div>
             <input type="range" id="sldAssembly" min="0" max="100" value="100" step="1" oninput="onAssembly(this.value)">
-            <div style="display:flex;justify-content:space-between" class="hint">
-              <span>Exploded</span><span>Assembled</span>
-            </div>
+            <div style="display:flex;justify-content:space-between" class="hint"><span>Exploded</span><span>Assembled</span></div>
           </div>
         </div>
       </div>
@@ -380,7 +277,7 @@
       </div>
       <div class="modal-body" id="svgPreviewArea"></div>
       <div class="opt-row">
-        <label><input type="checkbox" id="optLabels" checked onchange="refreshSVGPreview()"> Show labels</label>
+        <label><input type="checkbox" id="optLabels" checked onchange="refreshSVGPreview()"> Show labels (blue, engrave layer)</label>
         <label><input type="checkbox" id="optNest" checked onchange="refreshSVGPreview()"> Compact layout</label>
         <span id="optInfo" style="color:var(--muted);margin-left:auto;font-family:var(--mono);font-size:0.75rem"></span>
       </div>
@@ -394,498 +291,412 @@
 <script>
 /* ============================================================
    LaserBox — Finger Joint Box Generator
+   All geometry is computed in MILLIMETRES. Inches are display-only.
    ============================================================ */
 
-const state = {
-  unit: 'mm',
-  mode: 'inside',       // 'inside' | 'outside'
-  W: 150, H: 50, D: 100, // user-entered values
-  T: 3,                 // thickness
-  finger: 9,            // target finger width
-  kerf: 0.1,
-  lid: 'none',          // 'none' | 'flat'
-  assembly: 1.0,        // 0 = exploded, 1 = assembled
+const MM_PER_IN = 25.4;
+const DEFAULTS = {
+  unit: 'mm', mode: 'inside',
+  W: 150, H: 50, D: 100,   // mm
+  T: 3, finger: 9, kerf: 0.1, // mm
+  lid: 'none', assembly: 1.0,
 };
+const state = { ...DEFAULTS };
 
 let scene, camera, renderer, controls, boxGroup;
 let panels3D = [];
 
-// ---------- Units ----------
+// ---------- Unit helpers ----------
+const uf = () => (state.unit === 'in' ? MM_PER_IN : 1);
+const toDisp = mm => mm / uf();
+const fromDisp = v => v * uf();
+const numDisp = mm => state.unit === 'in' ? +(mm / MM_PER_IN).toFixed(4) : +mm.toFixed(2);
+function fmtLen(mm, decMM = 1, decIN = 3) {
+  return state.unit === 'in' ? (mm / MM_PER_IN).toFixed(decIN) + ' in' : mm.toFixed(decMM) + ' mm';
+}
+const $ = id => document.getElementById(id);
+
+// ---------- UI handlers ----------
 function setUnit(u) {
   if (u === state.unit) return;
-  const factor = u === 'in' ? 1/25.4 : 25.4;
-  state.W = +(state.W * factor).toFixed(3);
-  state.H = +(state.H * factor).toFixed(3);
-  state.D = +(state.D * factor).toFixed(3);
-  state.T = +(state.T * factor).toFixed(3);
-  state.finger = +(state.finger * factor).toFixed(3);
-  state.kerf = +(state.kerf * factor).toFixed(4);
   state.unit = u;
-  document.getElementById('unitMM').classList.toggle('active', u === 'mm');
-  document.getElementById('unitIN').classList.toggle('active', u === 'in');
+  $('unitMM').classList.toggle('active', u === 'mm');
+  $('unitIN').classList.toggle('active', u === 'in');
   syncInputs();
   rebuild();
 }
 
 function setMode(m) {
+  if (m === state.mode) return;
+  // Keep the physical box the same; just re-express the numbers
+  const d = dims();
+  if (m === 'outside') { state.W = d.ow; state.H = d.oh; state.D = d.od; }
+  else { state.W = d.iw; state.H = d.ih; state.D = d.id; }
   state.mode = m;
-  document.getElementById('modeI').classList.toggle('active', m === 'inside');
-  document.getElementById('modeO').classList.toggle('active', m === 'outside');
+  $('modeI').classList.toggle('active', m === 'inside');
+  $('modeO').classList.toggle('active', m === 'outside');
+  syncInputs();
   rebuild();
 }
 
 function setLid(l) {
   state.lid = l;
-  document.getElementById('lidNone').classList.toggle('active', l === 'none');
-  document.getElementById('lidFlat').classList.toggle('active', l === 'flat');
+  $('lidNone').classList.toggle('active', l === 'none');
+  $('lidFlat').classList.toggle('active', l === 'flat');
   rebuild();
 }
 
-function onThickness(v) {
-  state.T = parseFloat(v);
-  document.getElementById('inT').value = state.T;
-  document.getElementById('valT').textContent = fmt(state.T);
+function onDim() {
+  const r = id => parseFloat($(id).value);
+  const w = r('inW'), h = r('inH'), d = r('inD');
+  if (w > 0) state.W = fromDisp(w);
+  if (h > 0) state.H = fromDisp(h);
+  if (d > 0) state.D = fromDisp(d);
   rebuild();
+}
+function onThicknessSlider(v) {
+  state.T = parseFloat(v);
+  $('inT').value = numDisp(state.T);
+  updateLabels(); rebuild();
 }
 function onThicknessInput(v) {
-  state.T = parseFloat(v) || 3;
-  document.getElementById('sldT').value = state.T;
-  document.getElementById('valT').textContent = fmt(state.T);
-  rebuild();
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  state.T = fromDisp(n);
+  $('sldT').value = state.T;
+  updateLabels(); rebuild();
 }
-function onFinger(v) {
-  state.finger = parseFloat(v);
-  document.getElementById('valFinger').textContent = fmt(state.finger);
-  rebuild();
-}
-function onKerf(v) {
-  state.kerf = parseFloat(v);
-  document.getElementById('valKerf').textContent = fmt(state.kerf, 2);
-  rebuild();
-}
+function onFinger(v) { state.finger = parseFloat(v); updateLabels(); rebuild(); }
+function onKerf(v)   { state.kerf = parseFloat(v);   updateLabels(); rebuild(); }
 function onAssembly(v) {
   state.assembly = parseFloat(v) / 100;
-  document.getElementById('valAssembly').textContent = v + '%';
+  $('valAssembly').textContent = v + '%';
   updateAssembly();
 }
 
-function fmt(n, dec = 1) {
-  return n.toFixed(dec) + ' ' + state.unit;
+function updateLabels() {
+  $('valT').textContent = fmtLen(state.T, 1, 3);
+  $('valFinger').textContent = fmtLen(state.finger, 1, 3);
+  $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
 }
 
 function syncInputs() {
-  document.getElementById('inW').value = state.W;
-  document.getElementById('inH').value = state.H;
-  document.getElementById('inD').value = state.D;
-  document.getElementById('inT').value = state.T;
-  document.getElementById('sldT').value = state.T;
-  document.getElementById('sldFinger').value = state.finger;
-  document.getElementById('sldKerf').value = state.kerf;
-  document.getElementById('valT').textContent = fmt(state.T);
-  document.getElementById('valFinger').textContent = fmt(state.finger);
-  document.getElementById('valKerf').textContent = fmt(state.kerf, 2);
+  const inch = state.unit === 'in';
+  $('inW').value = numDisp(state.W);
+  $('inH').value = numDisp(state.H);
+  $('inD').value = numDisp(state.D);
+  $('inT').value = numDisp(state.T);
+  $('sldT').value = state.T;
+  $('sldFinger').value = state.finger;
+  $('sldKerf').value = state.kerf;
+  ['inW', 'inH', 'inD'].forEach(id => $(id).step = inch ? '0.0625' : '0.5');
+  $('inT').step = inch ? '0.005' : '0.1';
+  $('lblW').textContent = `Width (${state.unit})`;
+  $('lblH').textContent = `Height (${state.unit})`;
+  $('lblD').textContent = `Depth (${state.unit})`;
+  updateLabels();
 }
 
-function toggleSec(id) {
-  document.getElementById(id).classList.toggle('open');
-}
+function toggleSec(id) { $(id).classList.toggle('open'); }
 
-// ---------- Core geometry ----------
-/** Compute interior / exterior dimensions */
+// ============================================================
+// Core geometry
+// ============================================================
+
+/** Interior / exterior dimensions (mm). */
 function dims() {
   const T = state.T;
-  let iw, ih, id, ow, oh, od;
-  if (state.mode === 'inside') {
-    iw = state.W; ih = state.H; id = state.D;
-    ow = iw + 2 * T;
-    oh = ih + (state.lid === 'flat' ? 2 * T : T);
-    od = id + 2 * T;
-  } else {
-    ow = state.W; oh = state.H; od = state.D;
-    iw = ow - 2 * T;
-    ih = oh - (state.lid === 'flat' ? 2 * T : T);
-    id = od - 2 * T;
-  }
-  return { iw, ih, id, ow, oh, od, T };
+  const lidT = state.lid === 'flat' ? 2 * T : T;
+  let iw, ih, id;
+  if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
+  else { iw = state.W - 2 * T; ih = state.H - lidT; id = state.D - 2 * T; }
+  const minI = Math.max(2, 2 * T);
+  const warn = iw < minI || ih < minI || id < minI;
+  iw = Math.max(iw, minI); ih = Math.max(ih, minI); id = Math.max(id, minI);
+  return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT, od: id + 2 * T, T, warn };
 }
 
 /**
- * Divide an edge into fingers with a consistent pitch.
- * Solid margins at both ends keep corners clean and let a shorter
- * mating panel (centered) still align its fingers.
+ * Number of finger segments for a box edge of exterior length L.
+ * Always odd (symmetric), depends ONLY on L so both mating panels agree.
  */
-function fingerDiv(length, fingerW) {
-  let n = Math.max(1, Math.floor(length / fingerW));
-  if (n % 2 === 0) n -= 1;          // prefer odd
-  if (n < 1) n = 1;
-  // If the leftover margins would be huge, try one more pair
-  if (n >= 1 && (length - n * fingerW) / 2 > fingerW * 0.9) {
-    const n2 = n + 2;
-    if (n2 * fingerW <= length) n = n2;
+function segCount(L) {
+  const f = Math.max(state.finger, 0.5);
+  const T = state.T;
+  let n = Math.max(1, Math.round(L / f));
+  if (n % 2 === 0) {
+    const a = n - 1, b = n + 1;
+    n = (a >= 1 && Math.abs(L / a - f) <= Math.abs(L / b - f)) ? a : b;
   }
-  const step = fingerW;
-  const margin = (length - n * step) / 2;
-  return { n, step, margin };
+  if (n < 3) n = 3;
+  // Each segment must be clearly longer than the material thickness (corner zone)
+  while (n > 3 && L / n < 2 * T) n -= 2;
+  return n;
 }
 
 /**
- * Polyline for one edge.
- *
- * mode 'tab'  : male — tabs protrude OUT by `depth`
- * mode 'slot' : female — notches cut IN by `depth`
- *
- * startMale controls polarity of the first finger segment after the margin.
- * Tabs are widened by kerf/2; slots are cut exact (widened tab fills them).
- *
- * Returns [s, offset] with s from 0→length.
- * offset > 0 = outward, offset < 0 = inward.
+ * Pieces along one panel edge.
+ *  spec = null (plain edge) or { ownEven, ownCorners }
+ *  Returns [{a, b, inset}] where inset = 0 (material reaches the outer face → finger)
+ *  or T (material cut back by thickness → slot, the mating panel fills it).
  */
-function fingerEdge(length, fingerW, depth, kerf, mode, startMale) {
-  const { n, step, margin } = fingerDiv(length, fingerW);
-  const k = kerf;
-  const pts = [[0, 0]];
+function edgePieces(L, spec, startCorner, endCorner, T) {
+  if (!spec) return [{ a: 0, b: L, inset: 0 }];
+  const n = segCount(L), s = L / n;
+  const cornerInset = spec.ownCorners ? 0 : T;
 
-  // Solid lead-in to first finger
-  if (margin > 0.001) pts.push([margin, 0]);
+  const cuts = [0, L];
+  for (let i = 1; i < n; i++) cuts.push(i * s);
+  if (startCorner) cuts.push(T);
+  if (endCorner) cuts.push(L - T);
+  cuts.sort((x, y) => x - y);
 
-  for (let i = 0; i < n; i++) {
-    const isMale = startMale ? (i % 2 === 0) : (i % 2 === 1);
-    const s0 = margin + i * step;
-    const s1 = s0 + step;
+  const insetAt = x => {
+    if (startCorner && x < T) return cornerInset;
+    if (endCorner && x > L - T) return cornerInset;
+    const i = Math.min(n - 1, Math.floor(x / s));
+    return ((i % 2 === 0) === spec.ownEven) ? 0 : T;
+  };
 
-    if (mode === 'tab') {
-      if (isMale) {
-        const a = s0 + k / 2;
-        const b = s1 - k / 2;
-        pts.push([s0, 0]);
-        pts.push([a, depth]);
-        pts.push([b, depth]);
-        pts.push([s1, 0]);
-      } else {
-        pts.push([s1, 0]);
-      }
-    } else {
-      // slot
-      if (!isMale) {
-        const a = s0 + k / 2;
-        const b = s1 - k / 2;
-        pts.push([s0, 0]);
-        pts.push([a, 0]);
-        pts.push([a, -depth]);
-        pts.push([b, -depth]);
-        pts.push([b, 0]);
-        pts.push([s1, 0]);
-      } else {
-        pts.push([s1, 0]);
-      }
+  const pieces = [];
+  for (let j = 0; j < cuts.length - 1; j++) {
+    const a = cuts[j], b = cuts[j + 1];
+    if (b - a < 1e-6) { if (pieces.length) pieces[pieces.length - 1].b = b; continue; }
+    const inset = insetAt((a + b) / 2);
+    const last = pieces[pieces.length - 1];
+    if (last && last.inset === inset) last.b = b;
+    else pieces.push({ a, b, inset });
+  }
+  return pieces;
+}
+
+/** Remove duplicate & collinear points from a closed polygon. */
+function cleanPoly(pts, eps = 1e-6) {
+  let a = [];
+  for (const p of pts) {
+    const q = a[a.length - 1];
+    if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > eps) a.push(p);
+  }
+  while (a.length > 1 && Math.hypot(a[0][0] - a[a.length - 1][0], a[0][1] - a[a.length - 1][1]) <= eps) a.pop();
+  let changed = true;
+  while (changed && a.length > 3) {
+    changed = false;
+    for (let i = 0; i < a.length; i++) {
+      const p = a[(i - 1 + a.length) % a.length], c = a[i], n = a[(i + 1) % a.length];
+      const cross = (c[0] - p[0]) * (n[1] - c[1]) - (c[1] - p[1]) * (n[0] - c[0]);
+      if (Math.abs(cross) < eps) { a.splice(i, 1); changed = true; break; }
     }
   }
-
-  // Solid lead-out
-  pts.push([length, 0]);
-  return pts;
+  return a;
 }
 
 /**
- * Closed panel path. Origin = bottom-left of nominal rectangle. X right, Y up.
- * sides: null | { mode:'tab'|'slot', startMale:bool }
+ * Closed outline of a panel (counter-clockwise, Y up).
+ * Panel is its full exterior face: Pw × Ph. specs = [bottom, right, top, left].
  */
-function panelPath(w, h, fingerW, depth, kerf, sides) {
+function panelOutline(Pw, Ph, specs, T) {
+  const L = [Pw, Ph, Pw, Ph];
+  // edge-local (s along edge, i = inward inset) → panel coords
+  const maps = [
+    (s, i) => [s, i],             // bottom  L→R
+    (s, i) => [Pw - i, s],        // right   B→T
+    (s, i) => [Pw - s, Ph - i],   // top     R→L
+    (s, i) => [i, Ph - s],        // left    T→B
+  ];
+  const pcs = specs.map((sp, k) => {
+    const prev = specs[(k + 3) % 4], next = specs[(k + 1) % 4];
+    // A corner (3-panel vertex) exists only where both adjacent edges are joints
+    return edgePieces(L[k], sp, !!(sp && prev), !!(sp && next), T);
+  });
+
   const pts = [];
-
-  function addEdge(edge, mapFn, skipFirst) {
-    for (let i = skipFirst ? 1 : 0; i < edge.length; i++) {
-      pts.push(mapFn(edge[i]));
-    }
+  for (let k = 0; k < 4; k++) {
+    const P = pcs[k];
+    const prevP = pcs[(k + 3) % 4];
+    const prevInset = prevP[prevP.length - 1].inset;
+    const nextInset = pcs[(k + 1) % 4][0].inset;
+    P.forEach((p, j) => {
+      const a = j === 0 ? Math.max(p.a, prevInset) : p.a;
+      const b = j === P.length - 1 ? Math.min(p.b, L[k] - nextInset) : p.b;
+      pts.push(maps[k](a, p.inset), maps[k](b, p.inset));
+    });
   }
+  return cleanPoly(pts);
+}
 
-  // Bottom: L→R, outward = -Y
-  if (sides.bottom) {
-    const e = fingerEdge(w, fingerW, depth, kerf, sides.bottom.mode, sides.bottom.startMale);
-    addEdge(e, p => [p[0], -p[1]], false);
-  } else {
-    pts.push([0, 0], [w, 0]);
+/** Offset a CCW rectilinear polygon outward by d (kerf compensation). */
+function offsetPoly(pts, d) {
+  if (!d) return pts.map(p => [p[0], p[1]]);
+  const n = pts.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const p = pts[(i - 1 + n) % n], c = pts[i], q = pts[(i + 1) % n];
+    let e1x = c[0] - p[0], e1y = c[1] - p[1];
+    let e2x = q[0] - c[0], e2y = q[1] - c[1];
+    const l1 = Math.hypot(e1x, e1y) || 1, l2 = Math.hypot(e2x, e2y) || 1;
+    e1x /= l1; e1y /= l1; e2x /= l2; e2y /= l2;
+    const n1x = e1y, n1y = -e1x, n2x = e2y, n2y = -e2x; // outward normals (CCW)
+    const denom = 1 + n1x * n2x + n1y * n2y || 1;
+    out.push([c[0] + d * (n1x + n2x) / denom, c[1] + d * (n1y + n2y) / denom]);
   }
+  return out;
+}
 
-  // Right: B→T, outward = +X
-  if (sides.right) {
-    const e = fingerEdge(h, fingerW, depth, kerf, sides.right.mode, sides.right.startMale);
-    addEdge(e, p => [w + p[1], p[0]], true);
-  } else {
-    pts.push([w, h]);
+function polyArea(pts) {
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[(i + 1) % pts.length];
+    a += p[0] * q[1] - q[0] * p[1];
   }
-
-  // Top: R→L, outward = +Y
-  if (sides.top) {
-    const e = fingerEdge(w, fingerW, depth, kerf, sides.top.mode, sides.top.startMale);
-    addEdge(e, p => [w - p[0], h + p[1]], true);
-  } else {
-    pts.push([0, h]);
-  }
-
-  // Left: T→B, outward = -X
-  if (sides.left) {
-    const e = fingerEdge(h, fingerW, depth, kerf, sides.left.mode, sides.left.startMale);
-    addEdge(e, p => [-p[1], h - p[0]], true);
-  } else {
-    pts.push([0, 0]);
-  }
-
-  return pts;
+  return Math.abs(a) / 2;
 }
 
 /**
  * Flush-exterior finger-joint box.
  *
- * Mating pairs (every joint has one TAB edge + one SLOT edge):
+ * Every shared box edge is split ONCE into an odd number of equal segments.
+ * One panel owns the even segments (fingers), its mate owns the odd ones,
+ * so every joint edge on every panel has BOTH fingers and slots.
  *
- *   Bottom/Top  ↔  all four walls
- *     Bottom/Top edges = SLOT (notches)
- *     Wall bottom edges = TAB
+ *   Front/Back ↔ Bottom/Top    Front/Back own even
+ *   Front/Back ↔ Left/Right    Front/Back own even
+ *   Left/Right ↔ Bottom/Top    Left/Right own even
  *
- *   Front/Back  ↔  Left/Right  (vertical corners)
- *     Front/Back vertical edges = TAB
- *     Left/Right vertical edges = SLOT
- *
- * Sizing for flush outer faces:
- *   Front/Back width = interior width (ow − 2T); their end tabs
- *   extend by T and end flush with the outer faces of Left/Right.
- *   Left/Right width = full exterior depth.
- *   Bottom/Top = full exterior.
+ * The T×T×T corner cubes (where 3 panels meet) belong to Front/Back,
+ * which also own the adjacent segments, so corners are solid.
  */
 function generatePanels() {
-  const { iw, ih, id, ow, oh, od, T } = dims();
-  const f = state.finger;
-  const k = state.kerf;
-  const hasTop = state.lid === 'flat';
-  const sideH = ih;
+  const d = dims();
+  const { ow, oh, od, T } = d;
+  const lid = state.lid === 'flat';
+  const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
 
-  // Front/Back inset so end tabs reach exactly to the outer faces of Left/Right
-  const fbW = Math.max(iw, f * 3);
-  // Left/Right span the full exterior depth
-  const lrW = od;
+  //            bottom          right           top                         left
+  const fb = [J(true, true),  J(true, true),  lid ? J(true, true) : null,  J(true, true)];
+  const lr = [J(true, false), J(false, false), lid ? J(true, false) : null, J(false, false)];
+  const bt = [J(false, false), J(false, false), J(false, false),          J(false, false)];
 
-  const panels = [];
+  const defs = [
+    { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
+    ...(lid ? [{ name: 'Top', role: 'top', w: ow, h: od, specs: bt }] : []),
+    { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
+    { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
+    { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
+    { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
+  ];
 
-  // Adjacent edges on the same panel alternate startMale for clean corners.
-  // Mating edges on different panels share the same startMale so tabs land in notches.
-  function makeSides(bMode, bStart, rMode, tMode, lMode) {
-    return {
-      bottom: { mode: bMode, startMale: bStart },
-      right:  { mode: rMode, startMale: !bStart },
-      top:    tMode ? { mode: tMode, startMale: bStart } : null,
-      left:   { mode: lMode, startMale: !bStart },
-    };
-  }
-
-  // ---- BOTTOM: all SLOTS ----
-  panels.push({
-    name: 'Bottom',
-    pts: panelPath(ow, od, f, T, k, makeSides('slot', false, 'slot', 'slot', 'slot')),
-    w: ow, h: od, role: 'bottom',
+  const panels = defs.map(def => {
+    const outline = panelOutline(def.w, def.h, def.specs, T);
+    const cut = offsetPoly(outline, state.kerf / 2);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of cut) {
+      minX = Math.min(minX, x); minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+    return { ...def, outline, cut, minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY, area: polyArea(outline) };
   });
 
-  if (hasTop) {
-    panels.push({
-      name: 'Top',
-      pts: panelPath(ow, od, f, T, k, makeSides('slot', false, 'slot', 'slot', 'slot')),
-      w: ow, h: od, role: 'top',
-    });
-  }
-
-  // ---- FRONT / BACK: bottom TAB, vertical TABS (mate into Left/Right slots) ----
-  // startMale true on bottom → vertical edges get startMale false
-  // Left/Right slots also use startMale false so notches align with the gaps
-  // between Front tabs... actually for alignment: tab startMale S means tabs on
-  // even indices; slot needs notches on even indices → slot startMale false
-  // (!isMale on even when startMale false). Vertical on Front has startMale false
-  // with mode TAB → tabs on odd indices. So Left slots need notches on odd →
-  // slot startMale true. The makeSides alternation handles each panel's corners;
-  // we set Left's vertical startMale explicitly via the bottom start of that panel.
-  const fb = makeSides('tab', true, 'tab', hasTop ? 'tab' : null, 'tab');
-  panels.push({ name: 'Front', pts: panelPath(fbW, sideH, f, T, k, fb), w: fbW, h: sideH, role: 'front' });
-  panels.push({ name: 'Back',  pts: panelPath(fbW, sideH, f, T, k, fb), w: fbW, h: sideH, role: 'back' });
-
-  // ---- LEFT / RIGHT: bottom TAB, vertical SLOTS (receive Front/Back tabs) ----
-  // bottom startMale true → vertical startMale false, mode slot
-  // Front vertical is mode tab with startMale false → tabs on odd i
-  // Left vertical slot startMale false → notches on even i  → MISALIGNED
-  // Fix: use bottom startMale false for Left so vertical gets startMale true
-  // → slot notches on odd i, matching Front tabs on odd i.
-  // Bottom edge of Left still needs to mate with Bottom's slot edge.
-  // Bottom panel side edge: startMale false, mode slot → notches on even i
-  // Left bottom with startMale false, mode tab → tabs on odd i → also misaligned!
-  //
-  // Consistent rule: use the SAME startMale for every edge of a given
-  // orientation across all panels, and opposite mode for mates.
-  // Horizontal edges (bottom of walls / edges of floor): startMale true for tabs,
-  // false for slots. Vertical edges: startMale true for tabs, false for slots
-  // on the mating female — no, tabs and slots need the SAME startMale so that
-  // isMale indices coincide (tab where notch is).
-  //
-  // tab startMale true  → isMale on 0,2,4 (tabs)
-  // slot startMale true → isMale on 0,2,4 → !isMale on 1,3,5 → notches on odd
-  // That puts tabs and notches on OPPOSITE indices — wrong!
-  //
-  // CORRECT pairing:
-  //   tab  startMale true  → tabs on even
-  //   slot startMale false → !isMale on even → notches on even  ✓
-  //
-  // So female edge must have the OPPOSITE startMale from the male edge.
-  //
-  // For panel corner cleanliness we still alternate around one panel.
-  // For Front (all tabs): bottom startMale true, vertical startMale false.
-  // For Left (bottom tab, vertical slot):
-  //   bottom should startMale true (mate with bottom panel slots startMale false)
-  //   vertical should startMale false for slots? Front vertical tabs have
-  //   startMale false → tabs on odd. Left slots need notches on odd →
-  //   !isMale on odd → isMale on even → startMale true for slot mode.
-  //
-  // Front: bottom tab SM=true, right tab SM=false, left tab SM=false
-  // Left:  bottom tab SM=true, right slot SM=true, left slot SM=true
-  //
-  // Left corners: bottom SM=true ends with tab (odd n), right SM=true starts
-  // with notch (slot, !isMale on i=0 when SM=true? isMale on even when SM=true,
-  // !isMale on i=0 → first segment is notch). Corner: tab end meets notch start — clean.
-
-  const lrSides = {
-    bottom: { mode: 'tab',  startMale: true },
-    right:  { mode: 'slot', startMale: true },
-    top:    hasTop ? { mode: 'tab', startMale: true } : null,
-    left:   { mode: 'slot', startMale: true },
-  };
-  panels.push({ name: 'Left',  pts: panelPath(lrW, sideH, f, T, k, lrSides), w: lrW, h: sideH, role: 'left' });
-  panels.push({ name: 'Right', pts: panelPath(lrW, sideH, f, T, k, lrSides), w: lrW, h: sideH, role: 'right' });
-
-  for (const p of panels) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const [x, y] of p.pts) {
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
-    }
-    p.nominalW = p.w;
-    p.nominalH = p.h;
-    p.minX = minX;
-    p.minY = minY;
-    p.bboxW = maxX - minX;
-    p.bboxH = maxY - minY;
-  }
-
-  return { panels, dims: { iw, ih, id, ow, oh, od, T } };
+  return { panels, dims: d };
 }
 
-function layoutPanels(panels, gap = 3, compact = true) {
-  // Pack using tight bounding boxes (includes outward fingers)
+// ============================================================
+// Layout & export
+// ============================================================
+function layoutPanels(panels, gap = 4, compact = true) {
+  const maxW = Math.max(...panels.map(p => p.bboxW));
+  const area = panels.reduce((s, p) => s + (p.bboxW + gap) * (p.bboxH + gap), 0);
+  const rowLimit = compact ? Math.max(maxW, Math.sqrt(area) * 1.3) : maxW;
+  const order = compact ? [...panels].sort((a, b) => b.bboxH - a.bboxH) : panels;
+
   const placed = [];
   let x = gap, y = gap, rowH = 0, maxX = 0;
-  const sorted = compact
-    ? [...panels].sort((a, b) => b.bboxH - a.bboxH)
-    : panels;
-
-  for (const p of sorted) {
-    const bw = p.bboxW;
-    const bh = p.bboxH;
-    if (x + bw + gap > 420 && x > gap) {
-      x = gap;
-      y += rowH + gap;
-      rowH = 0;
-    }
-    // ox/oy position the bounding-box origin; path is shifted by -minX/-minY
+  for (const p of order) {
+    if (x > gap && x + p.bboxW > rowLimit + gap) { x = gap; y += rowH + gap; rowH = 0; }
     placed.push({ ...p, ox: x, oy: y });
-    x += bw + gap;
-    rowH = Math.max(rowH, bh);
+    x += p.bboxW + gap;
+    rowH = Math.max(rowH, p.bboxH);
     maxX = Math.max(maxX, x);
   }
-  const totalW = maxX + gap;
-  const totalH = y + rowH + gap;
-  return { placed, totalW, totalH };
+  return { placed, totalW: maxX, totalH: y + rowH + gap };
+}
+
+function ptsToPath(pts) {
+  if (!pts.length) return '';
+  return 'M' + pts.map(p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`).join(' L') + ' Z';
 }
 
 function buildSVG(showLabels = true, compact = true) {
   const { panels } = generatePanels();
   const { placed, totalW, totalH } = layoutPanels(panels, 4, compact);
 
-  let paths = '';
-  let labels = '';
+  let paths = '', labels = '';
   for (const p of placed) {
-    // Shift path so its bbox origin is at (0,0), then place at (ox, oy)
-    const shifted = p.pts.map(([x, y]) => [x - p.minX, y - p.minY]);
-    const d = ptsToPath(shifted);
-    paths += `<path d="${d}" transform="translate(${p.ox},${p.oy})" fill="none" stroke="#000" stroke-width="0.2"/>\n`;
+    // SVG is Y-down: flip each panel so it matches the 3D model orientation
+    const shifted = p.cut.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+    paths += `    <path d="${ptsToPath(shifted)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
     if (showLabels) {
-      labels += `<text x="${p.ox + p.bboxW / 2}" y="${p.oy + p.bboxH / 2}" text-anchor="middle" dominant-baseline="middle" font-size="4" fill="#888" font-family="sans-serif">${p.name}</text>\n`;
+      const fs = Math.max(3, Math.min(8, Math.min(p.bboxW, p.bboxH) / 6));
+      labels += `    <text x="${(p.ox + p.bboxW / 2).toFixed(2)}" y="${(p.oy + p.bboxH / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
     }
   }
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}mm" height="${totalH}mm" viewBox="0 0 ${totalW} ${totalH}">
-  <!-- LaserBox finger-joint box · cut black lines -->
+<svg xmlns="http://www.w3.org/2000/svg" width="${totalW.toFixed(3)}mm" height="${totalH.toFixed(3)}mm" viewBox="0 0 ${totalW.toFixed(3)} ${totalH.toFixed(3)}">
+  <!-- LaserBox finger-joint box · red = cut, blue = labels (engrave or hide). Units: mm. Kerf ${state.kerf} mm applied. -->
   <g id="cut">
-${paths}
-  </g>
-  <g id="labels" fill="#888">
-${labels}
-  </g>
+${paths}  </g>
+  <g id="labels">
+${labels}  </g>
 </svg>`;
   return { svg, totalW, totalH, count: panels.length };
 }
 
-// ---------- DXF (simple R12) ----------
+// ---------- DXF (simple R12, mm) ----------
 function buildDXF() {
   const { panels } = generatePanels();
   const { placed } = layoutPanels(panels, 5, true);
   let entities = '';
   for (const p of placed) {
-    const pts = p.pts.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]);
+    const pts = p.cut.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]);
     for (let i = 0; i < pts.length; i++) {
-      const a = pts[i];
-      const b = pts[(i + 1) % pts.length];
-      entities += `0\nLINE\n8\n0\n10\n${a[0].toFixed(4)}\n20\n${a[1].toFixed(4)}\n11\n${b[0].toFixed(4)}\n21\n${b[1].toFixed(4)}\n`;
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      entities += `0\nLINE\n8\nCUT\n10\n${a[0].toFixed(4)}\n20\n${a[1].toFixed(4)}\n30\n0\n11\n${b[0].toFixed(4)}\n21\n${b[1].toFixed(4)}\n31\n0\n`;
     }
   }
   return `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${entities}0\nENDSEC\n0\nEOF\n`;
 }
 
-// ---------- 3D Preview ----------
+// ============================================================
+// 3D preview
+// ============================================================
 function initThree() {
-  const canvas = document.getElementById('threeCanvas');
-  const area = document.getElementById('canvasArea');
+  const canvas = $('threeCanvas');
+  const area = $('canvasArea');
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x080c10, 1);
 
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
+  camera = new THREE.PerspectiveCamera(40, 1, 0.1, 5000);
   camera.position.set(180, 120, 220);
 
   controls = new THREE.OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.target.set(0, 40, 0); // look at middle of a typical box sitting on the grid
 
-  // Lights
-  const amb = new THREE.AmbientLight(0x6688aa, 0.55);
-  scene.add(amb);
-  const dir = new THREE.DirectionalLight(0xffffff, 0.7);
-  dir.position.set(80, 120, 60);
-  scene.add(dir);
+  scene.add(new THREE.AmbientLight(0x6688aa, 0.55));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.75);
+  dir.position.set(80, 120, 60); scene.add(dir);
   const dir2 = new THREE.DirectionalLight(0x88aaff, 0.25);
-  dir2.position.set(-60, 40, -80);
-  scene.add(dir2);
+  dir2.position.set(-60, 40, -80); scene.add(dir2);
 
-  // Ground grid — sits at y=0; the box is placed entirely above it
-  const grid = new THREE.GridHelper(400, 20, 0x1a2535, 0x121a25);
-  grid.position.y = 0;
+  const grid = new THREE.GridHelper(600, 30, 0x1a2535, 0x121a25);
   scene.add(grid);
 
   boxGroup = new THREE.Group();
   scene.add(boxGroup);
 
   function resize() {
-    const w = area.clientWidth;
-    const h = area.clientHeight;
+    const w = area.clientWidth, h = area.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -893,157 +704,152 @@ function initThree() {
   window.addEventListener('resize', resize);
   resize();
 
-  function animate() {
+  (function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-  }
-  animate();
+  })();
 }
 
-function shapeFromPts(pts, extrude = 0.01) {
+function shapeFromPts(pts) {
   const shape = new THREE.Shape();
-  if (pts.length < 2) return shape;
   shape.moveTo(pts[0][0], pts[0][1]);
   for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
   shape.closePath();
   return shape;
 }
 
+/** Panel-local (u, v, thickness) → world basis. Box sits on y = 0, centred on x/z. */
+function placement(role, d) {
+  const { ow, oh, od, T } = d, hw = ow / 2, hd = od / 2;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  switch (role) {
+    case 'bottom': return { o: V(-hw, 0, hd),      u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'top':    return { o: V(-hw, oh - T, hd), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'front':  return { o: V(-hw, 0, hd - T),  u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
+    case 'back':   return { o: V(-hw, 0, -hd),     u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
+    case 'left':   return { o: V(-hw + T, 0, -hd), u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
+    case 'right':  return { o: V(hw, 0, -hd),      u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
+  }
+}
+
+const EXPLODE_DIR = {
+  bottom: [0, -1, 0], top: [0, 1, 0], front: [0, 0, 1],
+  back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0],
+};
+const PANEL_COLOR = {
+  bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
+};
+
 function rebuild3D() {
-  // Clear previous
   while (boxGroup.children.length) {
     const c = boxGroup.children[0];
-    if (c.geometry) c.geometry.dispose();
-    if (c.material) c.material.dispose();
+    c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
     boxGroup.remove(c);
   }
   panels3D = [];
 
   const { panels, dims: d } = generatePanels();
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0xc4a574,
-    roughness: 0.65,
-    metalness: 0.05,
-    side: THREE.DoubleSide,
-  });
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.35 });
-
-  const T = d.T;
-  // Geometry is centered (translate -w/2, -h/2, -T/2).
-  // Bottom underside sits at y = 0. Walls rest on the bottom (center at T + sideH/2).
-  // Front/Back sit at the exterior Z faces; Left/Right at the exterior X faces.
-  // Because all four walls are exterior-sized, they interlock at the corners via fingers.
-  const sideH = d.ih;
-  const positions = {
-    bottom: { x: 0, y: T / 2,              z: 0,                    rx: -Math.PI / 2, ry: 0,            rz: 0 },
-    top:    { x: 0, y: T + sideH + T / 2,   z: 0,                    rx:  Math.PI / 2, ry: 0,            rz: 0 },
-    front:  { x: 0, y: T + sideH / 2,       z:  d.od / 2 - T / 2,    rx: 0,            ry: 0,            rz: 0 },
-    back:   { x: 0, y: T + sideH / 2,       z: -d.od / 2 + T / 2,    rx: 0,            ry: Math.PI,      rz: 0 },
-    left:   { x: -d.ow / 2 + T / 2, y: T + sideH / 2, z: 0,          rx: 0,            ry: -Math.PI / 2, rz: 0 },
-    right:  { x:  d.ow / 2 - T / 2, y: T + sideH / 2, z: 0,          rx: 0,            ry:  Math.PI / 2, rz: 0 },
-  };
-
-  // Exploded offsets (relative to assembled positions)
-  const explode = {
-    bottom: [0, -50, 0],
-    top:    [0,  50, 0],
-    front:  [0, 0,  55],
-    back:   [0, 0, -55],
-    left:   [-55, 0, 0],
-    right:  [ 55, 0, 0],
-  };
+  const amount = Math.max(d.ow, d.oh, d.od) * 0.4;
 
   for (const p of panels) {
-    const shape = shapeFromPts(p.pts);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false });
-    // Center on the nominal rectangle (not the finger-extended bbox) so panels align when assembled
-    const nW = p.nominalW != null ? p.nominalW : p.w;
-    const nH = p.nominalH != null ? p.nominalH : p.h;
-    geo.translate(-nW / 2, -nH / 2, -T / 2);
+    // 3D uses the nominal (un-kerfed) outline so parts meet exactly
+    const geo = new THREE.ExtrudeGeometry(shapeFromPts(p.outline), { depth: d.T, bevelEnabled: false });
+    const pl = placement(p.role, d);
+    const m = new THREE.Matrix4().makeBasis(pl.u, pl.v, pl.n);
+    m.setPosition(pl.o);
+    geo.applyMatrix4(m);
+    geo.computeVertexNormals();
 
-    const mesh = new THREE.Mesh(geo, mat.clone());
-    const edges = new THREE.EdgesGeometry(geo);
-    const line = new THREE.LineSegments(edges, edgeMat);
+    const mat = new THREE.MeshStandardMaterial({
+      color: PANEL_COLOR[p.role], roughness: 0.65, metalness: 0.05, side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    const line = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.5 })
+    );
     mesh.add(line);
 
-    const pos = positions[p.role];
-    const exp = explode[p.role] || [0, 0, 0];
-    mesh.userData = { base: pos, exp, role: p.role };
-
+    const dir = EXPLODE_DIR[p.role];
+    mesh.userData = { exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount] };
     boxGroup.add(mesh);
     panels3D.push(mesh);
   }
-
   updateAssembly();
-  updateHUD(d, panels.length);
+  updateHUD(d, panels);
 }
 
 function updateAssembly() {
-  const t = state.assembly;
+  const t = 1 - state.assembly;
   for (const mesh of panels3D) {
-    const { base, exp } = mesh.userData;
-    mesh.position.set(
-      base.x + exp[0] * (1 - t),
-      base.y + exp[1] * (1 - t),
-      base.z + exp[2] * (1 - t)
-    );
-    mesh.rotation.set(base.rx, base.ry, base.rz);
+    const e = mesh.userData.exp;
+    mesh.position.set(e[0] * t, e[1] * t, e[2] * t);
   }
 }
 
-function updateHUD(d, count) {
-  const vol = d.iw * d.ih * d.id;
-  const unit = state.unit;
-  document.getElementById('volDisp').innerHTML = `${vol.toLocaleString(undefined,{maximumFractionDigits:0})} <span style="font-size:0.7em;opacity:0.7">${unit}³</span>`;
-  document.getElementById('iExtW').textContent = d.ow.toFixed(1);
-  document.getElementById('iExtH').textContent = d.oh.toFixed(1);
-  document.getElementById('iExtD').textContent = d.od.toFixed(1);
-  document.getElementById('iVol').textContent = (vol/1000).toFixed(1) + (unit==='mm'?' cm³':'');
-  document.getElementById('stPieces').textContent = count;
-  const area = (d.ow*d.od*2 + d.ow*d.ih*2 + d.id*d.ih*2) / 100; // rough cm² if mm
-  document.getElementById('stArea').textContent = area.toFixed(0) + (unit==='mm'?' cm²':' in²');
+function updateHUD(d, panels) {
+  const inch = state.unit === 'in';
+  const vol = d.iw * d.ih * d.id; // mm³
+  $('volDisp').innerHTML = inch
+    ? `${(vol / 16387.064).toFixed(1)} <span style="font-size:0.7em;opacity:0.7">in³</span>`
+    : `${(vol / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span style="font-size:0.7em;opacity:0.7">cm³</span>`;
+
+  const dec = inch ? 2 : 1;
+  $('iExtW').textContent = toDisp(d.ow).toFixed(dec);
+  $('iExtH').textContent = toDisp(d.oh).toFixed(dec);
+  $('iExtD').textContent = toDisp(d.od).toFixed(dec);
+  $('iVol').textContent = inch ? (vol / 16387.064).toFixed(1) + ' in³' : (vol / 1e6).toFixed(2) + ' L';
+
+  $('stPieces').textContent = panels.length;
+  const area = panels.reduce((s, p) => s + p.area, 0); // mm²
+  $('stArea').textContent = inch ? (area / 645.16).toFixed(1) + ' in²' : (area / 100).toFixed(0) + ' cm²';
+
+  // Actual finger widths per edge
+  const edges = [['Width', d.ow], ['Depth', d.od], ['Height', d.oh]];
+  $('jointInfo').innerHTML = edges.map(([n, L]) => {
+    const c = segCount(L);
+    return `${n}: ${c} × ${fmtLen(L / c, 2, 3)}`;
+  }).join('<br>');
+
+  const wb = $('warnBox');
+  if (d.warn) {
+    wb.textContent = 'Box is too small for this material thickness — interior was clamped to a minimum. Increase the size or reduce thickness.';
+    wb.classList.add('show');
+  } else wb.classList.remove('show');
 }
 
-// ---------- UI actions ----------
+// ---------- Actions ----------
 function rebuild() {
-  state.W = parseFloat(document.getElementById('inW').value) || 100;
-  state.H = parseFloat(document.getElementById('inH').value) || 40;
-  state.D = parseFloat(document.getElementById('inD').value) || 80;
   rebuild3D();
+  if ($('svgModal').classList.contains('show')) refreshSVGPreview();
 }
 
 function setView(name, btn) {
   document.querySelectorAll('.dock button').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   const d = dims();
-  const dist = Math.max(d.ow, d.oh, d.od) * 1.8;
-  const midY = d.oh / 2; // box sits on grid, center roughly at half exterior height
-  if (name === 'persp') {
-    camera.position.set(dist * 0.7, dist * 0.5, dist * 0.85);
-  } else if (name === 'front') {
-    camera.position.set(0, midY, dist);
-  } else if (name === 'top') {
-    camera.position.set(0, dist, 0.01);
-  } else if (name === 'side') {
-    camera.position.set(dist, midY, 0);
-  }
-  controls.target.set(0, midY * 0.6, 0);
+  const dist = Math.max(d.ow, d.oh, d.od) * 2.2;
+  const midY = d.oh / 2;
+  if (name === 'persp')      camera.position.set(dist * 0.7, dist * 0.55, dist * 0.85);
+  else if (name === 'front') camera.position.set(0, midY, dist);
+  else if (name === 'top')   camera.position.set(0, dist, 0.01);
+  else if (name === 'side')  camera.position.set(dist, midY, 0);
+  controls.target.set(0, midY, 0);
   controls.update();
 }
 
 function playAssembly() {
+  const start = state.assembly >= 0.99 ? 0 : state.assembly;
   let t = 0;
-  const start = state.assembly;
-  function step() {
+  (function step() {
     t += 0.02;
     state.assembly = start + (1 - start) * Math.min(1, t);
-    document.getElementById('sldAssembly').value = state.assembly * 100;
-    document.getElementById('valAssembly').textContent = Math.round(state.assembly * 100) + '%';
+    $('sldAssembly').value = state.assembly * 100;
+    $('valAssembly').textContent = Math.round(state.assembly * 100) + '%';
     updateAssembly();
     if (t < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+  })();
 }
 
 function takeScreenshot() {
@@ -1054,64 +860,49 @@ function takeScreenshot() {
   link.click();
 }
 
-function showSVG() {
-  refreshSVGPreview();
-  document.getElementById('svgModal').classList.add('show');
-}
-function closeModal() {
-  document.getElementById('svgModal').classList.remove('show');
-}
+function showSVG() { refreshSVGPreview(); $('svgModal').classList.add('show'); }
+function closeModal() { $('svgModal').classList.remove('show'); }
+
 function refreshSVGPreview() {
-  const labels = document.getElementById('optLabels').checked;
-  const nest = document.getElementById('optNest').checked;
-  const { svg, totalW, totalH, count } = buildSVG(labels, nest);
-  document.getElementById('svgPreviewArea').innerHTML = svg;
-  document.getElementById('optInfo').textContent = `${count} pieces · ${totalW.toFixed(0)} × ${totalH.toFixed(0)} ${state.unit}`;
+  const { svg, totalW, totalH, count } = buildSVG($('optLabels').checked, $('optNest').checked);
+  $('svgPreviewArea').innerHTML = svg.replace(/^<\?xml[^>]*>\s*/, '');
+  $('optInfo').textContent = `${count} pieces · ${fmtLen(totalW, 0, 2)} × ${fmtLen(totalH, 0, 2)}`;
+}
+
+function fileBase() {
+  const d = dims();
+  return `laserbox_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
+}
+function download(data, type, name) {
+  const blob = new Blob([data], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function downloadSVG() {
-  const labels = document.getElementById('optLabels').checked;
-  const nest = document.getElementById('optNest').checked;
-  const { svg } = buildSVG(labels, nest);
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `laserbox_${state.W}x${state.H}x${state.D}.svg`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const { svg } = buildSVG($('optLabels').checked, $('optNest').checked);
+  download(svg, 'image/svg+xml', fileBase() + '.svg');
 }
-function downloadDXF() {
-  const dxf = buildDXF();
-  const blob = new Blob([dxf], { type: 'application/dxf' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `laserbox_${state.W}x${state.H}x${state.D}.dxf`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
-  state.unit = 'mm';
-  state.mode = 'inside';
-  state.W = 150; state.H = 50; state.D = 100;
-  state.T = 3; state.finger = 9; state.kerf = 0.1;
-  state.lid = 'none'; state.assembly = 1;
-  document.getElementById('unitMM').classList.add('active');
-  document.getElementById('unitIN').classList.remove('active');
-  document.getElementById('modeI').classList.add('active');
-  document.getElementById('modeO').classList.remove('active');
-  document.getElementById('lidNone').classList.add('active');
-  document.getElementById('lidFlat').classList.remove('active');
-  document.getElementById('sldAssembly').value = 100;
-  document.getElementById('valAssembly').textContent = '100%';
+  Object.assign(state, DEFAULTS);
+  $('unitMM').classList.add('active');  $('unitIN').classList.remove('active');
+  $('modeI').classList.add('active');   $('modeO').classList.remove('active');
+  $('lidNone').classList.add('active'); $('lidFlat').classList.remove('active');
+  $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
   syncInputs();
   rebuild();
+  setView('persp', document.querySelector('.dock button'));
 }
 
-// Init
 window.addEventListener('load', () => {
   initThree();
   syncInputs();
   rebuild();
+  setView('persp', document.querySelector('.dock button'));
 });
 </script>
 </body>
