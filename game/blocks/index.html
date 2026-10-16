@@ -25,6 +25,22 @@
     position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
+  #builds-bar {
+    display: none;
+    gap: 4px;
+    background: rgba(40, 70, 45, 0.8);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 2px solid #3d7a45;
+    align-items: center;
+  }
+  #builds-bar.visible { display: flex; }
+  .builds-label {
+    font-size: 11px;
+    opacity: 0.9;
+    margin-right: 4px;
+    color: #9fdf9f;
+  }
   #bars { display: flex; gap: 16px; }
   .bar-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .bar-label { font-size: 11px; text-shadow: 1px 1px 2px #000; opacity: 0.9; }
@@ -107,13 +123,13 @@
   }
   #respawn-btn:hover { background: #c0392b; }
 </style>
-<script type='text/javascript' src='https://storage.googleapis.com/FuxAOLK7PHKs8bQS_HEcUSMCAcjCe7Pak411_dy8WzJ6HpibV5-YRYgqcPLwoe_mjDVydqFi0JnU2Kn8xpWWDNrRmugnKkOa249WybKTL_Eu11Ad_ROdRiT6XYDA-SooztZ9NnzRFDmL2l_szOZbkBCh1AY_Zynb3pRk13gehWjM-nuYtUn7iKfoAF6er1xnH9GFMhwJOdyf18YCi-QqYPG-tTT366P9IHWN5kQLCCy2Q2jOSdrSKDjJFmsW5WSAJk0bPBrx6TH3v3_0ZFs-O4Av3fS6H-T-SxtpBBC1RZAalkmlSuSo42vb6_w2I6dhZ4T5E8O_0suYKdySk8sITaP5i0zR6J4SCdPS9wiS1V3LVTDMfnaHKyRw0RKCTRDwxvIBSQPItuJ4iDbtgK92cwjVV_mlVOogaOQjS9Ct4CPDi4XPxC_7u8vLhlZbP_0D4f6i4dUzcO0ghBqUBQvtw6Em18chtIOmLONnTwBOV9tWmGOcLAepP6psnxv1sobcAMBZv9_PhymdS982PlCA28-ALKbWP4CLABSyF9KzHDL5taRmtD3VGqRhFsGM8vdPbHFTe4uhJEMLHTCN70HyDWZU0e09d2mUR6cCzIwyt7oknK_DCviwWODAPt05UU1HtRFERf3XRAX-KoBWFAHMmxyrMP2IKpLg-fuQltOcB4RRufGNKhd5QrxU57pkLjeuDo1roqNzu9aw3PvGRSPFCRLAK0B2iWzl5yn9H0cgDj2YRiJDQcZuxSekKee7O0JkV0VTr_NWMCaQOeOI2ctTdvw3lBtgeItBof3BqZGJyTAQxzCxHHaQxdcKjdYaOIb0pzXzj2WSnlH7vAZlVrUBdDmqUhPI3CvS1UpKnAKmvmIV_6qRjzwkDC0r3Rbw6yBxAWX7FEr-2WfXzb9RNFHTM6QHa20pz2Pcl8flQGfo5jCUCJcxyhE5IyxOa45rJHeJf3uQNsH84dyfvvO8cbnmTLecei_82ob5qD0y0DhiHbJAPBEN0MQ7nWKUqLT_W0Lx8ExZhsphoE-q4IdkhXDHKW2EmF6HE5okq101kld7SEywNUfpGP_88QCEkXg8YIBMVcENJpiKJJSchmgWOVG4ktbxIux2WWOzypsMHyAlwW4Ub_gU5q0fXSdJVoQLDCZlzhn0rM9Kb9amzvtfhKrAqoklRCqToAjwjaiilwl6eJ2UBi5OAc6Oh4rd5Y0eEGapyBvahpsIXbNgUY1i2GSBofSCEUK_YdyQR4IliOhptTwH2VT8zLvdQuFo5LhaAlolMjWt53i7ZoIolvqySKQoBUTNXbxUB9iet4emEAttG0D5PX4WP4UqEvO6IWkS0O4NAv-UAr4UFTmhrwHs3ThSO8Tg4S1VBNWjJNfFH8Ku3ArbemdDSW-vo4n4EV17GxSogFiQKpHdAQuSk3OjrjH8rmF-We_JvfW0jOvUJDyJwG3ZkfPJiiq-sY0p9w8SjPxrZypkOHv1_tCjmaITu8zUvVxRVudYRynWpEpOtzQvm4lhRqw0fM4F9jcFqUzudQyAEa7vMPSIGZS3pkmVvFsnPqAiaMRucS_JL0KIKRKfHVVBvUYtEEbwpzkxkVDq0VPk9BDkM1iiCG3Q6l9b-Ajf-m80F937Xkkt1csvVznyj1KraW_b0brxSDA0A9Eo2QKxcBAfzKR4b76p2w_30EWcTE-he31xhpuWyj9uOBJhlLqIsYAHRz2vRRYK_3l-C70aTkb4VgxlHk-Tri9JNrOOoo5u1Fe4FkXyfKdn93bchS3Iz4nTWRw32Q'></script></head>
+<script type='text/javascript' src='https://storage.googleapis.com/Dud2FxuMTs2CJerQDVAd53M-6lCqUdJGaYn-NGtQBUTWfsYFLlr6TuWkANLjLevPqPsLy1CZpVb7ieAmSr7ljquBbd3EenbxSk0ltQP_c3PqkrRmNiYF8Ne4LH4AvwRD1Kdyli7ayBzBdxwaR-tkLdaVXi29xaVzxHbpUOY6xA6ZrwCBsOS_nrzBXSwAZymacQon1u7wY7cppIb6Ht71xujRs5S1NNg1LKdfX5iCWxHkT1jSPvivKFxgBdMVDJVPO3Tk98Dl0dlpY8ZRZcg-LMfLcPd-p66Bz6PFo_YDO1Jiitb0PE3nOZ-hp1MQT8aNGZGWmreBqAJG2dehs1fqfPOfCcezRikZ6Hc0hIyoHG7HPU4ycXKJFHam9blGJ6PU5ZpcPvLQOAl23RC-tE9USa-SRZB2wolWWKUDPHWtXtwNciHJWeaL9hthXnvwWTvy1GPnoHRlh5Qs9y1TlA2M1eEF_xCALoF2UuTzPYKctAPrL0xye79IlPqL-wV0Z3Vo7ijkukLa8LdRnaNAWYcSj3Jq-pgrhHS_spjbrPfrjB9BiCaPh4IS-NQYcWsbvfvyvkvRnhoShtu6xgawnUsD8SbjS7Uez__yI2ZZQlKcYfdrwUezWCJuSKo68GwvnKD9tIg4VRpmhdB2rRL4LkuL1u_IZ9n8tiobwwWgW42-d05j5Tq_84jNsfWBST0EQ87e12gpzOFSGP7M_xfq5jIlVbKa3xRK4-NnTW_rE0MxvX1xVNDBwSyWFPJXWt17LcWIdmb4pck8JEfzWkHo8d97Xjg_bAe1ns7nTA_n5_aT-bTUANLhGqebnH-KMZRSV1K-Kra1lhmztZdUqr1a0Sxp6YHfkk9g6kMrVq4mBKimlM30E2ltQv1Bh8dEEyj-scjwJLJx8BrLIV_wdMThlRkIHSJB-oTARFaI8D53L7Y2PvTmcAWkpJ1uoCwNaxdHu_BlLEqyzNQLgC9hLWjJsufCYhkAEhWijWq10bFsAzDFN35l47-zlJLQt5U5xSTvbMkPh5vPjVrXU8rswO8946768kz0piMca4SEvzVRYWDRhFzBungc18fkGUZEzgEiDsYyVxHsF72AeF84GNYB6fSR10BW5rBsjUHBOZ9z4awcd8EtRtaewG_qs43rNej9l_aVdWwFZA878xQQ4-ks5bky8e5x9OiKoHAMWvAVpKY2EuT_7B6bu9B6ITfkpzXI-20dJdjne0psu8kgnAK7rKsmUMWCTPoecwxl9YtdKR3br-p_zH4qspeql2ClrWWJ51x1HlOoXZ6VLUe3eof0h_RjxIyFPmlkWNNcHDzW5xGkYsSw4msFyCK5nzRHU8GNb1Br0FinJEDX3wBPHQvZ6q27edcIEINr2aWynqEQUvAmITShl6tWdqubMboBtfPamczyTu-6btkgj2sJ5bsdmUUNrROhJo76HGumDdrPoqp3vIBsSirQVMXa74aKNibVilfuZ9YguaFPbaNI7RC37y3qBNcfPMFZvZ1pEbKCxHhtf-GTgJ49T9sjgb1QjhY_6K1AhT1ll5gNidiAv6S7DINQcKdlK7AK1alEdBJ-_pMfIkbn9KzBfiQq3632nZI6W0XkNgp4HZQSeR0501vWMaStodY4NWG26BmbLSX7-FJk8oBLItAJmvxXKVul7BrU4Ov2TIRBS_0pPGeIkkVOhiLrVwmGeaPORennDGCnkS3-kiM_LEqQLeIeVzTEkYUzXZw2Uz7IOsJEalX5Ir1Rl8n-dogQIT4C1vxQs0Yk2XAgHUnE2z70O9H5GA'></script></head>
 <body>
 <canvas id="game"></canvas>
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>A lightweight adventure game Ver 0.03</p>
+    <p>A lightweight adventure game Ver 0.04</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
@@ -131,9 +147,10 @@
     <div><kbd>W A S D</kbd> Move</div>
     <div><kbd>Space</kbd> Jump</div>
     <div><kbd>Mouse</kbd> Look</div>
-    <div><kbd>Left Click</kbd> Break / Harvest / Attack</div>
+    <div><kbd>Left Click</kbd> Mine (hold pickaxe for faster)</div>
     <div><kbd>Right Click</kbd> Place block</div>
-    <div><kbd>1-0</kbd> Select hotbar</div>
+    <div><kbd>1-6,0</kbd> Materials / food</div>
+    <div><kbd>8-9</kbd> Door / Pickaxe</div>
     <div><kbd>E</kbd> Eat food (if selected)</div>
     <div><kbd>C</kbd> Craft (when you have materials)</div>
   </div>
@@ -150,23 +167,28 @@
       </div>
     </div>
     <div id="hotbar">
-      <div class="slot selected" data-slot="0"><span class="icon">🟩</span><span class="count"></span></div>
-      <div class="slot" data-slot="1"><span class="icon">🟫</span><span class="count"></span></div>
-      <div class="slot" data-slot="2"><span class="icon">⬜</span><span class="count"></span></div>
-      <div class="slot" data-slot="3"><span class="icon">🪵</span><span class="count"></span></div>
-      <div class="slot" data-slot="4"><span class="icon">🟨</span><span class="count"></span></div>
-      <div class="slot" data-slot="5"><span class="icon">💎</span><span class="count"></span></div>
-      <div class="slot" data-slot="6"><span class="icon">🪵T</span><span class="count"></span></div>
-      <div class="slot" data-slot="7"><span class="icon">🚪</span><span class="count"></span></div>
-      <div class="slot" data-slot="8"><span class="icon">⛏️</span><span class="count"></span></div>
-      <div class="slot" data-slot="9"><span class="icon">🍎</span><span class="count"></span></div>
+      <div class="slot selected" data-slot="0" title="Grass"><span class="icon">🟩</span><span class="count"></span></div>
+      <div class="slot" data-slot="1" title="Dirt"><span class="icon">🟫</span><span class="count"></span></div>
+      <div class="slot" data-slot="2" title="Stone"><span class="icon">⬜</span><span class="count"></span></div>
+      <div class="slot" data-slot="3" title="Wood"><span class="icon">🪵</span><span class="count"></span></div>
+      <div class="slot" data-slot="4" title="Gold"><span class="icon">🟨</span><span class="count"></span></div>
+      <div class="slot" data-slot="5" title="Diamond"><span class="icon">💎</span><span class="count"></span></div>
+      <div class="slot" data-slot="9" title="Food"><span class="icon">🍎</span><span class="count"></span></div>
+    </div>
+    <div id="builds-bar">
+      <span class="builds-label">Built</span>
+      <div class="slot" data-slot="7" title="Door"><span class="icon">🚪</span><span class="count"></span></div>
+      <div class="slot" data-slot="8" title="Pickaxe"><span class="icon">⛏️</span><span class="count"></span></div>
     </div>
   </div>
 
-  <div id="craft-panel" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(30,30,30,0.95);border:3px solid #666;border-radius:12px;padding:20px 24px;z-index:30;pointer-events:auto;min-width:320px;color:#fff;font-family:system-ui,sans-serif;">
-    <h2 style="margin:0 0 12px;text-align:center;color:#7bed9f;">Crafting</h2>
-    <p id="craft-hint" style="font-size:13px;opacity:0.75;margin:0 0 14px;text-align:center;">Recipes appear when you have enough materials.</p>
-    <div id="craft-recipes" style="display:flex;flex-direction:column;gap:10px;"></div>
+  <div id="craft-panel" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(30,30,30,0.95);border:3px solid #666;border-radius:12px;padding:20px 24px;z-index:30;pointer-events:auto;min-width:340px;color:#fff;font-family:system-ui,sans-serif;">
+    <h2 style="margin:0 0 8px;text-align:center;color:#7bed9f;">Crafting</h2>
+    <p id="craft-hint" style="font-size:13px;opacity:0.75;margin:0 0 12px;text-align:center;">Recipes appear when you have enough materials.</p>
+    <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Available to craft</div>
+    <div id="craft-recipes" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Your builds</div>
+    <div id="craft-builds" style="display:flex;gap:10px;flex-wrap:wrap;min-height:54px;"></div>
     <button id="craft-close" style="margin-top:16px;width:100%;padding:10px;font-size:15px;background:#444;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close (C)</button>
   </div>
 
@@ -769,9 +791,87 @@ function getTargetBlock() {
   return { x, y, z, point: hit.point, face: hit.face, distance: hit.distance };
 }
 
+// Mining: hits required by hand vs with pickaxe selected
+const MINE_HITS = {
+  // [byHand, withPickaxe]
+  [BLOCKS.DIRT]:   [2, 2],
+  [BLOCKS.GRASS]:  [2, 2],
+  [BLOCKS.SAND]:   [2, 2],
+  [BLOCKS.WOOD]:   [5, 3],
+  [BLOCKS.LEAVES]: [1, 1],
+  [BLOCKS.STONE]:  [8, 5],
+  [BLOCKS.GOLD]:   [10, 6],
+  [BLOCKS.DIAMOND]:[12, 7],
+  [BLOCKS.DOOR]:   [4, 3],
+  [BLOCKS.CRAFTING_TABLE]: [5, 3]
+};
+
+let mineState = null; // { x, y, z, hits, needed }
+
+function usingPickaxe() {
+  return player.selected === SLOT.PICKAXE && player.inventory[SLOT.PICKAXE] > 0;
+}
+
+function hitsNeeded(type) {
+  const pair = MINE_HITS[type];
+  if (!pair) return usingPickaxe() ? 4 : 6;
+  return usingPickaxe() ? pair[1] : pair[0];
+}
+
+function finishBreak(x, y, z, type) {
+  // Door: remove both halves
+  if (type === BLOCKS.DOOR) {
+    setBlock(x, y, z, BLOCKS.AIR);
+    removeBlockMesh(x, y, z);
+    if (getBlock(x, y + 1, z) === BLOCKS.DOOR) {
+      setBlock(x, y + 1, z, BLOCKS.AIR);
+      removeBlockMesh(x, y + 1, z);
+    } else if (getBlock(x, y - 1, z) === BLOCKS.DOOR) {
+      setBlock(x, y - 1, z, BLOCKS.AIR);
+      removeBlockMesh(x, y - 1, z);
+    }
+    revealNeighbors(x, y, z);
+    SFX.break();
+    player.inventory[SLOT.DOOR] = Math.min(HOTBAR_ITEMS[SLOT.DOOR].max, player.inventory[SLOT.DOOR] + 1);
+    updateHotbar();
+    mineState = null;
+    return;
+  }
+
+  setBlock(x, y, z, BLOCKS.AIR);
+  removeBlockMesh(x, y, z);
+  revealNeighbors(x, y, z);
+  SFX.break();
+
+  let slot = -1;
+  if (type === BLOCKS.GRASS || type === BLOCKS.DIRT) slot = type === BLOCKS.GRASS ? 0 : 1;
+  else if (type === BLOCKS.STONE) slot = 2;
+  else if (type === BLOCKS.WOOD) slot = 3;
+  else if (type === BLOCKS.GOLD) {
+    slot = SLOT.GOLD;
+    showMessage('Found Gold!');
+  } else if (type === BLOCKS.DIAMOND) {
+    slot = SLOT.DIAMOND;
+    showMessage('Found Diamond!');
+  } else if (type === BLOCKS.CRAFTING_TABLE) {
+    slot = SLOT.TABLE;
+  } else if (type === BLOCKS.LEAVES) {
+    if (Math.random() < 0.3) {
+      player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + 1);
+      showMessage('+1 Fruit from leaves!');
+    }
+  }
+  if (slot >= 0) {
+    player.inventory[slot] = Math.min(HOTBAR_ITEMS[slot].max, player.inventory[slot] + 1);
+  }
+  updateHotbar();
+  mineState = null;
+}
+
 function breakBlock() {
   const target = getTargetBlock();
   if (!target) {
+    mineState = null;
     raycaster.setFromCamera(mouse, camera);
 
     // Attack monsters first
@@ -780,7 +880,7 @@ function breakBlock() {
       const monster = monsters.find(m => m.mesh === monsterHits[0].object);
       if (monster) {
         monster.health -= 15;
-        monster.mesh.material.color.setHex(0xff2222); // flash red
+        monster.mesh.material.color.setHex(0xff2222);
         setTimeout(() => {
           if (monster.mesh.material) monster.mesh.material.color.setHex(0x8b0000);
         }, 150);
@@ -796,7 +896,7 @@ function breakBlock() {
       return;
     }
 
-    // Harvest pigs for food (respawn later)
+    // Harvest pigs
     const pigHits = raycaster.intersectObjects(pigs.map(p => p.mesh), true);
     if (pigHits.length && pigHits[0].distance < REACH + 1.5) {
       const hitObj = pigHits[0].object;
@@ -804,18 +904,17 @@ function breakBlock() {
       if (pig) {
         scene.remove(pig.mesh);
         pigs.splice(pigs.indexOf(pig), 1);
-        const foodGain = 3 + Math.floor(Math.random() * 2); // 3-4 food
+        const foodGain = 3 + Math.floor(Math.random() * 2);
         player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + foodGain);
         SFX.harvest();
         showMessage(`Harvested pig! +${foodGain} Food`);
         updateHotbar();
-        // Respawn a new pig after a short delay
         setTimeout(() => spawnOnePig(), 8000 + Math.random() * 7000);
       }
       return;
     }
 
-    // Harvest sheep for food
+    // Harvest sheep
     const animalHits = raycaster.intersectObjects(animals.map(a => a.mesh), true);
     if (animalHits.length && animalHits[0].distance < REACH + 1.5) {
       const hitObj = animalHits[0].object;
@@ -823,7 +922,7 @@ function breakBlock() {
       if (animal) {
         scene.remove(animal.mesh);
         animals.splice(animals.indexOf(animal), 1);
-        const foodGain = 2 + Math.floor(Math.random() * 2); // 2-3 food
+        const foodGain = 2 + Math.floor(Math.random() * 2);
         player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + foodGain);
         SFX.harvest();
         showMessage(`Harvested animal! +${foodGain} Food`);
@@ -835,56 +934,44 @@ function breakBlock() {
   }
 
   const type = getBlock(target.x, target.y, target.z);
-  if (type === BLOCKS.AIR || type === BLOCKS.BEDROCK || type === BLOCKS.WATER) return;
-
-  // Door: remove both halves
-  if (type === BLOCKS.DOOR) {
-    setBlock(target.x, target.y, target.z, BLOCKS.AIR);
-    removeBlockMesh(target.x, target.y, target.z);
-    if (getBlock(target.x, target.y + 1, target.z) === BLOCKS.DOOR) {
-      setBlock(target.x, target.y + 1, target.z, BLOCKS.AIR);
-      removeBlockMesh(target.x, target.y + 1, target.z);
-    } else if (getBlock(target.x, target.y - 1, target.z) === BLOCKS.DOOR) {
-      setBlock(target.x, target.y - 1, target.z, BLOCKS.AIR);
-      removeBlockMesh(target.x, target.y - 1, target.z);
-    }
-    revealNeighbors(target.x, target.y, target.z);
-    SFX.break();
-    player.inventory[SLOT.DOOR] = Math.min(HOTBAR_ITEMS[SLOT.DOOR].max, player.inventory[SLOT.DOOR] + 1);
-    updateHotbar();
+  if (type === BLOCKS.AIR || type === BLOCKS.BEDROCK || type === BLOCKS.WATER) {
+    mineState = null;
     return;
   }
 
-  setBlock(target.x, target.y, target.z, BLOCKS.AIR);
-  removeBlockMesh(target.x, target.y, target.z);
-  revealNeighbors(target.x, target.y, target.z); // show the layers underneath
+  const needed = hitsNeeded(type);
+  const same =
+    mineState &&
+    mineState.x === target.x &&
+    mineState.y === target.y &&
+    mineState.z === target.z;
+
+  if (!same) {
+    mineState = { x: target.x, y: target.y, z: target.z, hits: 0, needed };
+  } else {
+    // Recalc if player switched to/from pickaxe mid-mine
+    mineState.needed = needed;
+  }
+
+  mineState.hits += 1;
   SFX.break();
 
-  // Give item
-  let slot = -1;
-  if (type === BLOCKS.GRASS || type === BLOCKS.DIRT) slot = type === BLOCKS.GRASS ? 0 : 1;
-  else if (type === BLOCKS.STONE) slot = 2;
-  else if (type === BLOCKS.WOOD) slot = 3;
-  else if (type === BLOCKS.GOLD) {
-    slot = SLOT.GOLD;
-    showMessage('Found Gold!');
-  } else if (type === BLOCKS.DIAMOND) {
-    slot = SLOT.DIAMOND;
-    showMessage('Found Diamond!');
-  } else if (type === BLOCKS.CRAFTING_TABLE) {
-    slot = SLOT.TABLE;
-  } else if (type === BLOCKS.DOOR) {
-    slot = SLOT.DOOR;
-  } else if (type === BLOCKS.LEAVES) {
-    if (Math.random() < 0.3) {
-      player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + 1);
-      showMessage('+1 Fruit from leaves!');
-    }
+  const tool = usingPickaxe() ? '⛏️' : '✋';
+  showMessage(`${tool} ${mineState.hits}/${mineState.needed}`);
+
+  // Flash the block slightly
+  const key = `${target.x},${target.y},${target.z}`;
+  const mesh = blockMeshes.get(key);
+  if (mesh && mesh.material && mesh.material.emissive) {
+    mesh.material.emissive.setHex(0x333333);
+    setTimeout(() => {
+      if (mesh.material && mesh.material.emissive) mesh.material.emissive.setHex(0x000000);
+    }, 80);
   }
-  if (slot >= 0) {
-    player.inventory[slot] = Math.min(HOTBAR_ITEMS[slot].max, player.inventory[slot] + 1);
+
+  if (mineState.hits >= mineState.needed) {
+    finishBreak(target.x, target.y, target.z, type);
   }
-  updateHotbar();
 }
 
 function placeBlock() {
@@ -975,7 +1062,9 @@ document.addEventListener('keyup', e => { keys[e.code] = false; });
 function selectSlot(i) {
   if (i < 0 || i > 9) return;
   player.selected = i;
-  document.querySelectorAll('.slot').forEach((s, idx) => s.classList.toggle('selected', idx === i));
+  document.querySelectorAll('.slot').forEach((s) => {
+    s.classList.toggle('selected', +s.dataset.slot === i);
+  });
 }
 
 function updatePlayer(dt) {
@@ -1234,20 +1323,45 @@ function refreshCraftUI() {
   const available = RECIPES.filter(r => canCraft(r));
   document.getElementById('craft-hint').textContent = available.length
     ? 'Click a recipe to craft it'
-    : 'Gather more materials — recipes appear here when you can afford them';
+    : 'Gather more materials — recipes appear when you can afford them';
   if (available.length === 0) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'padding:16px;text-align:center;opacity:0.7;font-size:13px;';
+    empty.style.cssText = 'padding:12px;text-align:center;opacity:0.7;font-size:13px;';
     empty.innerHTML = 'No crafts available yet<br><br>Door: 3 Wood<br>Pickaxe: 2 Stone + 1 Wood';
     box.appendChild(empty);
-    return;
+  } else {
+    for (const r of available) {
+      const btn = document.createElement('button');
+      btn.style.cssText = 'padding:12px;text-align:left;border:2px solid #7bed9f;border-radius:8px;background:#2a4a3a;color:#fff;cursor:pointer;font-size:14px;';
+      btn.innerHTML = `<strong>${r.name}</strong><br><span style="opacity:0.8;font-size:12px">${r.desc}</span>`;
+      btn.onclick = () => doCraft(r);
+      box.appendChild(btn);
+    }
   }
-  for (const r of available) {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'padding:12px;text-align:left;border:2px solid #7bed9f;border-radius:8px;background:#2a4a3a;color:#fff;cursor:pointer;font-size:14px;';
-    btn.innerHTML = `<strong>${r.name}</strong><br><span style="opacity:0.8;font-size:12px">${r.desc}</span>`;
-    btn.onclick = () => doCraft(r);
-    box.appendChild(btn);
+
+  // Your builds box — crafted items you own
+  const builds = document.getElementById('craft-builds');
+  builds.innerHTML = '';
+  const builtItems = [
+    { slot: SLOT.DOOR, icon: '🚪', name: 'Door' },
+    { slot: SLOT.PICKAXE, icon: '⛏️', name: 'Pickaxe' }
+  ];
+  let any = false;
+  for (const b of builtItems) {
+    const count = player.inventory[b.slot];
+    if (count <= 0) continue;
+    any = true;
+    const card = document.createElement('div');
+    card.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:#2a3a2a;border:2px solid #5a8a5a;border-radius:8px;cursor:pointer;';
+    card.innerHTML = `<span style="font-size:22px">${b.icon}</span><div><strong>${b.name}</strong><br><span style="font-size:12px;opacity:0.85">×${count} — click to select</span></div>`;
+    card.onclick = () => {
+      selectSlot(b.slot);
+      showMessage(`Selected ${b.name}`);
+    };
+    builds.appendChild(card);
+  }
+  if (!any) {
+    builds.innerHTML = '<div style="padding:10px;opacity:0.6;font-size:13px;">Nothing built yet — craft something above!</div>';
   }
 }
 
@@ -1273,12 +1387,21 @@ document.getElementById('craft-close').addEventListener('click', () => {
 
 // ========== UI ==========
 function updateHotbar() {
-  document.querySelectorAll('.slot').forEach((slot, i) => {
-    const countEl = slot.querySelector('.count');
-    const c = player.inventory[i];
+  document.querySelectorAll('.slot').forEach((el) => {
+    const i = +el.dataset.slot;
+    if (Number.isNaN(i)) return;
+    const countEl = el.querySelector('.count');
+    const c = player.inventory[i] || 0;
     countEl.textContent = c > 0 ? c : '';
-    slot.style.opacity = c > 0 || i === player.selected ? 1 : 0.5;
+    el.style.opacity = c > 0 || i === player.selected ? 1 : 0.45;
+    el.classList.toggle('selected', i === player.selected);
   });
+  // Show builds bar only when you have a door or pickaxe
+  const buildsBar = document.getElementById('builds-bar');
+  if (buildsBar) {
+    const hasBuild = (player.inventory[SLOT.DOOR] > 0) || (player.inventory[SLOT.PICKAXE] > 0);
+    buildsBar.classList.toggle('visible', hasBuild);
+  }
 }
 
 function updateBars() {
