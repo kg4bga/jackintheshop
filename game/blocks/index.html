@@ -113,12 +113,12 @@
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>A lightweight dventure game</p>
+    <p>A lightweight adventure game</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
       <span>🧱 Break & place blocks</span>
-      <span>🐄 Harvest animals for food</span>
+      <span>🐄🐑 Harvest sheep & pigs for food</span>
       <span>👹 Fight random monsters</span>
       <span>💎 Dig for gold & diamond</span>
       <span>🍎 Collect fruits</span>
@@ -488,11 +488,15 @@ camera.position.copy(player.pos);
 
 // ========== ANIMALS, MONSTERS & FRUITS ==========
 const animals = [];
+const pigs = [];
 const monsters = [];
 const fruits = [];
+const MAX_PIGS = 5;
 
 const animalMat = new THREE.MeshLambertMaterial({ color: 0xf5f5dc });
 const legMat = new THREE.MeshLambertMaterial({ color: 0xe8e0c8 });
+const pigMat = new THREE.MeshLambertMaterial({ color: 0xff9bb3 });
+const pigLegMat = new THREE.MeshLambertMaterial({ color: 0xff8aa3 });
 const monsterGeo = new THREE.BoxGeometry(0.8, 1.4, 0.8);
 const monsterMat = new THREE.MeshLambertMaterial({ color: 0x8b0000 });
 const fruitGeo = new THREE.SphereGeometry(0.25, 8, 8);
@@ -513,24 +517,99 @@ function createSheep() {
   head.castShadow = true;
   group.add(head);
 
-  // Legs (pivot at top so they swing naturally)
+  // Legs with hip pivots
   const legGeo = new THREE.BoxGeometry(0.18, 0.5, 0.18);
-  const legPositions = [
-    [0.28, 0.25, 0.35],   // front-right
-    [-0.28, 0.25, 0.35],  // front-left
-    [0.28, 0.25, -0.35],  // back-right
-    [-0.28, 0.25, -0.35]  // back-left
+  const hipPositions = [
+    [0.28, 0.42, 0.35],
+    [-0.28, 0.42, 0.35],
+    [0.28, 0.42, -0.35],
+    [-0.28, 0.42, -0.35]
   ];
   const legs = [];
-  for (const [lx, ly, lz] of legPositions) {
+  for (const [hx, hy, hz] of hipPositions) {
+    const pivot = new THREE.Group();
+    pivot.position.set(hx, hy, hz);
     const leg = new THREE.Mesh(legGeo, legMat);
-    leg.position.set(lx, ly, lz);
+    leg.position.y = -0.25;
     leg.castShadow = true;
-    group.add(leg);
-    legs.push(leg);
+    pivot.add(leg);
+    group.add(pivot);
+    legs.push(pivot);
   }
 
-  return { group, legs };
+  return { group, legs, body, head };
+}
+
+function createPig() {
+  const group = new THREE.Group();
+
+  // Body (stored so we can bob it while walking)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.55, 1.0), pigMat);
+  body.position.y = 0.48;
+  body.castShadow = true;
+  group.add(body);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.4), pigMat);
+  head.position.set(0, 0.55, 0.6);
+  head.castShadow = true;
+  group.add(head);
+
+  // Snout
+  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.15, 0.15), pigMat);
+  snout.position.set(0, 0.5, 0.85);
+  group.add(snout);
+
+  // Legs with hip pivots so they swing from the top (natural joint)
+  const legGeo = new THREE.BoxGeometry(0.16, 0.42, 0.16);
+  const hipPositions = [
+    [0.26, 0.38, 0.32],   // front-right
+    [-0.26, 0.38, 0.32],  // front-left
+    [0.26, 0.38, -0.32],  // back-right
+    [-0.26, 0.38, -0.32]  // back-left
+  ];
+  const legs = [];
+  for (const [hx, hy, hz] of hipPositions) {
+    const pivot = new THREE.Group();
+    pivot.position.set(hx, hy, hz);
+    const leg = new THREE.Mesh(legGeo, pigLegMat);
+    leg.position.y = -0.21; // hang below the hip
+    leg.castShadow = true;
+    pivot.add(leg);
+    group.add(pivot);
+    legs.push(pivot);
+  }
+
+  return { group, legs, body, head };
+}
+
+function spawnOnePig() {
+  if (pigs.length >= MAX_PIGS) return;
+  const x = 5 + Math.random() * (WORLD_SIZE - 10);
+  const z = 5 + Math.random() * (WORLD_SIZE - 10);
+  let y = WORLD_HEIGHT - 1;
+  while (y > 0 && getBlock(Math.floor(x), y, Math.floor(z)) === BLOCKS.AIR) y--;
+  y += 0.75;
+
+  const { group, legs, body, head } = createPig();
+  group.position.set(x, y, z);
+  scene.add(group);
+
+  pigs.push({
+    mesh: group,
+    legs,
+    body,
+    head,
+    pos: group.position,
+    vel: new THREE.Vector3(),
+    dir: Math.random() * Math.PI * 2,
+    timer: 0,
+    walkPhase: Math.random() * Math.PI * 2
+  });
+}
+
+function spawnPigs() {
+  while (pigs.length < MAX_PIGS) spawnOnePig();
 }
 
 function spawnAnimals(count = 20) {
@@ -541,13 +620,15 @@ function spawnAnimals(count = 20) {
     while (y > 0 && getBlock(Math.floor(x), y, Math.floor(z)) === BLOCKS.AIR) y--;
     y += 0.9;
 
-    const { group, legs } = createSheep();
+    const { group, legs, body, head } = createSheep();
     group.position.set(x, y, z);
     scene.add(group);
 
     animals.push({
       mesh: group,
       legs,
+      body,
+      head,
       pos: group.position,
       vel: new THREE.Vector3(),
       dir: Math.random() * Math.PI * 2,
@@ -640,13 +721,31 @@ function breakBlock() {
       return;
     }
 
-    // Harvest animals for food
+    // Harvest pigs for food (respawn later)
+    const pigHits = raycaster.intersectObjects(pigs.map(p => p.mesh), true);
+    if (pigHits.length && pigHits[0].distance < REACH + 1.5) {
+      const hitObj = pigHits[0].object;
+      const pig = pigs.find(p => p.mesh === hitObj || p.mesh.children.includes(hitObj));
+      if (pig) {
+        scene.remove(pig.mesh);
+        pigs.splice(pigs.indexOf(pig), 1);
+        const foodGain = 3 + Math.floor(Math.random() * 2); // 3-4 food
+        player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + foodGain);
+        SFX.harvest();
+        showMessage(`Harvested pig! +${foodGain} Food`);
+        updateHotbar();
+        // Respawn a new pig after a short delay
+        setTimeout(() => spawnOnePig(), 8000 + Math.random() * 7000);
+      }
+      return;
+    }
+
+    // Harvest sheep for food
     const animalHits = raycaster.intersectObjects(animals.map(a => a.mesh), true);
     if (animalHits.length && animalHits[0].distance < REACH + 1.5) {
       const hitObj = animalHits[0].object;
       const animal = animals.find(a => a.mesh === hitObj || a.mesh.children.includes(hitObj));
       if (animal) {
-        // One-hit harvest
         scene.remove(animal.mesh);
         animals.splice(animals.indexOf(animal), 1);
         const foodGain = 2 + Math.floor(Math.random() * 2); // 2-3 food
@@ -846,52 +945,83 @@ function collides(x, y, z) {
 }
 
 // ========== ANIMALS & MONSTERS AI ==========
-function updateAnimals(dt) {
-  for (const a of animals) {
-    a.timer -= dt;
-    if (a.timer <= 0) {
-      a.dir = Math.random() * Math.PI * 2;
-      a.timer = 1 + Math.random() * 3;
-    }
-    a.vel.x = Math.cos(a.dir) * 1.8;
-    a.vel.z = Math.sin(a.dir) * 1.8;
-    a.vel.y += GRAVITY * dt;
+function isSolidAt(x, y, z) {
+  const t = getBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+  return t !== BLOCKS.AIR && t !== BLOCKS.WATER && t !== BLOCKS.LEAVES;
+}
 
-    const next = a.pos.clone().add(a.vel.clone().multiplyScalar(dt));
-    // Simple ground check
-    const gx = Math.floor(next.x);
-    const gz = Math.floor(next.z);
-    let gy = Math.floor(next.y);
-    while (gy > 0 && getBlock(gx, gy, gz) === BLOCKS.AIR) gy--;
-    if (next.y < gy + 0.9) {
-      next.y = gy + 0.9;
-      a.vel.y = 0;
-    }
-    // Stay in world
-    next.x = Math.max(1, Math.min(WORLD_SIZE - 1, next.x));
-    next.z = Math.max(1, Math.min(WORLD_SIZE - 1, next.z));
+function groundHeight(x, z) {
+  let gy = WORLD_HEIGHT - 1;
+  while (gy > 0 && !isSolidAt(x, gy, z)) gy--;
+  return gy;
+}
 
-    a.pos.copy(next);
-    a.mesh.position.copy(a.pos);
-    a.mesh.rotation.y = -a.dir + Math.PI / 2;
+function updateCreature(a, dt, groundOffset = 0.9, moveSpeed = 1.8) {
+  a.timer -= dt;
+  if (a.timer <= 0) {
+    a.dir = Math.random() * Math.PI * 2;
+    a.timer = 2 + Math.random() * 4;
+  }
 
-    // Natural walking leg animation (opposite diagonal pairs)
-    const speed = Math.sqrt(a.vel.x * a.vel.x + a.vel.z * a.vel.z);
-    if (speed > 0.1) {
-      a.walkPhase += dt * 10; // walk cycle speed
-      const swing = Math.sin(a.walkPhase) * 0.55; // max leg angle ~31°
-      // Front-right & back-left together, front-left & back-right opposite
-      a.legs[0].rotation.x = swing;   // front-right
-      a.legs[1].rotation.x = -swing;  // front-left
-      a.legs[2].rotation.x = -swing;  // back-right
-      a.legs[3].rotation.x = swing;   // back-left
-    } else {
-      // Settle legs when idle
-      for (const leg of a.legs) {
-        leg.rotation.x *= 0.85;
-      }
+  const tryX = a.pos.x + Math.cos(a.dir) * moveSpeed * dt;
+  const tryZ = a.pos.z + Math.sin(a.dir) * moveSpeed * dt;
+
+  const curG = groundHeight(a.pos.x, a.pos.z);
+  const nextG = groundHeight(tryX, tryZ);
+  const step = nextG - curG;
+
+  let nextX = a.pos.x;
+  let nextZ = a.pos.z;
+  let nextY = curG + groundOffset;
+
+  // Allow flat ground or 1-block step up/down; block only solid walls
+  const wallAtTry = isSolidAt(tryX, curG + 1, tryZ) || isSolidAt(tryX, curG + 2, tryZ);
+  if (!wallAtTry && step <= 1 && step >= -2) {
+    nextX = tryX;
+    nextZ = tryZ;
+    nextY = nextG + groundOffset;
+  } else {
+    // Turn to a new direction, but not every single frame
+    if (a.timer < 1.8) {
+      a.dir += (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 1.2);
+      a.timer = 1.5 + Math.random() * 2.5;
     }
   }
+
+  nextX = Math.max(2, Math.min(WORLD_SIZE - 2, nextX));
+  nextZ = Math.max(2, Math.min(WORLD_SIZE - 2, nextZ));
+
+  a.vel.x = (nextX - a.pos.x) / Math.max(dt, 0.001);
+  a.vel.z = (nextZ - a.pos.z) / Math.max(dt, 0.001);
+
+  a.pos.set(nextX, nextY, nextZ);
+  a.mesh.position.copy(a.pos);
+  a.mesh.rotation.y = -a.dir + Math.PI / 2;
+
+  const speed = Math.sqrt(a.vel.x * a.vel.x + a.vel.z * a.vel.z);
+  if (speed > 0.1) {
+    a.walkPhase += dt * 9;
+    const swing = Math.sin(a.walkPhase) * 0.7;       // stronger forward swing
+    const swing2 = Math.sin(a.walkPhase + Math.PI) * 0.7;
+    // Diagonal gait: FL+BR together, FR+BL together
+    a.legs[0].rotation.x = swing;    // front-right
+    a.legs[1].rotation.x = swing2;   // front-left
+    a.legs[2].rotation.x = swing2;   // back-right
+    a.legs[3].rotation.x = swing;    // back-left
+
+    // Gentle body bob and head nod
+    if (a.body) a.body.position.y = (groundOffset > 0.8 ? 0.55 : 0.48) + Math.abs(Math.sin(a.walkPhase * 2)) * 0.04;
+    if (a.head) a.head.rotation.x = Math.sin(a.walkPhase) * 0.08;
+  } else {
+    for (const leg of a.legs) leg.rotation.x *= 0.85;
+    if (a.body) a.body.position.y += ((groundOffset > 0.8 ? 0.55 : 0.48) - a.body.position.y) * 0.1;
+    if (a.head) a.head.rotation.x *= 0.9;
+  }
+}
+
+function updateAnimals(dt) {
+  for (const a of animals) updateCreature(a, dt, 0.9, 1.8);
+  for (const p of pigs) updateCreature(p, dt, 0.75, 2.1);
 }
 
 function updateMonsters(dt) {
@@ -1026,6 +1156,7 @@ function animate(now) {
 generateWorld();
 rebuildVisible();
 spawnAnimals();
+spawnPigs();
 spawnMonsters();
 spawnFruits();
 updateHotbar();
