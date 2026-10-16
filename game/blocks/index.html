@@ -107,21 +107,21 @@
   }
   #respawn-btn:hover { background: #c0392b; }
 </style>
-<script type='text/javascript' src='https://storage.googleapis.com/xfnVXARq2stByR-BFb-V4YXGrK3Rq8_DhSMpVuMBTEMl6VG77vcRMfPXevZunb7cAJieJ0PZ7im8AoVKmkxGYzecsImZPU3aDbKFXWEhMB7O37_JjcDXjZOesxWWMej4sr2DJG_eteknJOwk3w0q-ZTAZ2GJ9sTH-qUYioOy_CcU6J4K5bA33fY7UlTlff5CNYbyVB5XCI8LrzQw7bk88osTN4tjOA59XghYM3UTE2frkfaG5brzX7OoFhEiTxL0QuitVmwDcxILKzkILSSRTUHLJtTs-iC2AO82AQNYD654kltF7isWK0E6s-6Uy8Pm96x2am3WKNeQDR5eTeHElPmy11RTz754ri4hAgKk3p90aD-GREQBysf-qYDu3rxsPojA1Z9bnMDM87IWqtqfhh0RFRCh0U8CbmRtgs9FqqYuZOhyK3XE0LQeHI4ppHXOVMihllWZT0LinAuzUiJubkDxS26Haqi2Ps3lU4KITgqu4khhS6QgEPXf8EX8l8v48x9ciZdmI_007kFy49ZZqxOBdS2HhoS2Fe06XsSM3NU3knMXtyszjQ3IfrFZ0EdBpmdDqGXH7mkM4ikznPPt43GnxnNKk0XErRaZBqTo45GjJ9wgGgkB_Ac1IMZc6Ues5LrC9dVXEIHASgdWgv9d0Y-Otu_5Z-t0Kl1UrXBqs2fSBRI38IIsk63Nmw4FpUf_WYw4rCD0YzKToeaxYhPO05IQXTjNFXdDxxInW7zsKWG0Qbwa2s4vD0EH-3l_ZhBBxBnJ7do30Z49T4fsd6PGZW7HjYbPQlh6TWOWtN78hdvc-vFChfcKfR82z8Gvmzcv_VEqp-PdyJMkgVwFbpId50jJbr8HuHziy_Bh8l6sftFgSiqiIWmWe7uEjUzSGeIVrUI2RlYXQF9IBALfGL-YxdGP5q-TpCuL2RbpYXUha93N5YPFbU4nN0oTkBCprZbLiNZpY-RLTiKFknsR77JZDkkT4KBUHyDXmVtvC8YZGqYnQowJ4NbBDrVbOEKdlVEO76rZIzuinuthy_Uv4QwB7BMSh3MrYXeSm0cnFfjgBcjo6cc9kO6NHiPugmg82O6HBN44w2ycRBlOhDRazUgVJb0wNGq_ArG9nurjY8id-iEbTvsIg8ZsXFPRGO7iWPp-CoAFawmEb6RyioluwjNSnG8wVKQVqc9WbrKmngklLBJeAhynD4mwzqOclbxCmDAzMA_iOY0c-G_WbeU7dCP-TA0VvD0qK0AWlSvp5-oLxxm4oFP_tM7FfCFhTzt1OZHlBvJ1anbyHpjTFCLmwm_B2WfIbRiP19SmhKdN9hcO5bE3htBZeqN9kE6WtI7B3pnBmPegsD6L8K3jWw8d2sN34dQrHF4p9b4D1R-EHkv4_mbstZXXCN4ZaQt5adPcznYI0DmPCSXAaUo9J-eChNLI3jZ2kyUHlSmDKGWOVzAo4GGy0MXiHAvKeT5pnm5YkBZTDtS4SY9rVRl5jYd2rm_gb9FNT-W7pUkB4YCxMPA7IhSni2ils6i9YCC_aXN4Z-I2Pc3viq96jZYcd3UONKLEWgz9ZStzRA_i0UsugWAqEwX-S_CIRdFu83XOlpc7PvUGv32MnxN9leO3Uwww47u2TMPtDGDxrpMUsxJR0oUXw_Cfyx4wX9oISrDdN04fFbQ00Qe61bsHFEsGVS0MhegMd2hwwOTtEvl7hI8BLMlz2AN7opwS-8XVeGPUaHfm8AErlwD00BUegZjrlini-BIY82bIBcMLwqFzjZ6xirTPBqX8EM0r1bPXHQ'></script></head>
+</head>
 <body>
 <canvas id="game"></canvas>
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>JackBlocks</p>
+    <p>A lightweight Mining game adventure</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
       <span>🧱 Break & place blocks</span>
       <span>🐄 Harvest animals for food</span>
       <span>👹 Fight random monsters</span>
+      <span>💎 Dig for gold & diamond</span>
       <span>🍎 Collect fruits</span>
-      <span>❤️ Manage health & hunger</span>
     </div>
   </div>
 
@@ -133,7 +133,7 @@
     <div><kbd>Mouse</kbd> Look</div>
     <div><kbd>Left Click</kbd> Break / Harvest / Attack</div>
     <div><kbd>Right Click</kbd> Place block</div>
-    <div><kbd>1-5</kbd> Select hotbar</div>
+    <div><kbd>1-7</kbd> Select hotbar</div>
     <div><kbd>E</kbd> Eat food (if selected)</div>
   </div>
 
@@ -153,7 +153,9 @@
       <div class="slot" data-slot="1"><span class="icon">🟫</span><span class="count"></span></div>
       <div class="slot" data-slot="2"><span class="icon">⬜</span><span class="count"></span></div>
       <div class="slot" data-slot="3"><span class="icon">🪵</span><span class="count"></span></div>
-      <div class="slot" data-slot="4"><span class="icon">🍎</span><span class="count"></span></div>
+      <div class="slot" data-slot="4"><span class="icon">🟨</span><span class="count"></span></div>
+      <div class="slot" data-slot="5"><span class="icon">💎</span><span class="count"></span></div>
+      <div class="slot" data-slot="6"><span class="icon">🍎</span><span class="count"></span></div>
     </div>
   </div>
 
@@ -178,7 +180,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 
 // ========== CONFIG ==========
 const WORLD_SIZE = 100;         // blocks per side
-const WORLD_HEIGHT = 24;
+const WORLD_HEIGHT = 48;        // deeper underground
 const BLOCK_SIZE = 1;
 const GRAVITY = -28;
 const JUMP_FORCE = 9.5;
@@ -198,7 +200,9 @@ const BLOCKS = {
   LEAVES: 5,
   SAND: 6,
   WATER: 7,
-  BEDROCK: 8
+  BEDROCK: 8,
+  GOLD: 9,
+  DIAMOND: 10
 };
 
 const BLOCK_COLORS = {
@@ -209,7 +213,9 @@ const BLOCK_COLORS = {
   [BLOCKS.LEAVES]: 0x3d8b3d,
   [BLOCKS.SAND]: 0xe8d5a3,
   [BLOCKS.WATER]: 0x3a7ca5,
-  [BLOCKS.BEDROCK]: 0x222222
+  [BLOCKS.BEDROCK]: 0x222222,
+  [BLOCKS.GOLD]: 0xffd700,
+  [BLOCKS.DIAMOND]: 0x4deeea
 };
 
 const HOTBAR_ITEMS = [
@@ -217,8 +223,76 @@ const HOTBAR_ITEMS = [
   { id: BLOCKS.DIRT, name: 'Dirt', icon: '🟫', max: 64 },
   { id: BLOCKS.STONE, name: 'Stone', icon: '⬜', max: 64 },
   { id: BLOCKS.WOOD, name: 'Wood', icon: '🪵', max: 64 },
+  { id: BLOCKS.GOLD, name: 'Gold', icon: '🟨', max: 32 },
+  { id: BLOCKS.DIAMOND, name: 'Diamond', icon: '💎', max: 16 },
   { id: 'food', name: 'Food', icon: '🍎', max: 20 }
 ];
+
+// ========== SOUND EFFECTS (Web Audio API) ==========
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'square', volume = 0.15, slideTo = null) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    if (slideTo !== null) {
+      osc.frequency.exponentialRampToValueAtTime(slideTo, ctx.currentTime + duration);
+    }
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {}
+}
+
+function playNoise(duration, volume = 0.12, filterFreq = 1000) {
+  try {
+    const ctx = getAudioCtx();
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.5);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = filterFreq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+  } catch (e) {}
+}
+
+const SFX = {
+  break: () => { playNoise(0.12, 0.18, 800); playTone(120, 0.08, 'square', 0.08); },
+  place: () => { playTone(280, 0.06, 'triangle', 0.12); playTone(180, 0.1, 'triangle', 0.06); },
+  harvest: () => { playTone(400, 0.08, 'sine', 0.12); playTone(600, 0.1, 'sine', 0.08, 900); },
+  hitMonster: () => { playTone(180, 0.1, 'sawtooth', 0.15); playNoise(0.08, 0.1, 600); },
+  killMonster: () => { playTone(300, 0.15, 'sawtooth', 0.18, 80); playNoise(0.2, 0.12, 400); },
+  hurt: () => { playTone(150, 0.2, 'sawtooth', 0.2, 60); },
+  eat: () => { playTone(500, 0.08, 'sine', 0.1); playTone(700, 0.12, 'sine', 0.08); },
+  jump: () => { playTone(220, 0.08, 'triangle', 0.08, 320); },
+  step: () => { playNoise(0.04, 0.04, 400); }
+};
 
 // ========== WORLD ==========
 const world = new Uint8Array(WORLD_SIZE * WORLD_HEIGHT * WORLD_SIZE);
@@ -238,12 +312,12 @@ function setBlock(x, y, z, type) {
   world[idx(x, y, z)] = type;
 }
 
-// Simple noise
+// Simple noise – surface around y=20–30 so there is real depth below
 function noise2d(x, z) {
   const n = Math.sin(x * 0.12) * Math.cos(z * 0.11) * 4 +
             Math.sin(x * 0.07 + 1.3) * Math.cos(z * 0.09) * 2.5 +
             Math.sin(x * 0.03) * 1.5;
-  return Math.floor(n + 8);
+  return Math.floor(n + 22); // base height ~22, plenty of underground
 }
 
 function generateWorld() {
@@ -251,17 +325,29 @@ function generateWorld() {
     for (let z = 0; z < WORLD_SIZE; z++) {
       const h = noise2d(x, z);
       for (let y = 0; y < WORLD_HEIGHT; y++) {
-        if (y === 0) setBlock(x, y, z, BLOCKS.BEDROCK);
-        else if (y < h - 3) setBlock(x, y, z, BLOCKS.STONE);
-        else if (y < h) setBlock(x, y, z, BLOCKS.DIRT);
-        else if (y === h) {
-          if (h < 6) setBlock(x, y, z, BLOCKS.SAND);
+        if (y === 0) {
+          setBlock(x, y, z, BLOCKS.BEDROCK);
+        } else if (y < h - 4) {
+          // Deep stone – place ores randomly
+          let block = BLOCKS.STONE;
+          // Gold: more common mid-depths (y 5–18)
+          if (y >= 5 && y <= 18 && Math.random() < 0.012) block = BLOCKS.GOLD;
+          // Diamond: rare and deeper (y 2–12)
+          if (y >= 2 && y <= 12 && Math.random() < 0.004) block = BLOCKS.DIAMOND;
+          setBlock(x, y, z, block);
+        } else if (y < h) {
+          setBlock(x, y, z, BLOCKS.DIRT);
+        } else if (y === h) {
+          if (h < 18) setBlock(x, y, z, BLOCKS.SAND);
           else setBlock(x, y, z, BLOCKS.GRASS);
-        } else if (y < 5) setBlock(x, y, z, BLOCKS.WATER);
-        else setBlock(x, y, z, BLOCKS.AIR);
+        } else if (y < 16) {
+          setBlock(x, y, z, BLOCKS.WATER);
+        } else {
+          setBlock(x, y, z, BLOCKS.AIR);
+        }
       }
       // Trees
-      if (h > 7 && Math.random() < 0.025) {
+      if (h > 20 && Math.random() < 0.022) {
         const trunkH = 3 + Math.floor(Math.random() * 3);
         for (let t = 1; t <= trunkH; t++) setBlock(x, h + t, z, BLOCKS.WOOD);
         for (let lx = -2; lx <= 2; lx++) {
@@ -334,16 +420,34 @@ function removeBlockMesh(x, y, z) {
   }
 }
 
+// When a block is broken, reveal any solid neighbors that were previously hidden
+function revealNeighbors(x, y, z) {
+  const dirs = [
+    [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]
+  ];
+  for (const [dx, dy, dz] of dirs) {
+    const nx = x + dx, ny = y + dy, nz = z + dz;
+    const t = getBlock(nx, ny, nz);
+    if (t !== BLOCKS.AIR && t !== BLOCKS.WATER) {
+      addBlockMesh(nx, ny, nz, t);
+    }
+  }
+}
+
 function rebuildVisible() {
-  // Only build surface blocks for performance
+  // Only build surface / exposed blocks for performance
   for (let x = 0; x < WORLD_SIZE; x++) {
     for (let z = 0; z < WORLD_SIZE; z++) {
       for (let y = 0; y < WORLD_HEIGHT; y++) {
         const t = getBlock(x, y, z);
         if (t === BLOCKS.AIR) continue;
-        // Cull fully internal blocks
-        if (getBlock(x+1,y,z) && getBlock(x-1,y,z) && getBlock(x,y+1,z) &&
-            getBlock(x,y-1,z) && getBlock(x,y,z+1) && getBlock(x,y,z-1)) continue;
+        // Cull fully internal blocks (all 6 neighbors solid)
+        const solid = (bx, by, bz) => {
+          const b = getBlock(bx, by, bz);
+          return b !== BLOCKS.AIR && b !== BLOCKS.WATER;
+        };
+        if (solid(x+1,y,z) && solid(x-1,y,z) && solid(x,y+1,z) &&
+            solid(x,y-1,z) && solid(x,y,z+1) && solid(x,y,z-1)) continue;
         addBlockMesh(x, y, z, t);
       }
     }
@@ -357,7 +461,7 @@ const player = {
   onGround: false,
   health: 100,
   hunger: 100,
-  inventory: [0, 0, 0, 0, 0], // counts for hotbar slots
+  inventory: [0, 0, 0, 0, 0, 0, 0], // counts for hotbar slots
   selected: 0
 };
 
@@ -366,7 +470,9 @@ player.inventory[0] = 8;  // grass
 player.inventory[1] = 16; // dirt
 player.inventory[2] = 12; // stone
 player.inventory[3] = 6;  // wood
-player.inventory[4] = 3;  // food
+player.inventory[4] = 0;  // gold
+player.inventory[5] = 0;  // diamond
+player.inventory[6] = 3;  // food
 
 camera.position.copy(player.pos);
 
@@ -476,10 +582,12 @@ function breakBlock() {
         setTimeout(() => {
           if (monster.mesh.material) monster.mesh.material.color.setHex(0x8b0000);
         }, 150);
+        SFX.hitMonster();
         showMessage('Hit monster!');
         if (monster.health <= 0) {
           scene.remove(monster.mesh);
           monsters.splice(monsters.indexOf(monster), 1);
+          SFX.killMonster();
           showMessage('Monster defeated!');
         }
       }
@@ -495,7 +603,8 @@ function breakBlock() {
         scene.remove(animal.mesh);
         animals.splice(animals.indexOf(animal), 1);
         const foodGain = 2 + Math.floor(Math.random() * 2); // 2-3 food
-        player.inventory[4] = Math.min(HOTBAR_ITEMS[4].max, player.inventory[4] + foodGain);
+        player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + foodGain);
+        SFX.harvest();
         showMessage(`Harvested animal! +${foodGain} Food`);
         updateHotbar();
       }
@@ -509,15 +618,23 @@ function breakBlock() {
 
   setBlock(target.x, target.y, target.z, BLOCKS.AIR);
   removeBlockMesh(target.x, target.y, target.z);
+  revealNeighbors(target.x, target.y, target.z); // show the layers underneath
+  SFX.break();
 
   // Give item
   let slot = -1;
   if (type === BLOCKS.GRASS || type === BLOCKS.DIRT) slot = type === BLOCKS.GRASS ? 0 : 1;
   else if (type === BLOCKS.STONE) slot = 2;
   else if (type === BLOCKS.WOOD) slot = 3;
-  else if (type === BLOCKS.LEAVES) {
+  else if (type === BLOCKS.GOLD) {
+    slot = 4;
+    showMessage('Found Gold!');
+  } else if (type === BLOCKS.DIAMOND) {
+    slot = 5;
+    showMessage('Found Diamond!');
+  } else if (type === BLOCKS.LEAVES) {
     if (Math.random() < 0.3) {
-      player.inventory[4] = Math.min(HOTBAR_ITEMS[4].max, player.inventory[4] + 1);
+      player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + 1);
       showMessage('+1 Fruit from leaves!');
     }
   }
@@ -551,6 +668,7 @@ function placeBlock() {
   setBlock(px, py, pz, item.id);
   addBlockMesh(px, py, pz, item.id);
   player.inventory[player.selected]--;
+  SFX.place();
   updateHotbar();
 }
 
@@ -561,7 +679,8 @@ function collectFruits() {
     if (dist < 1.8) {
       f.collected = true;
       scene.remove(f.mesh);
-      player.inventory[4] = Math.min(HOTBAR_ITEMS[4].max, player.inventory[4] + 1);
+      player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + 1);
+      SFX.harvest();
       showMessage('+1 Fruit!');
       updateHotbar();
     }
@@ -569,17 +688,18 @@ function collectFruits() {
 }
 
 function eatFood() {
-  if (player.selected !== 4 || player.inventory[4] <= 0) {
-    showMessage('Select food (slot 5) to eat');
+  if (player.selected !== 6 || player.inventory[6] <= 0) {
+    showMessage('Select food (slot 7) to eat');
     return;
   }
   if (player.hunger >= 100) {
     showMessage('Not hungry');
     return;
   }
-  player.inventory[4]--;
+  player.inventory[6]--;
   player.hunger = Math.min(100, player.hunger + 25);
   player.health = Math.min(100, player.health + 5);
+  SFX.eat();
   updateHotbar();
   updateBars();
   showMessage('Ate food! +25 hunger');
@@ -591,7 +711,7 @@ document.addEventListener('keydown', e => { keys[e.code] = true; if (e.code.star
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 function selectSlot(i) {
-  if (i < 0 || i > 4) return;
+  if (i < 0 || i > 6) return;
   player.selected = i;
   document.querySelectorAll('.slot').forEach((s, idx) => s.classList.toggle('selected', idx === i));
 }
@@ -623,6 +743,7 @@ function updatePlayer(dt) {
   if (keys['Space'] && player.onGround) {
     player.vel.y = JUMP_FORCE;
     player.onGround = false;
+    SFX.jump();
   }
 
   // Gravity
@@ -758,6 +879,7 @@ function updateMonsters(dt) {
     if (distToPlayer < attackRange && m.attackCooldown <= 0) {
       player.health = Math.max(0, player.health - 12);
       m.attackCooldown = 1.2;
+      SFX.hurt();
       showMessage('Monster attacked you! -12 Health');
       updateBars();
     }
@@ -851,6 +973,7 @@ while (startY > 0 && getBlock(Math.floor(player.pos.x), startY, Math.floor(playe
 player.pos.y = startY + 2;
 
 document.getElementById('start-btn').addEventListener('click', () => {
+  getAudioCtx(); // unlock audio on user gesture
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('crosshair').style.display = 'block';
   document.getElementById('info').style.display = 'block';
