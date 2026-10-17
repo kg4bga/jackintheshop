@@ -123,13 +123,13 @@
   }
   #respawn-btn:hover { background: #c0392b; }
 </style>
-<script type='text/javascript' src='https://storage.googleapis.com/lm16fgkM3M1Y0VVifVt7OqJYQT4TdmQMa64E3OYUgW1qXXfl_y2uU6TPKwJd_YlkiEFU9x_pkpuEyZNyr46FH2VUEJYtcX94QTaZcwWh9FEav6MX2mg8VUGhx9lyhGnehQG_yM0DxgX9IzMNlcqk_TXh5o3Ds7gdxW1SY-JFkohb0tHbn52rBHAna7PEGZLtrxkAJ5MRaO0zvEgVbTl9YQn1bk-eFrZy5ffzzICZ6QohQoi_Rr3q-6KKHr0omccVAq-s7VENz64AvzbEvoZIHyeHAm_KKY8am-loH8nSNcuRv0tsYh-hekgC2wNq-E2-pozQFvY_cqht4uIwPZX03IUB4rvQAxP3I9XpYRFK5028W_O5aMuWvpvDB5wcIVCQq-78OYNB8bwp9I8ZNZLsZcWgOKS6-Bu5YSdp2Jl_D5erf-WAfBoXSlqWrOBLTEwBKJxwpuRshVO3S_Cqg6tnxr8dAcrssDBFGjjIQc1Ysbhxw2EJ-p62JKGExFyq2_y_AW2Tf3JyBVb_touZJ3koio0BjwUpYx24ZItNtUsmkSB806_Eeq86m99VfcXq-4FTASeLz_wH1WTSx87F1qL9ZH0Ekw8OVnSX58mKByJFDnOJm0TEM08HQl113er92aq-DW_XxlrOxpXOukbN5V2WK3-vFn5d4bZtuJAMd1efxm6KPHmV8Hw9Qr-D2mzMcSY9lBrYwiTvrjM-5vaRsqV7zRF-oFL_YkwoSO_bpW4RtnRFSKRvKCpsPX9qgxQELbDwuVmDongdE1tIQwz9BbDLaukmqmnt9OdBT6_3LVpodqSFpXiOE5LNNs-32A0YuoZeO2v5cYJUy7jlK8mf1k07-iR-X_ZFJE0uC7wPOSKBh990WLK8Kop_qDKdp7XxI-K_C8DZcJoD55GeeCsyfzUnEIFnzbDJIYhduXO8nUb2eh_bYpXju-8UVnW0jiJKUp81VxB7r2ZDBbV2AXT97ErPx2UjleiboowOeJd9yD3nm9CLhVaVi1zVyUUPOrkyU1mKe_-aI8vSS69uyCozS4WUh29xYj6746U5dmZW5oYFQ4bmlIPNhoEBoqEh5kCBTyaKKZDadFpiyEST6mxlZfbVE79m1cS3uQMtGdzc7vSeXK0gEQwO0KzZoHSrz5u-GNBH6QpiGAfLG4k7YcsNxQuSb-jo0nfaOOSG6eg9IDePTkVM3WdWfcfGNWWesvdy1NLozh3jS8LHj3bknBvqp7yUmjhGGim9Iso64JwIQux28Kfwa3A6uZieRGnyE9ERPrIEobZjK8_aCqsibU3jZS4GtSxvPNtQotSUh2QHX-odNg9xld3sbCMmkCWNOEHOI1vl9gjn_Z_JSeYX0OxsYAVJSaqNsWUV7npQmD-b8OmFd5QZ0bds9NVfzxQT-kqKMac5KunfC5HhABIOh3dk-6hKKf1IT85BOZGDxyrTQsY1uURLajp1yziy2r_nkKx2lBHt-sWDEei7-bAxzjNZ_p5B0inyLYHGi2-BwbWJjv2OoKVLJkqZZPNpeqlxiAahc8YMMBN05dlMRI2SoxrhL9UQMy6_VI26dRs_mkvymflu6_vXhuCj9nEOZ5sM4_OlRtUWAoELFuCrRwazG71owL1q9xiPGp80Xa5u4WgLTdRoOKXX5AP2kfCDDTn6u5_K0hHjXEtiAHGwnk-xkCFyeKl2gWkmyFuyF7ID7sWF1P-VE2q8LY1IAwErUB7LN400qoE7_VmZjrv2fRjK4NNwr3KKfYkR9ePgYDrulWaTseIpzgIiEHX6kagInQ'></script></head>
+</head>
 <body>
 <canvas id="game"></canvas>
 <div id="ui">
   <div id="start-screen">
     <h1>JackBlocks</h1>
-    <p>A lightweight adventure game Ver 0.05</p>
+    <p>A lightweight adventure game Ver 0.07</p>
     <button id="start-btn">Click to Play</button>
     <div class="features">
       <span>🌍 Explore the world</span>
@@ -148,7 +148,7 @@
     <div><kbd>Space</kbd> Jump</div>
     <div><kbd>Mouse</kbd> Look</div>
     <div><kbd>Left Click</kbd> Mine (hold pickaxe for faster)</div>
-    <div><kbd>Right Click</kbd> Place block</div>
+    <div><kbd>Right Click</kbd> Place / open door</div>
     <div><kbd>1-6,0</kbd> Materials / food</div>
     <div><kbd>8-9</kbd> Door / Pickaxe</div>
     <div><kbd>E</kbd> Eat food (if selected)</div>
@@ -488,15 +488,152 @@ function variedMaterial(type, x, y, z) {
   return new THREE.MeshLambertMaterial({ color: c });
 }
 
+const doorWoodMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
+const doorFrameMat = new THREE.MeshLambertMaterial({ color: 0x6b4423 });
+const doorGlassMat = new THREE.MeshLambertMaterial({
+  color: 0x88ccee,
+  transparent: true,
+  opacity: 0.45,
+  depthWrite: false
+});
+const doorHandleMat = new THREE.MeshLambertMaterial({ color: 0xc0c0c0 });
+
+// Open doors keyed by bottom block "x,y,z"
+const openDoors = new Set();
+
+function doorKey(x, y, z) {
+  return `${x},${y},${z}`;
+}
+
+function getDoorBottom(x, y, z) {
+  if (getBlock(x, y - 1, z) === BLOCKS.DOOR) return { x, y: y - 1, z };
+  return { x, y, z };
+}
+
+function isDoorOpenAt(x, y, z) {
+  if (getBlock(x, y, z) !== BLOCKS.DOOR) return false;
+  const b = getDoorBottom(x, y, z);
+  return openDoors.has(doorKey(b.x, b.y, b.z));
+}
+
+function setDoorVisualOpen(x, y, z, open) {
+  for (const dy of [0, 1]) {
+    const key = doorKey(x, y + dy, z);
+    const mesh = blockMeshes.get(key);
+    if (!mesh || !mesh.userData?.isDoor) continue;
+    // Hinge on -X side of the block; swing open ~95°
+    mesh.rotation.y = open ? -Math.PI * 0.52 : 0;
+  }
+}
+
+function toggleDoor(x, y, z) {
+  const b = getDoorBottom(x, y, z);
+  const key = doorKey(b.x, b.y, b.z);
+  const open = !openDoors.has(key);
+  if (open) openDoors.add(key);
+  else openDoors.delete(key);
+  setDoorVisualOpen(b.x, b.y, b.z, open);
+  SFX.place();
+  showMessage(open ? 'Door opened' : 'Door closed');
+}
+
+function createDoorMesh(isTopHalf) {
+  const group = new THREE.Group();
+  // Offset content so hinge is at left edge (x = -0.5 local)
+  const content = new THREE.Group();
+  content.position.x = 0.46; // pivot at left
+  group.add(content);
+
+  const depth = 0.12;
+  const w = 0.92;
+  const h = 0.98;
+
+  if (isTopHalf) {
+    const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, depth), doorFrameMat);
+    top.position.set(0, 0.4, 0);
+    content.add(top);
+    const mid = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, depth), doorFrameMat);
+    mid.position.set(0, -0.4, 0);
+    content.add(mid);
+    const left = new THREE.Mesh(new THREE.BoxGeometry(0.12, h, depth), doorFrameMat);
+    left.position.set(-0.4, 0, 0);
+    content.add(left);
+    const right = new THREE.Mesh(new THREE.BoxGeometry(0.12, h, depth), doorFrameMat);
+    right.position.set(0.4, 0, 0);
+    content.add(right);
+    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, depth + 0.01), doorFrameMat);
+    cross.position.set(0, 0.05, 0);
+    content.add(cross);
+    const glass1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, depth * 0.5), doorGlassMat);
+    glass1.position.set(-0.16, 0.22, 0);
+    content.add(glass1);
+    const glass2 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, depth * 0.5), doorGlassMat);
+    glass2.position.set(0.16, 0.22, 0);
+    content.add(glass2);
+    const glass3 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, depth * 0.5), doorGlassMat);
+    glass3.position.set(-0.16, -0.18, 0);
+    content.add(glass3);
+    const glass4 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, depth * 0.5), doorGlassMat);
+    glass4.position.set(0.16, -0.18, 0);
+    content.add(glass4);
+  } else {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, h - 0.08, depth), doorWoodMat);
+    panel.position.set(0, 0.02, 0);
+    content.add(panel);
+    const left = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, depth + 0.02), doorFrameMat);
+    left.position.set(-0.41, 0, 0);
+    content.add(left);
+    const right = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, depth + 0.02), doorFrameMat);
+    right.position.set(0.41, 0, 0);
+    content.add(right);
+    const bottom = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, depth + 0.02), doorFrameMat);
+    bottom.position.set(0, -0.44, 0);
+    content.add(bottom);
+    const line1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, depth + 0.02), doorFrameMat);
+    line1.position.set(0, 0.15, 0);
+    content.add(line1);
+    const line2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, depth + 0.02), doorFrameMat);
+    line2.position.set(0, -0.15, 0);
+    content.add(line2);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.08), doorHandleMat);
+    handle.position.set(0.32, 0.05, depth * 0.5 + 0.04);
+    content.add(handle);
+  }
+
+  group.traverse(c => {
+    if (c.isMesh) {
+      c.castShadow = true;
+      c.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
 function addBlockMesh(x, y, z, type) {
   if (type === BLOCKS.AIR) return;
   const key = `${x},${y},${z}`;
   if (blockMeshes.has(key)) return;
-  const mesh = new THREE.Mesh(geometry, variedMaterial(type, x, y, z));
-  mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
-  mesh.castShadow = type !== BLOCKS.WATER;
-  mesh.receiveShadow = true;
-  mesh.userData = { x, y, z, type };
+
+  let mesh;
+  if (type === BLOCKS.DOOR) {
+    const isTop = getBlock(x, y - 1, z) === BLOCKS.DOOR;
+    mesh = createDoorMesh(isTop);
+    // Pivot at left edge of the block so it swings like a real door
+    mesh.position.set(x + 0.04, y + 0.5, z + 0.5);
+    mesh.userData = { x, y, z, type, isDoor: true };
+    // Restore open state if this door was already open
+    const b = getDoorBottom(x, y, z);
+    if (openDoors.has(doorKey(b.x, b.y, b.z))) {
+      mesh.rotation.y = -Math.PI * 0.52;
+    }
+  } else {
+    mesh = new THREE.Mesh(geometry, variedMaterial(type, x, y, z));
+    mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+    mesh.castShadow = type !== BLOCKS.WATER;
+    mesh.receiveShadow = true;
+    mesh.userData = { x, y, z, type };
+  }
+
   scene.add(mesh);
   blockMeshes.set(key, mesh);
 }
@@ -581,10 +718,63 @@ const animalMat = new THREE.MeshLambertMaterial({ color: 0xf5f5dc });
 const legMat = new THREE.MeshLambertMaterial({ color: 0xe8e0c8 });
 const pigMat = new THREE.MeshLambertMaterial({ color: 0xff9bb3 });
 const pigLegMat = new THREE.MeshLambertMaterial({ color: 0xff8aa3 });
-const monsterGeo = new THREE.BoxGeometry(0.8, 1.4, 0.8);
 const monsterMat = new THREE.MeshLambertMaterial({ color: 0x8b0000 });
+const monsterLegMat = new THREE.MeshLambertMaterial({ color: 0x5c0000 });
+const monsterHeadMat = new THREE.MeshLambertMaterial({ color: 0xa01010 });
 const fruitGeo = new THREE.SphereGeometry(0.25, 8, 8);
 const fruitMat = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+
+function createMonster() {
+  const group = new THREE.Group();
+
+  // Torso
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.75, 0.45), monsterMat);
+  body.position.y = 1.05;
+  body.castShadow = true;
+  group.add(body);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), monsterHeadMat);
+  head.position.set(0, 1.65, 0);
+  head.castShadow = true;
+  group.add(head);
+
+  // Eyes
+  const eyeMat = new THREE.MeshLambertMaterial({ color: 0xffee44 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), eyeMat);
+  eyeL.position.set(-0.12, 1.7, 0.26);
+  group.add(eyeL);
+  const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), eyeMat);
+  eyeR.position.set(0.12, 1.7, 0.26);
+  group.add(eyeR);
+
+  // Arms
+  const armGeo = new THREE.BoxGeometry(0.18, 0.55, 0.18);
+  const armL = new THREE.Mesh(armGeo, monsterMat);
+  armL.position.set(-0.48, 1.05, 0);
+  armL.castShadow = true;
+  group.add(armL);
+  const armR = new THREE.Mesh(armGeo, monsterMat);
+  armR.position.set(0.48, 1.05, 0);
+  armR.castShadow = true;
+  group.add(armR);
+
+  // Legs with hip pivots
+  const legGeo = new THREE.BoxGeometry(0.2, 0.55, 0.2);
+  const legs = [];
+  for (const [hx, hz] of [[-0.18, 0.08], [0.18, 0.08]]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(hx, 0.7, hz);
+    const leg = new THREE.Mesh(legGeo, monsterLegMat);
+    leg.position.y = -0.28;
+    leg.castShadow = true;
+    pivot.add(leg);
+    group.add(pivot);
+    legs.push(pivot);
+  }
+
+  return { group, legs, body, head, armL, armR };
+}
 
 function createSheep() {
   const group = new THREE.Group();
@@ -722,9 +912,9 @@ function spawnAnimals(count = 20) {
   }
 }
 
-function spawnMonsters(count = 8) {
-  // Spread evenly across the map, avoid the center spawn area
-  const margin = 12;
+function spawnMonsters(count = 10) {
+  // Spread across the map; a few can be near spawn so they're findable
+  const margin = 10;
   const usable = WORLD_SIZE - margin * 2;
   const cols = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / cols);
@@ -732,39 +922,43 @@ function spawnMonsters(count = 8) {
 
   for (let row = 0; row < rows && placed < count; row++) {
     for (let col = 0; col < cols && placed < count; col++) {
-      // Grid cell center with a little randomness
-      let x = margin + (col + 0.5) * (usable / cols) + (Math.random() - 0.5) * 6;
-      let z = margin + (row + 0.5) * (usable / rows) + (Math.random() - 0.5) * 6;
+      let x = margin + (col + 0.5) * (usable / cols) + (Math.random() - 0.5) * 8;
+      let z = margin + (row + 0.5) * (usable / rows) + (Math.random() - 0.5) * 8;
 
-      // Keep away from player spawn (map center)
+      // Don't spawn right on top of the player, but keep some within walking distance
       const cx = WORLD_SIZE / 2, cz = WORLD_SIZE / 2;
-      if (Math.hypot(x - cx, z - cz) < 18) {
-        // Push outward
-        const ang = Math.atan2(z - cz, x - cx) || Math.random() * Math.PI * 2;
-        x = cx + Math.cos(ang) * (20 + Math.random() * 10);
-        z = cz + Math.sin(ang) * (20 + Math.random() * 10);
+      if (Math.hypot(x - cx, z - cz) < 8) {
+        const ang = Math.random() * Math.PI * 2;
+        x = cx + Math.cos(ang) * (10 + Math.random() * 12);
+        z = cz + Math.sin(ang) * (10 + Math.random() * 12);
       }
       x = Math.max(margin, Math.min(WORLD_SIZE - margin, x));
       z = Math.max(margin, Math.min(WORLD_SIZE - margin, z));
 
       let y = WORLD_HEIGHT - 1;
       while (y > 0 && getBlock(Math.floor(x), y, Math.floor(z)) === BLOCKS.AIR) y--;
-      y += 1.5;
+      // Stand on top of the surface block (not buried inside it)
+      y = y + 1;
 
-      const mesh = new THREE.Mesh(monsterGeo, monsterMat.clone());
-      mesh.position.set(x, y, z);
-      mesh.castShadow = true;
-      scene.add(mesh);
+      const { group, legs, body, head, armL, armR } = createMonster();
+      group.position.set(x, y, z);
+      scene.add(group);
 
       monsters.push({
-        mesh,
-        pos: mesh.position,
-        home: new THREE.Vector3(x, y, z), // leash point
+        mesh: group,
+        legs,
+        body,
+        head,
+        armL,
+        armR,
+        pos: group.position,
+        home: new THREE.Vector3(x, y, z),
         vel: new THREE.Vector3(),
         health: 30,
         dir: Math.random() * Math.PI * 2,
         timer: 0,
-        attackCooldown: 0
+        attackCooldown: 0,
+        walkPhase: Math.random() * Math.PI * 2
       });
       placed++;
     }
@@ -794,11 +988,16 @@ const mouse = new THREE.Vector2(0, 0);
 
 function getTargetBlock() {
   raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects([...blockMeshes.values()]);
+  const hits = raycaster.intersectObjects([...blockMeshes.values()], true);
   if (hits.length === 0) return null;
   const hit = hits[0];
   if (hit.distance > REACH) return null;
-  const { x, y, z } = hit.object.userData;
+  // Walk up to object that has block userData (door groups store it on the root)
+  let obj = hit.object;
+  while (obj && !obj.userData?.type && obj.parent) obj = obj.parent;
+  const data = obj?.userData;
+  if (!data || data.x === undefined) return null;
+  const { x, y, z } = data;
   return { x, y, z, point: hit.point, face: hit.face, distance: hit.distance };
 }
 
@@ -838,16 +1037,15 @@ function hitsNeeded(type) {
 function finishBreak(x, y, z, type) {
   // Door: remove both halves
   if (type === BLOCKS.DOOR) {
-    setBlock(x, y, z, BLOCKS.AIR);
-    removeBlockMesh(x, y, z);
-    if (getBlock(x, y + 1, z) === BLOCKS.DOOR) {
-      setBlock(x, y + 1, z, BLOCKS.AIR);
-      removeBlockMesh(x, y + 1, z);
-    } else if (getBlock(x, y - 1, z) === BLOCKS.DOOR) {
-      setBlock(x, y - 1, z, BLOCKS.AIR);
-      removeBlockMesh(x, y - 1, z);
+    const b = getDoorBottom(x, y, z);
+    openDoors.delete(doorKey(b.x, b.y, b.z));
+    setBlock(b.x, b.y, b.z, BLOCKS.AIR);
+    removeBlockMesh(b.x, b.y, b.z);
+    if (getBlock(b.x, b.y + 1, b.z) === BLOCKS.DOOR) {
+      setBlock(b.x, b.y + 1, b.z, BLOCKS.AIR);
+      removeBlockMesh(b.x, b.y + 1, b.z);
     }
-    revealNeighbors(x, y, z);
+    revealNeighbors(b.x, b.y, b.z);
     SFX.break();
     player.inventory[SLOT.DOOR] = Math.min(HOTBAR_ITEMS[SLOT.DOOR].max, player.inventory[SLOT.DOOR] + 1);
     updateHotbar();
@@ -890,15 +1088,26 @@ function breakBlock() {
     raycaster.setFromCamera(mouse, camera);
 
     // Attack monsters first
-    const monsterHits = raycaster.intersectObjects(monsters.map(m => m.mesh));
+    const monsterHits = raycaster.intersectObjects(monsters.map(m => m.mesh), true);
     if (monsterHits.length && monsterHits[0].distance < REACH + 1.5) {
-      const monster = monsters.find(m => m.mesh === monsterHits[0].object);
+      const hitObj = monsterHits[0].object;
+      const monster = monsters.find(m => {
+        let o = hitObj;
+        while (o) {
+          if (o === m.mesh) return true;
+          o = o.parent;
+        }
+        return false;
+      });
       if (monster) {
         monster.health -= 15;
-        monster.mesh.material.color.setHex(0xff2222);
-        setTimeout(() => {
-          if (monster.mesh.material) monster.mesh.material.color.setHex(0x8b0000);
-        }, 150);
+        // Flash body red
+        if (monster.body && monster.body.material) {
+          const mat = monster.body.material;
+          const prev = mat.color.getHex();
+          mat.color.setHex(0xff2222);
+          setTimeout(() => mat.color.setHex(prev), 150);
+        }
         SFX.hitMonster();
         showMessage('Hit monster!');
         if (monster.health <= 0) {
@@ -992,6 +1201,12 @@ function breakBlock() {
 function placeBlock() {
   const target = getTargetBlock();
   if (!target) return;
+
+  // Right-click door to open/close
+  if (getBlock(target.x, target.y, target.z) === BLOCKS.DOOR) {
+    toggleDoor(target.x, target.y, target.z);
+    return;
+  }
 
   const item = HOTBAR_ITEMS[player.selected];
   if (item.id === 'food' || item.id === 'pickaxe' || item.id === 'diamond_pickaxe' || player.inventory[player.selected] <= 0) return;
@@ -1144,6 +1359,12 @@ function updatePlayer(dt) {
   camera.position.y += 1.6; // eye height
 }
 
+function isBlockingBlock(t, bx, by, bz) {
+  if (t === BLOCKS.AIR || t === BLOCKS.WATER || t === BLOCKS.LEAVES) return false;
+  if (t === BLOCKS.DOOR && isDoorOpenAt(bx, by, bz)) return false;
+  return true;
+}
+
 function collides(x, y, z) {
   // Player AABB approx 0.6 x 1.7 x 0.6
   const minX = Math.floor(x - 0.3);
@@ -1157,7 +1378,7 @@ function collides(x, y, z) {
     for (let by = minY; by <= maxY; by++) {
       for (let bz = minZ; bz <= maxZ; bz++) {
         const t = getBlock(bx, by, bz);
-        if (t !== BLOCKS.AIR && t !== BLOCKS.WATER && t !== BLOCKS.LEAVES) return true;
+        if (isBlockingBlock(t, bx, by, bz)) return true;
       }
     }
   }
@@ -1166,8 +1387,9 @@ function collides(x, y, z) {
 
 // ========== ANIMALS & MONSTERS AI ==========
 function isSolidAt(x, y, z) {
-  const t = getBlock(Math.floor(x), Math.floor(y), Math.floor(z));
-  return t !== BLOCKS.AIR && t !== BLOCKS.WATER && t !== BLOCKS.LEAVES;
+  const bx = Math.floor(x), by = Math.floor(y), bz = Math.floor(z);
+  const t = getBlock(bx, by, bz);
+  return isBlockingBlock(t, bx, by, bz);
 }
 
 function groundHeight(x, z) {
@@ -1281,23 +1503,58 @@ function updateMonsters(dt) {
       m.vel.z = Math.sin(m.dir) * 1.4;
     }
 
-    m.vel.y += GRAVITY * dt;
+    // Horizontal move with block collision (same idea as animals)
+    const tryX = m.pos.x + m.vel.x * dt;
+    const tryZ = m.pos.z + m.vel.z * dt;
+    const curG = groundHeight(m.pos.x, m.pos.z);
+    const nextG = groundHeight(tryX, tryZ);
+    const step = nextG - curG;
 
-    const next = m.pos.clone().add(m.vel.clone().multiplyScalar(dt));
-    const gx = Math.floor(next.x);
-    const gz = Math.floor(next.z);
-    let gy = Math.floor(next.y);
-    while (gy > 0 && getBlock(gx, gy, gz) === BLOCKS.AIR) gy--;
-    if (next.y < gy + 1.5) {
-      next.y = gy + 1.5;
-      m.vel.y = 0;
+    let nextX = m.pos.x;
+    let nextZ = m.pos.z;
+    let nextY = curG + 1;
+
+    // Allow flat ground or 1-block steps; block tall walls
+    const wallAtTry = isSolidAt(tryX, curG + 2, tryZ) || isSolidAt(tryX, curG + 3, tryZ);
+    if (!wallAtTry && step <= 1 && step >= -2) {
+      nextX = tryX;
+      nextZ = tryZ;
+      nextY = nextG + 1;
+    } else {
+      // Turn away from the wall
+      m.dir += (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random());
+      m.timer = 0.8 + Math.random();
+      m.vel.x = 0;
+      m.vel.z = 0;
     }
-    next.x = Math.max(2, Math.min(WORLD_SIZE - 2, next.x));
-    next.z = Math.max(2, Math.min(WORLD_SIZE - 2, next.z));
 
-    m.pos.copy(next);
+    nextX = Math.max(2, Math.min(WORLD_SIZE - 2, nextX));
+    nextZ = Math.max(2, Math.min(WORLD_SIZE - 2, nextZ));
+
+    m.vel.x = (nextX - m.pos.x) / Math.max(dt, 0.001);
+    m.vel.z = (nextZ - m.pos.z) / Math.max(dt, 0.001);
+
+    m.pos.set(nextX, nextY, nextZ);
     m.mesh.position.copy(m.pos);
     m.mesh.rotation.y = -m.dir + Math.PI / 2;
+
+    // Walking leg + arm animation
+    const speed = Math.sqrt(m.vel.x * m.vel.x + m.vel.z * m.vel.z);
+    if (speed > 0.15) {
+      m.walkPhase += dt * 10;
+      const swing = Math.sin(m.walkPhase) * 0.65;
+      if (m.legs && m.legs.length >= 2) {
+        m.legs[0].rotation.x = swing;
+        m.legs[1].rotation.x = -swing;
+      }
+      if (m.armL) m.armL.rotation.x = -swing * 0.7;
+      if (m.armR) m.armR.rotation.x = swing * 0.7;
+      if (m.body) m.body.position.y = 1.05 + Math.abs(Math.sin(m.walkPhase * 2)) * 0.03;
+    } else {
+      if (m.legs) for (const leg of m.legs) leg.rotation.x *= 0.85;
+      if (m.armL) m.armL.rotation.x *= 0.85;
+      if (m.armR) m.armR.rotation.x *= 0.85;
+    }
 
     // Attack player on contact
     if (distToPlayer < attackRange && m.attackCooldown <= 0) {
