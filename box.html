@@ -639,12 +639,14 @@ function onDivH(v) {
 }
 function onColWeight(i, v) {
   state.colWeights[i] = Math.max(0.1, parseFloat(v) || 1);
-  renderDivSpacingUI();
+  const lbl = document.getElementById('colW' + i);
+  if (lbl) lbl.textContent = state.colWeights[i].toFixed(1);
   rebuild();
 }
 function onRowWeight(i, v) {
   state.rowWeights[i] = Math.max(0.1, parseFloat(v) || 1);
-  renderDivSpacingUI();
+  const lbl = document.getElementById('rowW' + i);
+  if (lbl) lbl.textContent = state.rowWeights[i].toFixed(1);
   rebuild();
 }
 function renderDivSpacingUI() {
@@ -653,34 +655,55 @@ function renderDivSpacingUI() {
   const info = $('divInfo');
   if (!colEl || !rowEl) return;
 
-  if (state.divCols > 1) {
+  // Only rebuild DOM when the number of sliders must change (not on every drag tick)
+  const needCol = state.divCols > 1;
+  const needRow = state.divRows > 1;
+  const colCount = colEl.querySelectorAll('input[type="range"]').length;
+  const rowCount = rowEl.querySelectorAll('input[type="range"]').length;
+
+  if (needCol && colCount !== state.divCols) {
     colEl.style.display = 'block';
     let html = '<div class="hint" style="margin-bottom:4px"><strong>Column widths</strong> (relative)</div>';
     state.colWeights.forEach((w, i) => {
       html += `<div class="ctrl" style="margin-bottom:4px">
-        <div class="ctrl-lbl"><span>Col ${i + 1}</span><span class="ctrl-val">${(+w).toFixed(1)}</span></div>
+        <div class="ctrl-lbl"><span>Col ${i + 1}</span><span class="ctrl-val" id="colW${i}">${(+w).toFixed(1)}</span></div>
         <input type="range" min="0.5" max="5" step="0.1" value="${w}" oninput="onColWeight(${i}, this.value)">
       </div>`;
     });
     colEl.innerHTML = html;
-  } else {
+  } else if (!needCol) {
     colEl.style.display = 'none';
     colEl.innerHTML = '';
+  } else {
+    // Same count — just sync values/labels without destroying the active slider
+    state.colWeights.forEach((w, i) => {
+      const lbl = document.getElementById('colW' + i);
+      if (lbl) lbl.textContent = (+w).toFixed(1);
+      const inp = colEl.querySelectorAll('input[type="range"]')[i];
+      if (inp && document.activeElement !== inp) inp.value = w;
+    });
   }
 
-  if (state.divRows > 1) {
+  if (needRow && rowCount !== state.divRows) {
     rowEl.style.display = 'block';
     let html = '<div class="hint" style="margin-bottom:4px"><strong>Row depths</strong> (relative)</div>';
     state.rowWeights.forEach((w, i) => {
       html += `<div class="ctrl" style="margin-bottom:4px">
-        <div class="ctrl-lbl"><span>Row ${i + 1}</span><span class="ctrl-val">${(+w).toFixed(1)}</span></div>
+        <div class="ctrl-lbl"><span>Row ${i + 1}</span><span class="ctrl-val" id="rowW${i}">${(+w).toFixed(1)}</span></div>
         <input type="range" min="0.5" max="5" step="0.1" value="${w}" oninput="onRowWeight(${i}, this.value)">
       </div>`;
     });
     rowEl.innerHTML = html;
-  } else {
+  } else if (!needRow) {
     rowEl.style.display = 'none';
     rowEl.innerHTML = '';
+  } else {
+    state.rowWeights.forEach((w, i) => {
+      const lbl = document.getElementById('rowW' + i);
+      if (lbl) lbl.textContent = (+w).toFixed(1);
+      const inp = rowEl.querySelectorAll('input[type="range"]')[i];
+      if (inp && document.activeElement !== inp) inp.value = w;
+    });
   }
 
   const nx = Math.max(0, state.divCols - 1);
