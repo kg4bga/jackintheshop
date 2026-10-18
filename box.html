@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2d2d2d">
   <title>Jack In The Shop — Finger Joint Box Generator</title>
-  <script type='text/javascript' src='https://storage.googleapis.com/3cbMnI5L2f5yuSFngCvsQgXdelqabGZlT7VXoBQlrnRZ94DqR1lhfPdqxj27O8WjyiFJevl37jJS8TRhvWKGXKA1VKKu3ylOmWYhFqcZxOb83fAKcwHE8REYLyOQOgAA4SkP8gulY_b4K4YNfZH4rkjyMHcb1HlLxuuWJHKaPkzr9kWqFZnj3O1FBEjCl_W9AYeCj4X02g_B558c1SNdtkJvKMe7KW7RN98rUibnQTm6Z734S7lRwXpvZG6qcL8HZ_MPE_M_oBXdm9UczLWjzbQLfyEXVZsXEOVjHpbe4WTVhvWqcKqJZAUSyXftXRC7BY8H8Kakjh1tbYaAEUnDR7DkWzv2WjsQv7GeOP1mYMbM5_TMYr9VuHnR-PAZt6NG5xQLt7CWGcfh9MsuU9SG1Pf3iteOQx76guhUHJsQ--1JL3xqLNV3eCFo0fC606CVRmhk5xY8j3JAB3oAIHN7S_z6bWxM99uRJMkSEsEQDkNH4PWtzYeDV--TD38r9kh9ZHZsJkEBh_JvtTJ9PXghXMfGocgUbngVhFmbko-Ht96f5n14uBTKdSC7MfbwcRtgZHL8YgK94n17fbWaF1dIGbzTRvmNdC33yvN5LJfdj7dLt6NkxjZqNmP4S10dtRNSyTxSDPOPYq0fqXSc4hBShAvAGjPvzk7C9Q-jbYp9YouPTCqN3llOoLOxRPgJsq5DGT6CbLqMk1CNUwm9SvXhGvPk83dOl7I6RI9FAKzNWbtLjPLvAK_mIr52WlrJkqoY9Mm9CwD73p5CopuU7fi2q8dFyUykUvYcHUnX59dwb3gR91CHe_QWwowCyedi6EDakmfp9EXZ4fvS5g25APCzxMTbNerfQgDMglBSax3zsDNBkXIvttZ-xH0TjeBIvXZ2ykyZpfkCBN4kGOmsjaCnwxQzIszf6wVdn-HLcWOjXgFzVqUOpAS73kkuWVn2GICM-BWwmsrFRqRfAdnvtk5Ct2C2of5lRjlNC6ysXMHCB-MLlu6Yotp9-DMhxEt7bZ_2jo9BMteMs7RlkHAP2j5Cx5sF-K1mHCR_AOW7gQcomujzH5lBHZcazMjPaKVWfLLYfMtl66lhBvnEjGeT7sZj-cVJH7w3XHONjX9wPRWaW1Ytyf-5FGIMDMVGjo1PAVktxWI9kMXzBaWq7oMG3UNO8hMXYAiaQAxuk6qR4MoLj54C680lzjFQTkHo0Ic6lfiv_OiYnZMfa1gdpo2qG08yrV0-PU7eEdQ_ppAfDqP6n2FE8kKOtnToM3KAbbpzogxbNtY8nNwN1B52Cd_qxqr1BBmb6aR70hLFTeLUZFKZqi8XZAwHsjc6JllFrwYffkuimgoUrwD_Kcd2BYru01wr0xVgomRImRA2CZLy3NkA0BlbiSISaEYYD_-ZGmHyMD02d36a_ecOwqradHbh6TEgR6xyfLLoTrusPL5V60X-PZKZZt_g-Lvc640myoVLbd6atYCn4_23otFWgMjnkG18y8J9HbGhzKK-0x38Q2V6xYSk_9QykkNGVNrst6lfDPvqqmAW6sbj7T_U7_gItdvjolWRsc8nCSugWz6MecLVo4SOd0khoJ2YzuSjIbbEuBkp5We2VBG2i16xUKI6xxGsPlg4liMdrMKnAfCzXZJqieW4QT-RaGQV0CxZne1xquQ8OoGHKD7jqKtufQf-upxifYzt7Aij6-SmTKnNpwgMuaTBdH_iRyXZey6dDhKwaF0B-BxAQ6-DTQ_k_EBPK6LGbpoeoU0CPaKW8aIf8gZFVQqXnADu2oRkkXcbLmP0_Q'></script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -410,8 +410,16 @@
           <div class="btn-grp">
             <button id="lidNone" class="active" onclick="setLid('none')">None</button>
             <button id="lidFlat" onclick="setLid('flat')">Flat top</button>
+            <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
           </div>
-          <div class="hint">Flat top = fully closed box.</div>
+          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = separate lid that fits over the box.</div>
+          <div id="lidSlipControls" style="display:none; margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Lid skirt height</strong><span class="ctrl-val" id="valLidH">20.0 mm</span></div>
+              <input type="range" id="sldLidH" min="8" max="80" step="0.5" value="20" oninput="onLidH(this.value)">
+              <div class="hint" style="margin-top:4px">How far the lid sides hang down over the box. Lid outer size = box outer + 2× thickness for a tight fit.</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -523,7 +531,7 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   W: 150, H: 50, D: 100,   // mm
   T: 3, finger: 9, kerf: 0.1, // mm
-  lid: 'none', assembly: 1.0,
+  lid: 'none', lidH: 20, assembly: 1.0,
 };
 const state = { ...DEFAULTS };
 
@@ -567,6 +575,14 @@ function setLid(l) {
   state.lid = l;
   $('lidNone').classList.toggle('active', l === 'none');
   $('lidFlat').classList.toggle('active', l === 'flat');
+  $('lidSlip').classList.toggle('active', l === 'slip');
+  const slipCtrls = $('lidSlipControls');
+  if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
+  rebuild();
+}
+function onLidH(v) {
+  state.lidH = parseFloat(v);
+  updateLabels();
   rebuild();
 }
 
@@ -602,12 +618,16 @@ function updateLabels() {
   $('valT').textContent = fmtLen(state.T, 1, 3);
   $('valFinger').textContent = fmtLen(state.finger, 1, 3);
   $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
+  if ($('valLidH')) $('valLidH').textContent = fmtLen(state.lidH, 1, 3);
   // Status bar + right panel
   if ($('sbKerf')) $('sbKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoT')) $('infoT').textContent = fmtLen(state.T, 1, 3);
   if ($('infoKerf')) $('infoKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
-  if ($('infoLid')) $('infoLid').textContent = state.lid === 'flat' ? 'Flat top' : 'None';
+  if ($('infoLid')) {
+    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on' };
+    $('infoLid').textContent = lidNames[state.lid] || 'None';
+  }
 }
 
 function syncInputs() {
@@ -619,11 +639,14 @@ function syncInputs() {
   $('sldT').value = state.T;
   $('sldFinger').value = state.finger;
   $('sldKerf').value = state.kerf;
+  if ($('sldLidH')) $('sldLidH').value = state.lidH;
   ['inW', 'inH', 'inD'].forEach(id => $(id).step = inch ? '0.0625' : '0.5');
   $('inT').step = inch ? '0.005' : '0.1';
   $('lblW').textContent = `Width (${state.unit})`;
   $('lblH').textContent = `Height (${state.unit})`;
   $('lblD').textContent = `Depth (${state.unit})`;
+  const slipCtrls = $('lidSlipControls');
+  if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
   updateLabels();
 }
 
@@ -797,22 +820,45 @@ function polyArea(pts) {
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T } = d;
-  const lid = state.lid === 'flat';
+  const flat = state.lid === 'flat';
+  const slip = state.lid === 'slip';
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
 
   //            bottom          right           top                         left
-  const fb = [J(true, true),  J(true, true),  lid ? J(true, true) : null,  J(true, true)];
-  const lr = [J(true, false), J(false, false), lid ? J(true, false) : null, J(false, false)];
+  const fb = [J(true, true),  J(true, true),  flat ? J(true, true) : null,  J(true, true)];
+  const lr = [J(true, false), J(false, false), flat ? J(true, false) : null, J(false, false)];
   const bt = [J(false, false), J(false, false), J(false, false),          J(false, false)];
 
   const defs = [
     { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
-    ...(lid ? [{ name: 'Top', role: 'top', w: ow, h: od, specs: bt }] : []),
+    ...(flat ? [{ name: 'Top', role: 'top', w: ow, h: od, specs: bt }] : []),
     { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
     { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
     { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
     { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
   ];
+
+  // Slip-on lid: separate 5-piece open box that fits over the main box.
+  // Lid interior ≈ box exterior → lid outer = box outer + 2T (tight fit).
+  // Lid is top + 4 sides; no bottom. Skirt height = state.lidH.
+  if (slip) {
+    const low = ow + 2 * T;           // lid outer width
+    const lod = od + 2 * T;           // lid outer depth
+    const loh = state.lidH + T;       // lid outer height (skirt + top thickness)
+    // Lid sides: open at bottom (null), finger-jointed at top to Lid Top.
+    // Front/Back own even + corners; Left/Right own even on top edge.
+    const lfb = [null, J(true, true), J(true, true), J(true, true)];
+    const llr = [null, J(false, false), J(true, false), J(false, false)];
+    const ltop = [J(false, false), J(false, false), J(false, false), J(false, false)];
+    defs.push(
+      { name: 'Lid Top',   role: 'lid-top',   w: low, h: lod, specs: ltop },
+      { name: 'Lid Front', role: 'lid-front', w: low, h: loh, specs: lfb },
+      { name: 'Lid Back',  role: 'lid-back',  w: low, h: loh, specs: lfb },
+      { name: 'Lid Left',  role: 'lid-left',  w: lod, h: loh, specs: llr },
+      { name: 'Lid Right', role: 'lid-right', w: lod, h: loh, specs: llr },
+    );
+    d.lid = { low, lod, loh, lidH: state.lidH };
+  }
 
   const panels = defs.map(def => {
     const outline = panelOutline(def.w, def.h, def.specs, T);
@@ -953,6 +999,12 @@ function shapeFromPts(pts) {
 function placement(role, d) {
   const { ow, oh, od, T } = d, hw = ow / 2, hd = od / 2;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  // Slip lid outer sizes
+  const low = ow + 2 * T, lod = od + 2 * T;
+  const lhw = low / 2, lhd = lod / 2;
+  const loh = (d.lid ? d.lid.loh : state.lidH + T);
+  // Lid sits on top of the box; top face at y = oh + T when assembled
+  const lidBaseY = oh; // bottom of lid top panel rests on box rim
   switch (role) {
     case 'bottom': return { o: V(-hw, 0, hd),      u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     case 'top':    return { o: V(-hw, oh - T, hd), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
@@ -960,15 +1012,24 @@ function placement(role, d) {
     case 'back':   return { o: V(-hw, 0, -hd),     u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
     case 'left':   return { o: V(-hw + T, 0, -hd), u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
     case 'right':  return { o: V(hw, 0, -hd),      u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
+    // Slip-on lid: larger box centered on the main box, sitting on top
+    case 'lid-top':   return { o: V(-lhw, lidBaseY, lhd),           u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'lid-front': return { o: V(-lhw, lidBaseY - state.lidH, lhd - T), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    case 'lid-back':  return { o: V(-lhw, lidBaseY - state.lidH, -lhd),    u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    case 'lid-left':  return { o: V(-lhw + T, lidBaseY - state.lidH, -lhd), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    case 'lid-right': return { o: V(lhw, lidBaseY - state.lidH, -lhd),      u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
   }
 }
 
 const EXPLODE_DIR = {
   bottom: [0, -1, 0], top: [0, 1, 0], front: [0, 0, 1],
   back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0],
+  'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
+  'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
 };
 const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
+  'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
 };
 
 function rebuild3D() {
@@ -1127,7 +1188,9 @@ function resetAll() {
   Object.assign(state, DEFAULTS);
   $('unitMM').classList.add('active');  $('unitIN').classList.remove('active');
   $('modeI').classList.add('active');   $('modeO').classList.remove('active');
-  $('lidNone').classList.add('active'); $('lidFlat').classList.remove('active');
+  $('lidNone').classList.add('active');
+  $('lidFlat').classList.remove('active');
+  if ($('lidSlip')) $('lidSlip').classList.remove('active');
   $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
   syncInputs();
   rebuild();
