@@ -423,6 +423,35 @@
         </div>
       </div>
 
+      <!-- Dividers panel -->
+      <div class="lb-panel open" id="s-div">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-div')">
+          <span class="title">Dividers</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <div class="hint">Internal grid with cross-lap slots. Dividers slot into the walls.</div>
+          <div class="dim-row" style="grid-template-columns:1fr 1fr;">
+            <div class="dim-grp">
+              <label for="inCols">Columns</label>
+              <input class="dim-inp" id="inCols" type="number" min="1" max="12" step="1" value="1" oninput="onDivGrid()">
+            </div>
+            <div class="dim-grp">
+              <label for="inRows">Rows</label>
+              <input class="dim-inp" id="inRows" type="number" min="1" max="12" step="1" value="1" oninput="onDivGrid()">
+            </div>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-lbl"><strong>Divider height</strong><span class="ctrl-val" id="valDivH">100%</span></div>
+            <input type="range" id="sldDivH" min="20" max="100" step="5" value="100" oninput="onDivH(this.value)">
+            <div class="hint" style="margin-top:4px">Percent of interior height. 100% = full height.</div>
+          </div>
+          <div id="colSpacing" style="display:none;margin-top:6px;"></div>
+          <div id="rowSpacing" style="display:none;margin-top:6px;"></div>
+          <div class="hint" id="divInfo" style="margin-top:6px;"></div>
+        </div>
+      </div>
+
       <!-- 3D View panel -->
       <div class="lb-panel open" id="s-vis">
         <div class="lb-panel-hdr" onclick="toggleSec('s-vis')">
@@ -532,6 +561,8 @@ const DEFAULTS = {
   W: 150, H: 50, D: 100,   // mm
   T: 3, finger: 9, kerf: 0.1, // mm
   lid: 'none', lidH: 20, assembly: 1.0,
+  divCols: 1, divRows: 1, divHpct: 100,
+  colWeights: [1], rowWeights: [1],
 };
 const state = { ...DEFAULTS };
 
@@ -584,6 +615,81 @@ function onLidH(v) {
   state.lidH = parseFloat(v);
   updateLabels();
   rebuild();
+}
+
+function onDivGrid() {
+  const c = Math.max(1, Math.min(12, parseInt($('inCols').value, 10) || 1));
+  const r = Math.max(1, Math.min(12, parseInt($('inRows').value, 10) || 1));
+  $('inCols').value = c;
+  $('inRows').value = r;
+  // Preserve existing weights when possible, pad/trim with 1s
+  while (state.colWeights.length < c) state.colWeights.push(1);
+  while (state.rowWeights.length < r) state.rowWeights.push(1);
+  state.colWeights = state.colWeights.slice(0, c);
+  state.rowWeights = state.rowWeights.slice(0, r);
+  state.divCols = c;
+  state.divRows = r;
+  renderDivSpacingUI();
+  rebuild();
+}
+function onDivH(v) {
+  state.divHpct = parseFloat(v);
+  $('valDivH').textContent = state.divHpct + '%';
+  rebuild();
+}
+function onColWeight(i, v) {
+  state.colWeights[i] = Math.max(0.1, parseFloat(v) || 1);
+  renderDivSpacingUI();
+  rebuild();
+}
+function onRowWeight(i, v) {
+  state.rowWeights[i] = Math.max(0.1, parseFloat(v) || 1);
+  renderDivSpacingUI();
+  rebuild();
+}
+function renderDivSpacingUI() {
+  const colEl = $('colSpacing');
+  const rowEl = $('rowSpacing');
+  const info = $('divInfo');
+  if (!colEl || !rowEl) return;
+
+  if (state.divCols > 1) {
+    colEl.style.display = 'block';
+    let html = '<div class="hint" style="margin-bottom:4px"><strong>Column widths</strong> (relative)</div>';
+    state.colWeights.forEach((w, i) => {
+      html += `<div class="ctrl" style="margin-bottom:4px">
+        <div class="ctrl-lbl"><span>Col ${i + 1}</span><span class="ctrl-val">${(+w).toFixed(1)}</span></div>
+        <input type="range" min="0.5" max="5" step="0.1" value="${w}" oninput="onColWeight(${i}, this.value)">
+      </div>`;
+    });
+    colEl.innerHTML = html;
+  } else {
+    colEl.style.display = 'none';
+    colEl.innerHTML = '';
+  }
+
+  if (state.divRows > 1) {
+    rowEl.style.display = 'block';
+    let html = '<div class="hint" style="margin-bottom:4px"><strong>Row depths</strong> (relative)</div>';
+    state.rowWeights.forEach((w, i) => {
+      html += `<div class="ctrl" style="margin-bottom:4px">
+        <div class="ctrl-lbl"><span>Row ${i + 1}</span><span class="ctrl-val">${(+w).toFixed(1)}</span></div>
+        <input type="range" min="0.5" max="5" step="0.1" value="${w}" oninput="onRowWeight(${i}, this.value)">
+      </div>`;
+    });
+    rowEl.innerHTML = html;
+  } else {
+    rowEl.style.display = 'none';
+    rowEl.innerHTML = '';
+  }
+
+  const nx = Math.max(0, state.divCols - 1);
+  const ny = Math.max(0, state.divRows - 1);
+  if (info) {
+    info.textContent = (nx || ny)
+      ? `${nx} width-divider(s) · ${ny} depth-divider(s) · cross-lap where they meet`
+      : 'No dividers (1×1 grid)';
+  }
 }
 
 function onDim() {
@@ -640,6 +746,10 @@ function syncInputs() {
   $('sldFinger').value = state.finger;
   $('sldKerf').value = state.kerf;
   if ($('sldLidH')) $('sldLidH').value = state.lidH;
+  if ($('inCols')) $('inCols').value = state.divCols;
+  if ($('inRows')) $('inRows').value = state.divRows;
+  if ($('sldDivH')) $('sldDivH').value = state.divHpct;
+  if ($('valDivH')) $('valDivH').textContent = state.divHpct + '%';
   ['inW', 'inH', 'inD'].forEach(id => $(id).step = inch ? '0.0625' : '0.5');
   $('inT').step = inch ? '0.005' : '0.1';
   $('lblW').textContent = `Width (${state.unit})`;
@@ -647,6 +757,7 @@ function syncInputs() {
   $('lblD').textContent = `Depth (${state.unit})`;
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
+  renderDivSpacingUI();
   updateLabels();
 }
 
@@ -817,9 +928,151 @@ function polyArea(pts) {
  * The T×T×T corner cubes (where 3 panels meet) belong to Front/Back,
  * which also own the adjacent segments, so corners are solid.
  */
+/** Weighted cell sizes that fill interior length L, accounting for divider thickness. */
+function cellSizes(weights, L, T) {
+  const n = weights.length;
+  if (n < 1) return [];
+  if (n === 1) return [L];
+  const sum = weights.reduce((a, b) => a + b, 0) || n;
+  const usable = L - (n - 1) * T;
+  return weights.map(w => (w / sum) * usable);
+}
+
+/** Divider center positions along interior axis (0 at inside of first wall). */
+function dividerCenters(weights, L, T) {
+  const cells = cellSizes(weights, L, T);
+  const centers = [];
+  let x = 0;
+  for (let i = 0; i < cells.length - 1; i++) {
+    x += cells[i] + T / 2;
+    centers.push(x);
+    x += T / 2;
+  }
+  return centers;
+}
+
+/**
+ * Finger segments along a vertical edge of height H (same rules as box joints).
+ * ownEven=true → even segments are fingers (extend by T); odd are slots (inset).
+ * Returns list of {a,b,isFinger} along y from 0..H.
+ */
+function fingerSegments(H, ownEven) {
+  const n = segCount(H);
+  const s = H / n;
+  const segs = [];
+  for (let i = 0; i < n; i++) {
+    const isFinger = (i % 2 === 0) === ownEven;
+    segs.push({ a: i * s, b: (i + 1) * s, isFinger });
+  }
+  return segs;
+}
+
+/**
+ * Divider panel outline with finger-jointed ends (same pattern as box walls)
+ * and cross-lap notches where column/row dividers interlock.
+ *
+ * Local coords: x along length (0 = left end tab tip, length = right end tab tip),
+ *               y up (0..H). length = interiorSpan + 2*T.
+ * Ends: fingers extend to x=0 / x=length; slots are cut back by T.
+ * Cross-laps: notches of width = material thickness (T), depth = H/2,
+ * cut from the top edge (X-dividers) or bottom edge (Y-dividers) so they
+ * slide together into a half-lap joint.
+ */
+function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
+  const length = interiorSpan + 2 * T;
+  const segs = fingerSegments(H, true); // divider owns even → fingers on even segments
+  const slotD = H / 2; // half-height cross-lap
+  const slotW = T;     // must match material thickness of the crossing divider
+
+  // Sorted cross-lap notch ranges along x (panel coords)
+  // Crossing divider center at interior cx → panel x = T + cx; notch spans T centered there
+  const notches = crossPositions
+    .map(cx => {
+      const mid = T + cx;
+      return { x0: mid - slotW / 2, x1: mid + slotW / 2 };
+    })
+    .filter(n => n.x1 > T && n.x0 < length - T)
+    .sort((a, b) => a.x0 - b.x0);
+
+  const pts = [];
+
+  // --- Bottom edge (left → right), with notches if !fromTop ---
+  {
+    let x = T;
+    pts.push([x, 0]);
+    if (!fromTop) {
+      for (const n of notches) {
+        const a = Math.max(n.x0, T);
+        const b = Math.min(n.x1, length - T);
+        if (b <= a) continue;
+        if (a > x) pts.push([a, 0]);
+        // notch up into the panel
+        pts.push([a, slotD], [b, slotD], [b, 0]);
+        x = b;
+      }
+    }
+    pts.push([length - T, 0]);
+  }
+
+  // --- Right end: bottom → top, finger joints ---
+  for (const seg of segs) {
+    const x = seg.isFinger ? length : length - T;
+    pts.push([x, seg.a], [x, seg.b]);
+  }
+
+  // --- Top edge (right → left), with notches if fromTop ---
+  {
+    let x = length - T;
+    pts.push([x, H]);
+    if (fromTop) {
+      // walk right-to-left through notches in reverse
+      for (let i = notches.length - 1; i >= 0; i--) {
+        const n = notches[i];
+        const a = Math.max(n.x0, T);       // left of notch
+        const b = Math.min(n.x1, length - T); // right of notch
+        if (b <= a) continue;
+        if (b < x) pts.push([b, H]);
+        // notch down into the panel
+        pts.push([b, H - slotD], [a, H - slotD], [a, H]);
+        x = a;
+      }
+    }
+    pts.push([T, H]);
+  }
+
+  // --- Left end: top → bottom, finger joints ---
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const seg = segs[i];
+    const x = seg.isFinger ? 0 : T;
+    pts.push([x, seg.b], [x, seg.a]);
+  }
+
+  return { outline: cleanPoly(pts), holes: [], segs };
+}
+
+/**
+ * Wall slot cutouts matching divider finger joints.
+ * Returns list of rectangles [x, y, w, h] in wall panel-local coords
+ * for each finger of the divider (the parts that poke into the wall).
+ * slotX = left edge of the T-wide slot column on the wall.
+ * baseY = bottom of the divider on the wall (usually T, above bottom panel).
+ */
+function wallFingerSlots(slotX, baseY, H, T) {
+  // Wall receives the mating profile: where divider has a finger, wall has a slot.
+  // Divider ownEven=true → fingers on even segments → slots on wall at those y ranges.
+  const segs = fingerSegments(H, true);
+  const slots = [];
+  for (const seg of segs) {
+    if (seg.isFinger) {
+      slots.push([slotX, baseY + seg.a, T, seg.b - seg.a]);
+    }
+  }
+  return slots;
+}
+
 function generatePanels() {
   const d = dims();
-  const { ow, oh, od, T } = d;
+  const { ow, oh, od, T, iw, ih, id } = d;
   const flat = state.lid === 'flat';
   const slip = state.lid === 'slip';
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
@@ -838,15 +1091,11 @@ function generatePanels() {
     { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
   ];
 
-  // Slip-on lid: separate 5-piece open box that fits over the main box.
-  // Lid interior ≈ box exterior → lid outer = box outer + 2T (tight fit).
-  // Lid is top + 4 sides; no bottom. Skirt height = state.lidH.
+  // Slip-on lid
   if (slip) {
-    const low = ow + 2 * T;           // lid outer width
-    const lod = od + 2 * T;           // lid outer depth
-    const loh = state.lidH + T;       // lid outer height (skirt + top thickness)
-    // Lid sides: open at bottom (null), finger-jointed at top to Lid Top.
-    // Front/Back own even + corners; Left/Right own even on top edge.
+    const low = ow + 2 * T;
+    const lod = od + 2 * T;
+    const loh = state.lidH + T;
     const lfb = [null, J(true, true), J(true, true), J(true, true)];
     const llr = [null, J(false, false), J(true, false), J(false, false)];
     const ltop = [J(false, false), J(false, false), J(false, false), J(false, false)];
@@ -860,15 +1109,81 @@ function generatePanels() {
     d.lid = { low, lod, loh, lidH: state.lidH };
   }
 
+  // --- Dividers ---
+  const divH = Math.max(T * 2, ih * (state.divHpct / 100));
+  const xCenters = dividerCenters(state.colWeights, iw, T); // along width
+  const yCenters = dividerCenters(state.rowWeights, id, T); // along depth
+  d.dividers = { divH, xCenters, yCenters };
+
+  // Wall finger-joint slots matching divider ends (same segment pattern as box)
+  // Front/Back: x along width. Left/Right: x along depth. y up from bottom of panel.
+  const wallSlots = { front: [], back: [], left: [], right: [] };
+  for (const cx of xCenters) {
+    const sx = T + cx - T / 2;
+    wallSlots.front.push(...wallFingerSlots(sx, T, divH, T));
+    wallSlots.back.push(...wallFingerSlots(sx, T, divH, T));
+  }
+  for (const cy of yCenters) {
+    const sx = T + cy - T / 2;
+    wallSlots.left.push(...wallFingerSlots(sx, T, divH, T));
+    wallSlots.right.push(...wallFingerSlots(sx, T, divH, T));
+  }
+
+  // X-dividers: span depth, separate columns. Finger ends into Front/Back. Cross-laps from top.
+  xCenters.forEach((cx, i) => {
+    const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
+    defs.push({
+      name: `Div X${i + 1}`, role: 'div-x', w: id + 2 * T, h: divH,
+      specs: null, outlineOverride: outline, holes,
+      divIndex: i, divAxis: 'x', divPos: cx,
+    });
+  });
+  // Y-dividers: span width, separate rows. Finger ends into Left/Right. Cross-laps from bottom.
+  yCenters.forEach((cy, i) => {
+    const { outline, holes } = dividerOutline(iw, divH, T, xCenters, false);
+    defs.push({
+      name: `Div Y${i + 1}`, role: 'div-y', w: iw + 2 * T, h: divH,
+      specs: null, outlineOverride: outline, holes,
+      divIndex: i, divAxis: 'y', divPos: cy,
+    });
+  });
+
   const panels = defs.map(def => {
-    const outline = panelOutline(def.w, def.h, def.specs, T);
+    let outline;
+    if (def.outlineOverride) {
+      outline = def.outlineOverride;
+    } else {
+      outline = panelOutline(def.w, def.h, def.specs, T);
+    }
     const cut = offsetPoly(outline, state.kerf / 2);
+    // Kerf-compensate holes (inset for internal cuts — enlarge hole slightly)
+    const holes = (def.holes || []).map(h => {
+      // Simple: expand hole by kerf/2 outward (inward from material)
+      const xs = h.map(p => p[0]), ys = h.map(p => p[1]);
+      const minX = Math.min(...xs) - state.kerf / 2, maxX = Math.max(...xs) + state.kerf / 2;
+      const minY = Math.min(...ys) - state.kerf / 2, maxY = Math.max(...ys) + state.kerf / 2;
+      return [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
+    });
+
+    // Attach wall slots for wall panels
+    let slots = [];
+    if (def.role === 'front') slots = wallSlots.front;
+    else if (def.role === 'back') slots = wallSlots.back;
+    else if (def.role === 'left') slots = wallSlots.left;
+    else if (def.role === 'right') slots = wallSlots.right;
+    // Kerf-expand wall slots
+    slots = slots.map(([x, y, w, h]) => [x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf]);
+
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const [x, y] of cut) {
       minX = Math.min(minX, x); minY = Math.min(minY, y);
       maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
     }
-    return { ...def, outline, cut, minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY, area: polyArea(outline) };
+    return {
+      ...def, outline, cut, holes, slots,
+      minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
+      area: polyArea(outline),
+    };
   });
 
   return { panels, dims: d };
@@ -909,6 +1224,18 @@ function buildSVG(showLabels = true, compact = true) {
     // SVG is Y-down: flip each panel so it matches the 3D model orientation
     const shifted = p.cut.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
     paths += `    <path d="${ptsToPath(shifted)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
+    // Cross-lap holes on dividers
+    for (const h of (p.holes || [])) {
+      const hs = h.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      paths += `    <path d="${ptsToPath(hs)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
+    }
+    // Wall slots for dividers
+    for (const [sx, sy, sw, sh] of (p.slots || [])) {
+      const rect = [
+        [sx, sy], [sx + sw, sy], [sx + sw, sy + sh], [sx, sy + sh],
+      ].map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      paths += `    <path d="${ptsToPath(rect)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
+    }
     if (showLabels) {
       const fs = Math.max(3, Math.min(8, Math.min(p.bboxW, p.bboxH) / 6));
       labels += `    <text x="${(p.ox + p.bboxW / 2).toFixed(2)}" y="${(p.oy + p.bboxH / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
@@ -931,11 +1258,24 @@ function buildDXF() {
   const { panels } = generatePanels();
   const { placed } = layoutPanels(panels, 5, true);
   let entities = '';
-  for (const p of placed) {
-    const pts = p.cut.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]);
+  const addPoly = (pts) => {
     for (let i = 0; i < pts.length; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
       entities += `0\nLINE\n8\nCUT\n10\n${a[0].toFixed(4)}\n20\n${a[1].toFixed(4)}\n30\n0\n11\n${b[0].toFixed(4)}\n21\n${b[1].toFixed(4)}\n31\n0\n`;
+    }
+  };
+  for (const p of placed) {
+    addPoly(p.cut.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]));
+    for (const h of (p.holes || [])) {
+      addPoly(h.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]));
+    }
+    for (const [sx, sy, sw, sh] of (p.slots || [])) {
+      addPoly([
+        [sx - p.minX + p.ox, sy - p.minY + p.oy],
+        [sx + sw - p.minX + p.ox, sy - p.minY + p.oy],
+        [sx + sw - p.minX + p.ox, sy + sh - p.minY + p.oy],
+        [sx - p.minX + p.ox, sy + sh - p.minY + p.oy],
+      ]);
     }
   }
   return `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${entities}0\nENDSEC\n0\nEOF\n`;
@@ -1026,11 +1366,33 @@ const EXPLODE_DIR = {
   back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0],
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
+  'div-x': [0, 0.5, 0], 'div-y': [0, 0.5, 0],
 };
 const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
+  'div-x': 0xc4a574, 'div-y': 0xb8956a,
 };
+
+/** Placement for divider panels (needs position along interior). */
+function placementDivider(p, d) {
+  const { ow, od, T, iw, id } = d;
+  const hw = ow / 2, hd = od / 2;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const divH = p.h;
+  if (p.role === 'div-x') {
+    // Spans depth (Z), sits at interior X = divPos. Panel local: x along depth, y up.
+    // World: origin at left-interior of divider (tabs into front/back).
+    const x = -hw + T + p.divPos - T / 2;
+    return { o: V(x, T, hd), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
+  }
+  if (p.role === 'div-y') {
+    // Spans width (X), sits at interior Z = divPos.
+    const z = hd - T - p.divPos + T / 2;
+    return { o: V(-hw, T, z), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, -1) };
+  }
+  return null;
+}
 
 function rebuild3D() {
   while (boxGroup.children.length) {
@@ -1045,15 +1407,30 @@ function rebuild3D() {
 
   for (const p of panels) {
     // 3D uses the nominal (un-kerfed) outline so parts meet exactly
-    const geo = new THREE.ExtrudeGeometry(shapeFromPts(p.outline), { depth: d.T, bevelEnabled: false });
-    const pl = placement(p.role, d);
+    const shape = shapeFromPts(p.outline);
+    // Add cross-lap holes to the shape for dividers
+    for (const h of (p.holes || [])) {
+      const holePath = new THREE.Path();
+      holePath.moveTo(h[0][0], h[0][1]);
+      for (let i = 1; i < h.length; i++) holePath.lineTo(h[i][0], h[i][1]);
+      holePath.closePath();
+      shape.holes.push(holePath);
+    }
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: d.T, bevelEnabled: false });
+
+    let pl = (p.role === 'div-x' || p.role === 'div-y')
+      ? placementDivider(p, d)
+      : placement(p.role, d);
+    if (!pl) continue;
+
     const m = new THREE.Matrix4().makeBasis(pl.u, pl.v, pl.n);
     m.setPosition(pl.o);
     geo.applyMatrix4(m);
     geo.computeVertexNormals();
 
+    const color = PANEL_COLOR[p.role] || 0xc4a574;
     const mat = new THREE.MeshStandardMaterial({
-      color: PANEL_COLOR[p.role], roughness: 0.65, metalness: 0.05, side: THREE.DoubleSide,
+      color, roughness: 0.65, metalness: 0.05, side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
     const line = new THREE.LineSegments(
@@ -1062,7 +1439,17 @@ function rebuild3D() {
     );
     mesh.add(line);
 
-    const dir = EXPLODE_DIR[p.role];
+    let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
+    // Spread dividers apart when exploded so they visibly separate from the box
+    if (p.role === 'div-x' && d.dividers) {
+      const n = Math.max(1, d.dividers.xCenters.length);
+      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1; // -1..1 across width
+      dir = [t * 0.75, 1.0, 0];
+    } else if (p.role === 'div-y' && d.dividers) {
+      const n = Math.max(1, d.dividers.yCenters.length);
+      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1; // -1..1 across depth
+      dir = [0, 1.0, t * 0.75];
+    }
     mesh.userData = { exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount] };
     boxGroup.add(mesh);
     panels3D.push(mesh);
@@ -1074,7 +1461,7 @@ function rebuild3D() {
 function updateAssembly() {
   const t = 1 - state.assembly;
   for (const mesh of panels3D) {
-    const e = mesh.userData.exp;
+    const e = mesh.userData.exp || [0, 0, 0];
     mesh.position.set(e[0] * t, e[1] * t, e[2] * t);
   }
 }
@@ -1185,7 +1572,11 @@ function downloadSVG() {
 function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
-  Object.assign(state, DEFAULTS);
+  Object.assign(state, {
+    ...DEFAULTS,
+    colWeights: [1],
+    rowWeights: [1],
+  });
   $('unitMM').classList.add('active');  $('unitIN').classList.remove('active');
   $('modeI').classList.add('active');   $('modeO').classList.remove('active');
   $('lidNone').classList.add('active');
