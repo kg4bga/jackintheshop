@@ -76,6 +76,9 @@
       font-weight: 600;
     }
     .tb-btn.primary:hover { background: var(--accent-hover); }
+    .tb-btn:disabled {
+      opacity: 0.35; cursor: default; pointer-events: none;
+    }
     .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
     .tb-label { font-size: 11px; color: var(--muted); margin: 0 4px; }
 
@@ -318,6 +321,7 @@
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
+      <button class="tb-btn" id="btnUndo" title="Undo (Ctrl+Z)" onclick="undo()" disabled>↶ Undo</button>
       <button class="tb-btn primary" title="Export SVG" onclick="showSVG()">⬇ SVG</button>
       <button class="tb-btn" title="Export DXF" onclick="downloadDXF()">DXF</button>
     </div>
@@ -637,10 +641,77 @@ const DEFAULTS = {
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
 };
-const state = { ...DEFAULTS };
+const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
 let scene, camera, renderer, controls, boxGroup;
 let panels3D = [];
+
+// ---------- Undo history ----------
+const HISTORY_MAX = 50;
+const history = [];
+let historyTimer = null;
+let applyingHistory = false;
+
+function cloneState() {
+  return {
+    ...state,
+    colWeights: state.colWeights.slice(),
+    rowWeights: state.rowWeights.slice(),
+  };
+}
+
+function pushHistory() {
+  if (applyingHistory) return;
+  // Coalesce rapid changes (e.g. slider drag) into one undo step
+  if (historyTimer) return;
+  history.push(cloneState());
+  if (history.length > HISTORY_MAX) history.shift();
+  updateUndoBtn();
+  historyTimer = setTimeout(() => { historyTimer = null; }, 400);
+}
+
+function pushHistoryNow() {
+  if (applyingHistory) return;
+  if (historyTimer) { clearTimeout(historyTimer); historyTimer = null; }
+  history.push(cloneState());
+  if (history.length > HISTORY_MAX) history.shift();
+  updateUndoBtn();
+}
+
+function updateUndoBtn() {
+  const btn = $('btnUndo');
+  if (!btn) return;
+  btn.disabled = history.length === 0;
+  btn.title = history.length
+    ? `Undo (${history.length} step${history.length > 1 ? 's' : ''}) — Ctrl+Z`
+    : 'Nothing to undo';
+}
+
+function undo() {
+  if (!history.length) return;
+  const prev = history.pop();
+  applyingHistory = true;
+  Object.keys(prev).forEach(k => { state[k] = prev[k]; });
+  // Ensure arrays are copies so future edits don't mutate history entries
+  state.colWeights = (prev.colWeights || [1]).slice();
+  state.rowWeights = (prev.rowWeights || [1]).slice();
+  // Restore discrete UI toggles
+  $('unitMM').classList.toggle('active', state.unit === 'mm');
+  $('unitIN').classList.toggle('active', state.unit === 'in');
+  $('modeI').classList.toggle('active', state.mode === 'inside');
+  $('modeO').classList.toggle('active', state.mode === 'outside');
+  $('lidNone').classList.toggle('active', state.lid === 'none');
+  $('lidFlat').classList.toggle('active', state.lid === 'flat');
+  if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
+  if ($('sldAssembly')) {
+    $('sldAssembly').value = Math.round((state.assembly || 1) * 100);
+    $('valAssembly').textContent = Math.round((state.assembly || 1) * 100) + '%';
+  }
+  syncInputs();
+  rebuild();
+  applyingHistory = false;
+  updateUndoBtn();
+}
 
 // ---------- Unit helpers ----------
 const uf = () => (state.unit === 'in' ? MM_PER_IN : 1);
@@ -655,6 +726,7 @@ const $ = id => document.getElementById(id);
 // ---------- UI handlers ----------
 function setUnit(u) {
   if (u === state.unit) return;
+  pushHistoryNow();
   state.unit = u;
   $('unitMM').classList.toggle('active', u === 'mm');
   $('unitIN').classList.toggle('active', u === 'in');
@@ -664,6 +736,7 @@ function setUnit(u) {
 
 function setMode(m) {
   if (m === state.mode) return;
+  pushHistoryNow();
   // Keep the physical box the same; just re-express the numbers
   const d = dims();
   if (m === 'outside') { state.W = d.ow; state.H = d.oh; state.D = d.od; }
@@ -677,6 +750,8 @@ function setMode(m) {
 
 function setLid(l) {
   if (l === 'hinge') l = 'none'; // hinged lid temporarily removed
+  if (l === state.lid) return;
+  pushHistoryNow();
   state.lid = l;
   $('lidNone').classList.toggle('active', l === 'none');
   $('lidFlat').classList.toggle('active', l === 'flat');
@@ -688,16 +763,20 @@ function setLid(l) {
   rebuild();
 }
 function onFlatOverhang(v) {
+  pushHistory();
   state.flatOverhang = Math.max(0, parseFloat(v) || 0);
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang, 1, 2);
   rebuild();
 }
 function onWallJoints(on) {
+  pushHistoryNow();
   state.wallJoints = !!on;
   rebuild();
 }
 
 function setSides(n) {
+  if (n === state.sides) return;
+  pushHistoryNow();
   state.sides = n;
   [4, 6].forEach(s => {
     const el = $('sides' + s);
@@ -716,6 +795,7 @@ function setSides(n) {
   rebuild();
 }
 function onLidH(v) {
+  pushHistory();
   state.lidH = parseFloat(v);
   updateLabels();
   rebuild();
@@ -724,6 +804,8 @@ function onLidH(v) {
 function onDivGrid() {
   const c = Math.max(1, Math.min(12, parseInt($('inCols').value, 10) || 1));
   const r = Math.max(1, Math.min(12, parseInt($('inRows').value, 10) || 1));
+  if (c === state.divCols && r === state.divRows) return;
+  pushHistoryNow();
   $('inCols').value = c;
   $('inRows').value = r;
   // Preserve existing weights when possible, pad/trim with 1s
@@ -737,17 +819,20 @@ function onDivGrid() {
   rebuild();
 }
 function onDivH(v) {
+  pushHistory();
   state.divHpct = parseFloat(v);
   $('valDivH').textContent = state.divHpct + '%';
   rebuild();
 }
 function onColWeight(i, v) {
+  pushHistory();
   state.colWeights[i] = Math.max(0.1, parseFloat(v) || 1);
   const lbl = document.getElementById('colW' + i);
   if (lbl) lbl.textContent = state.colWeights[i].toFixed(1);
   rebuild();
 }
 function onRowWeight(i, v) {
+  pushHistory();
   state.rowWeights[i] = Math.max(0.1, parseFloat(v) || 1);
   const lbl = document.getElementById('rowW' + i);
   if (lbl) lbl.textContent = state.rowWeights[i].toFixed(1);
@@ -823,6 +908,7 @@ function onDimSlider(key, v) {
   // Slider values are always in mm
   const n = parseFloat(v);
   if (!(n > 0)) return;
+  pushHistory();
   state[key] = n;
   const inp = $('in' + key);
   if (inp) inp.value = numDisp(state[key]);
@@ -832,6 +918,7 @@ function onDimSlider(key, v) {
 function onDimInput(key, v) {
   const n = parseFloat(v);
   if (!(n > 0)) return;
+  pushHistory();
   state[key] = fromDisp(n);
   const sld = $('sld' + key);
   if (sld) sld.value = state[key];
@@ -845,6 +932,7 @@ function onDim() {
   onDimInput('D', $('inD').value);
 }
 function onThicknessSlider(v) {
+  pushHistory();
   state.T = parseFloat(v);
   $('inT').value = numDisp(state.T);
   updateLabels(); rebuild();
@@ -852,18 +940,21 @@ function onThicknessSlider(v) {
 function onThicknessInput(v) {
   const n = parseFloat(v);
   if (!(n > 0)) return;
+  pushHistory();
   state.T = fromDisp(n);
   $('sldT').value = state.T;
   updateLabels(); rebuild();
 }
-function onFinger(v) { state.finger = parseFloat(v); updateLabels(); rebuild(); }
-function onKerf(v)   { state.kerf = parseFloat(v);   updateLabels(); rebuild(); }
+function onFinger(v) { pushHistory(); state.finger = parseFloat(v); updateLabels(); rebuild(); }
+function onKerf(v)   { pushHistory(); state.kerf = parseFloat(v);   updateLabels(); rebuild(); }
 function onAssembly(v) {
+  // View-only — not recorded in undo history
   state.assembly = parseFloat(v) / 100;
   $('valAssembly').textContent = v + '%';
   updateAssembly();
 }
 function onDrawerPull(v) {
+  // View-only — not recorded in undo history
   state.drawerPull = Math.max(0, Math.min(1, parseFloat(v) / 100));
   if ($('valDrawerPull')) $('valDrawerPull').textContent = Math.round(state.drawerPull * 100) + '%';
   updateAssembly();
@@ -955,6 +1046,7 @@ function syncInputs() {
 
 const LEFT_SECTIONS = ['s-dim', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
 function onDrawer(on) {
+  pushHistoryNow();
   state.drawer = !!on;
   const ctrls = $('drawerControls');
   if (ctrls) ctrls.style.display = state.drawer ? 'block' : 'none';
@@ -967,16 +1059,20 @@ function onDrawer(on) {
   rebuild();
 }
 function onDrawerH(v) {
+  pushHistory();
   state.drawerH = Math.max(5, parseFloat(v) || 25);
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   rebuild();
 }
 function onDrawerClear(v) {
+  pushHistory();
   state.drawerClear = Math.max(0.05, parseFloat(v) || 0.5);
   if ($('valDrawerClear')) $('valDrawerClear').textContent = fmtLen(state.drawerClear, 1, 2);
   rebuild();
 }
 function onDrawerOpen(side) {
+  if ((side || 'front') === state.drawerOpen) return;
+  pushHistoryNow();
   state.drawerOpen = side || 'front';
   ['front','back','left','right'].forEach(s => {
     const el = $('drOpen' + s[0].toUpperCase());
@@ -1954,13 +2050,22 @@ function generatePanels() {
   d.dividers = { divH, xCenters, yCenters };
 
   const wallSlots = { front: [], back: [], left: [], right: [] };
+  // Front/Back: local x = 0 at LEFT exterior, interior starts at x = T.
+  // xCenters are measured from the left interior face → matches local x.
   for (const cx of xCenters) {
     const sx = T + cx - T / 2;
     wallSlots.front.push(...wallFingerSlots(sx, T, divH, T));
     wallSlots.back.push(...wallFingerSlots(sx, T, divH, T));
   }
+  // Left/Right: local x = 0 at BACK exterior (u = +Z). Interior runs
+  // back → front. yCenters are measured from the FRONT (same as 3D
+  // placementDivider), so convert to distance-from-back for wall coords.
+  // With wall joints: interior local x in [T, T+id]; without: [0, id].
+  // (joinWalls already declared earlier in this function)
+  const sideInteriorStart = joinWalls ? T : 0;
   for (const cy of yCenters) {
-    const sx = T + cy - T / 2;
+    const fromBack = id - cy;
+    const sx = sideInteriorStart + fromBack - T / 2;
     wallSlots.left.push(...wallFingerSlots(sx, T, divH, T));
     wallSlots.right.push(...wallFingerSlots(sx, T, divH, T));
   }
@@ -2615,6 +2720,7 @@ function downloadSVG() {
 function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
+  pushHistoryNow();
   Object.assign(state, {
     ...DEFAULTS,
     colWeights: [1],
@@ -2631,6 +2737,15 @@ function resetAll() {
   setView('persp', document.querySelector('.toolbar .tb-btn[onclick*="persp"]'));
 }
 
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+    e.preventDefault();
+    undo();
+  }
+});
+
 window.addEventListener('load', () => {
   try {
     initThree();
@@ -2638,6 +2753,7 @@ window.addEventListener('load', () => {
     console.error('3D init failed', err);
   }
   syncInputs();
+  updateUndoBtn();
   try {
     rebuild();
   } catch (err) {
