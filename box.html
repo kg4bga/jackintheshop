@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2d2d2d">
   <title>Jack In The Shop — Finger Joint Box Generator</title>
-  <script type='text/javascript' src='https://storage.googleapis.com/8T1GVQzm2qme2t9OwxQzwMkeHh_bemcjXiHmcvY3gvhBBb640joQ8d_x6r1pVSN-H709s9SAWf6UCWgcqtA2JOrY7AdfG_8QLnx331c_SDIPquo2-bdKFTQJvK67rY1o1Tnj-WkuAcm9gr5kzIPlSzzi-d4vphr3s_PTYD9MhJxS9MOpg9zPVA0EGGQHKSo_Sx-k8fWyY1nPeEnMqXeBZDfeGqrjMFf9fWZaCsPxfhWouNwd_a96P8G8xAOOvghiEzDh19HIk83inbbmhb8YLjXZtNZnftNeZrCRO2W3bsW44X2eAnuqbZNxYTnX6ANgIjq1xUQU_gd3-AxGCvMmVLHfXQPj-C2hy_D9LNUK2-RV7BBCoF_0M0oF34yJJ-SpBkTjcUJEfx9pP0gRAitSugWyPXgd5AcSkNLY2kUPCW5NN0ATWwfJ2Hlit1l-u5zivuJurx6QmQZTG22uyiIJpIrQhdhHpZJ1EjGL0XfzpQLDBVEhoI2aildFtCz3ZURv6yJ5yxt5sRRK8MSrWNa0ANis5WMYLPqcNjBA4GiVXXj_8QOkUNOJJaBwMhWVeKXJ_bQX5sxBVplc89NyBnz8HRdWLyhYZDtu7caxKV9QcY1savHlCnJvy0rHZrH3WEb_bbd81mhCKfqleOeYN_18RWJ5yHBLqUArcU4y_wDOl-oPWvjB59ndeAL9sD9TdyLnBXrSC1FHavFQNEdFH8blLeIiiS7uJRtEHOMg-lj6MJJrWOPCv0G_uorDvKcUwsM0k5OfyR0f2gjeNCUIIWCGq6sKWaW0ABLro912yEYHtuN-8MLoScSytv8rUiEWt5dM4ilzKYnnU0aw-2CBFRq39ZxWqvA2rkr5N7MR_jQiwVt3igL4ntUi4fd1fqvYMH0axKnQWM7Z3Jj2Ekn3C43dn7W-DDSIMkyi07FU5d1MGY-4ZtJ1Z89LZLztld7UNNsTusxkEYU-wN_2Q-KdWaPJEHGSOWN2TkE1ztGIRmMvtWtNCFlQ49uvnjmHveVTyuZDjmGzntJwRmrW4jOrP3WDRLMNEY0oaqlnZsLFVvo0y5wRcWEkd92swFAhCGFqO_mR0jscVJUSrx6ydzIbe-lYqgFxH_IHm_NGyeN_HO2SkGxugAFR7ARD0tiWLzemXfJfTxt7mf5iE28wrRc8c3Gtzpn21MN849m8RfVRuPMYrXPXbt5OoClOhBMkX71azymYPymquR32nv68iVASi2OWFFunJXv8_USMe54dpPLVFdFamI9Ct9e6l7MZdNxh_tjjO_MzHH8nwTZweUGUK0CqN3fCYfPsclE_uoRZOBcWPXlLc4MhWlGaqjaxq9_BlaamCmhyeTNlLLWF0agl6QkGhHAnLqnYKdkTeFQJI2GAY-aR8ev9f6BkBNikzQwkY7-heLXZUL1kc3gnCWkB0RrvJ0ZjUPGXqT_3NFV4eeOBQT4p-zbgvxYX2jue0QX9RySYo88FG0mhTHkM4E5vr5Rak4mGody6eVRNTJAFS6VZFEMz4R06SZfdd8FrxYbQ5tGQmqu45jLbPRubng37PgP5AtUEGFIdA-5s6YaZmBf8a9aOLiaUQSeXNExAIJRfA9MqDSE7kiQHFmuo9xTbA8vYo4IGOw9csMrrx1KFn7tW0BBcEiibh7zKj2qcXSSTa-y63mdhEBfZy5SY7T6b8axO77FDEx4XAEEUWTWX8-nvP3QE-fPCyeMHsWs1NzqCMtwcZsLsHmlPqP6YTrswi-2lvDEANzlIMAX__ci5S-ROFFNog9nd462xvKWtNG69Mg'></script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -392,7 +392,7 @@
       </div>
 
       <!-- Finger Joints panel -->
-      <div class="lb-panel open" id="s-joint">
+      <div class="lb-panel" id="s-joint">
         <div class="lb-panel-hdr" onclick="toggleSec('s-joint')">
           <span class="title">Finger Joints</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -413,7 +413,7 @@
       </div>
 
       <!-- Lid panel -->
-      <div class="lb-panel open" id="s-lid">
+      <div class="lb-panel" id="s-lid">
         <div class="lb-panel-hdr" onclick="toggleSec('s-lid')">
           <span class="title">Lid</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -436,7 +436,7 @@
       </div>
 
       <!-- Dividers panel -->
-      <div class="lb-panel open" id="s-div">
+      <div class="lb-panel" id="s-div">
         <div class="lb-panel-hdr" onclick="toggleSec('s-div')">
           <span class="title">Dividers</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -465,7 +465,7 @@
       </div>
 
       <!-- 3D View panel -->
-      <div class="lb-panel open" id="s-vis">
+      <div class="lb-panel" id="s-vis">
         <div class="lb-panel-hdr" onclick="toggleSec('s-vis')">
           <span class="title">3D View</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -859,7 +859,26 @@ function syncInputs() {
   updateLabels();
 }
 
-function toggleSec(id) { $(id).classList.toggle('open'); }
+const LEFT_SECTIONS = ['s-dim', 's-joint', 's-lid', 's-div', 's-vis'];
+function toggleSec(id) {
+  const el = $(id);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  // Accordion: only one left-side section open at a time
+  if (LEFT_SECTIONS.includes(id)) {
+    LEFT_SECTIONS.forEach(sid => {
+      const s = $(sid);
+      if (s) s.classList.toggle('open', !isOpen && sid === id);
+    });
+    // If closing the only open panel, leave all collapsed (or re-open Dimensions)
+    if (isOpen) {
+      // keep all closed when clicking the open one — optional: force Dimensions open
+      // $('s-dim').classList.add('open');
+    }
+  } else {
+    el.classList.toggle('open');
+  }
+}
 
 // ============================================================
 // Core geometry
