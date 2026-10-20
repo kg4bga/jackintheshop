@@ -425,6 +425,13 @@
             <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
           </div>
           <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box.</div>
+          <div id="lidFlatControls" style="display:none; margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Lid overhang</strong><span class="ctrl-val" id="valFlatOH">0.0 mm</span></div>
+              <input type="range" id="sldFlatOH" min="0" max="30" step="0.5" value="0" oninput="onFlatOverhang(this.value)">
+              <div class="hint" style="margin-top:4px">0 = flush lid with finger joints. Increase to get lantern-style solid top &amp; bottom plates that extend past the walls, with slots for the wall fingers.</div>
+            </div>
+          </div>
           <div id="lidSlipControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid skirt height</strong><span class="ctrl-val" id="valLidH">20.0 mm</span></div>
@@ -573,8 +580,8 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   W: 150, H: 50, D: 100,   // mm
   T: 3, finger: 9, kerf: 0.1, // mm
-  lid: 'none', lidH: 20, assembly: 1.0,
-  sides: 4, // 4 = full, 3 = open front, 2 = open front & back
+  lid: 'none', lidH: 20, flatOverhang: 0, assembly: 1.0,
+  sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
 };
@@ -624,6 +631,13 @@ function setLid(l) {
   $('lidSlip').classList.toggle('active', l === 'slip');
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
+  const flatCtrls = $('lidFlatControls');
+  if (flatCtrls) flatCtrls.style.display = l === 'flat' ? 'block' : 'none';
+  rebuild();
+}
+function onFlatOverhang(v) {
+  state.flatOverhang = Math.max(0, parseFloat(v) || 0);
+  if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang, 1, 2);
   rebuild();
 }
 
@@ -842,6 +856,10 @@ function syncInputs() {
   $('lblD').textContent = `Depth (${state.unit})`;
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
+  const flatCtrls = $('lidFlatControls');
+  if (flatCtrls) flatCtrls.style.display = state.lid === 'flat' ? 'block' : 'none';
+  if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
+  if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
   if (state.lid === 'hinge') state.lid = 'none';
   if ($('sides4')) {
     if (![4, 6].includes(state.sides)) state.sides = 4;
@@ -1002,6 +1020,97 @@ function panelOutline(Pw, Ph, specs, T) {
       pts.push(maps[k](a, p.inset), maps[k](b, p.inset));
     });
   }
+  return cleanPoly(pts);
+}
+
+/**
+ * Few large tab spans along an edge of length L (lantern-style).
+ * Returns [{a,b}, ...] centered and evenly spaced.
+ */
+function lanternTabs(L, T) {
+  let n = 3;
+  const minTab = Math.max(T * 2.5, 8);
+  const minGap = Math.max(T * 1.5, 5);
+  while (n > 1 && n * minTab + (n + 1) * minGap > L) n--;
+  if (n < 1) n = 1;
+  const tabW = Math.min(L * 0.22, Math.max(minTab, (L - (n + 1) * minGap) / n));
+  const gap = (L - n * tabW) / (n + 1);
+  const tabs = [];
+  for (let i = 0; i < n; i++) {
+    const a = gap + i * (tabW + gap);
+    tabs.push({ a, b: a + tabW });
+  }
+  return tabs;
+}
+
+/**
+ * Solid plate (top/bottom) with overhang O past the box walls.
+ * Plain rectangle + a few rectangular slots per side for wall tabs.
+ */
+function solidPlateWithSlots(ow, od, T, O) {
+  const plW = ow + 2 * O;
+  const plH = od + 2 * O;
+  const outline = [[0, 0], [plW, 0], [plW, plH], [0, plH]];
+  const holes = [];
+  const rectHole = (x0, y0, x1, y1) => [[x0, y0], [x0, y1], [x1, y1], [x1, y0]];
+
+  const tabsW = lanternTabs(ow, T);
+  const tabsD = lanternTabs(od, T);
+
+  for (const t of tabsW) {
+    holes.push(rectHole(O + t.a, O, O + t.b, O + T));             // front
+    holes.push(rectHole(O + t.a, O + od - T, O + t.b, O + od));     // back
+  }
+  for (const t of tabsD) {
+    holes.push(rectHole(O, O + t.a, O + T, O + t.b));               // left
+    holes.push(rectHole(O + ow - T, O + t.a, O + ow, O + t.b));     // right
+  }
+  return { outline, holes, plW, plH, tabsW, tabsD };
+}
+
+/**
+ * Wall with a few large tabs on top/bottom (fit plate slots) and
+ * finger joints on left/right. Ph = full exterior wall height (oh).
+ * Bottom tabs occupy y=0..T, body T..Ph-T, top tabs Ph-T..Ph.
+ */
+function tabbedWallOutline(Pw, Ph, T, leftSpec, rightSpec, tabs) {
+  const bodyBot = T;
+  const bodyTop = Ph - T;
+  const bodyH = bodyTop - bodyBot;
+  const pts = [];
+
+  // Bottom edge L→R
+  pts.push([0, bodyBot]);
+  for (const t of tabs) {
+    pts.push([t.a, bodyBot], [t.a, 0], [t.b, 0], [t.b, bodyBot]);
+  }
+  pts.push([Pw, bodyBot]);
+
+  // Right edge with finger joints along body
+  {
+    const pcs = edgePieces(bodyH, rightSpec, true, true, T);
+    for (const p of pcs) {
+      pts.push([Pw - p.inset, bodyBot + p.a], [Pw - p.inset, bodyBot + p.b]);
+    }
+  }
+
+  // Top edge R→L
+  pts.push([Pw, bodyTop]);
+  for (let i = tabs.length - 1; i >= 0; i--) {
+    const t = tabs[i];
+    pts.push([t.b, bodyTop], [t.b, Ph], [t.a, Ph], [t.a, bodyTop]);
+  }
+  pts.push([0, bodyTop]);
+
+  // Left edge with finger joints along body
+  {
+    const pcs = edgePieces(bodyH, leftSpec, true, true, T);
+    for (let i = pcs.length - 1; i >= 0; i--) {
+      const p = pcs[i];
+      pts.push([p.inset, bodyBot + p.b], [p.inset, bodyBot + p.a]);
+    }
+  }
+
   return cleanPoly(pts);
 }
 
@@ -1438,20 +1547,65 @@ function generatePanels() {
     return { panels, dims: d };
   }
 
-  // ---------- Rectangular 4-sided box (original) ----------
+  // ---------- Rectangular 4-sided box ----------
+  const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
+  const defs = [];
+
+  // Wall specs shared by open-top and flush flat
   //            bottom          right           top                         left
   const fb = [J(true, true),  J(true, true),  flat ? J(true, true) : null,  J(true, true)];
   const lr = [J(true, false), J(false, false), flat ? J(true, false) : null, J(false, false)];
-  const bt = [J(false, false), J(false, false), J(false, false),          J(false, false)];
+  const bt = [J(false, false), J(false, false), J(false, false), J(false, false)];
 
-  const defs = [
-    { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
-    ...(flat ? [{ name: 'Top', role: 'top', w: ow, h: od, specs: bt }] : []),
-    { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
-    { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
-    { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
-    { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
-  ];
+  if (flat && O > 0) {
+    // Lantern-style: solid top & bottom plates with a few slots; walls with matching tabs
+    const plateBot = solidPlateWithSlots(ow, od, T, O);
+    const plateTop = solidPlateWithSlots(ow, od, T, O);
+    defs.push({
+      name: 'Bottom', role: 'bottom', w: plateBot.plW, h: plateBot.plH,
+      specs: null, outlineOverride: plateBot.outline, holes: plateBot.holes,
+      overhang: O, plate: true,
+    });
+    defs.push({
+      name: 'Top', role: 'top', w: plateTop.plW, h: plateTop.plH,
+      specs: null, outlineOverride: plateTop.outline, holes: plateTop.holes,
+      overhang: O, plate: true,
+    });
+    const wallDefs = [
+      { name: 'Front', role: 'front', w: ow, tabs: plateBot.tabsW, vL: J(true, true),  vR: J(true, true) },
+      { name: 'Back',  role: 'back',  w: ow, tabs: plateBot.tabsW, vL: J(true, true),  vR: J(true, true) },
+      { name: 'Left',  role: 'left',  w: od, tabs: plateBot.tabsD, vL: J(false, false), vR: J(false, false) },
+      { name: 'Right', role: 'right', w: od, tabs: plateBot.tabsD, vL: J(false, false), vR: J(false, false) },
+    ];
+    for (const wd of wallDefs) {
+      defs.push({
+        name: wd.name, role: wd.role, w: wd.w, h: oh,
+        specs: null,
+        outlineOverride: tabbedWallOutline(wd.w, oh, T, wd.vL, wd.vR, wd.tabs),
+        tabbed: true,
+      });
+    }
+    d.plate = { O, plW: plateBot.plW, plH: plateBot.plH };
+  } else if (flat) {
+    // Flush flat top: classic edge finger joints (no overhang)
+    defs.push(
+      { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
+      { name: 'Top', role: 'top', w: ow, h: od, specs: bt },
+      { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
+      { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
+      { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
+      { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
+    );
+  } else {
+    // Open top
+    defs.push(
+      { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
+      { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
+      { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
+      { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
+      { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
+    );
+  }
 
   // Slip-on lid
   if (slip) {
@@ -1739,8 +1893,14 @@ function placement(role, d) {
   // Lid sits on top of the box; top face at y = oh + T when assembled
   const lidBaseY = oh; // bottom of lid top panel rests on box rim
   switch (role) {
-    case 'bottom': return { o: V(-hw, 0, hd),      u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
-    case 'top':    return { o: V(-hw, oh - T, hd), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'bottom': {
+      const O = (d.plate && d.plate.O) || 0;
+      return { o: V(-hw - O, 0, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    }
+    case 'top': {
+      const O = (d.plate && d.plate.O) || 0;
+      return { o: V(-hw - O, oh - T, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    }
     case 'front':  return { o: V(-hw, 0, hd - T),  u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
     case 'back':   return { o: V(-hw, 0, -hd),     u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
     case 'left':   return { o: V(-hw + T, 0, -hd), u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
@@ -1852,11 +2012,17 @@ function rebuild3D() {
   for (const p of panels) {
     // 3D uses the nominal (un-kerfed) outline so parts meet exactly
     const shape = shapeFromPts(p.outline);
-    // Add cross-lap holes to the shape for dividers
-    for (const h of (p.holes || [])) {
+    // Holes: dividers always; plate slots only if fully internal (overhang > 0)
+    // Skip plate slots in 3D when they would break the mesh; SVG/DXF still get them
+    const useHoles = p.holes || [];
+    for (const h of useHoles) {
+      if (h.length < 3) continue;
       const holePath = new THREE.Path();
-      holePath.moveTo(h[0][0], h[0][1]);
-      for (let i = 1; i < h.length; i++) holePath.lineTo(h[i][0], h[i][1]);
+      // Ensure CW winding for Three.js holes
+      const area = polyArea(h);
+      const pts = area > 0 ? h.slice().reverse() : h;
+      holePath.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) holePath.lineTo(pts[i][0], pts[i][1]);
       holePath.closePath();
       shape.holes.push(holePath);
     }
@@ -1878,11 +2044,14 @@ function rebuild3D() {
       color, roughness: 0.65, metalness: 0.05, side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    const line = new THREE.LineSegments(
-      new THREE.EdgesGeometry(geo),
-      new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.5 })
-    );
-    mesh.add(line);
+    // No edge overlay on lantern plates — slot holes were drawing lines across the surface
+    if (!(p.plate && p.holes && p.holes.length)) {
+      const line = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo, 20),
+        new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.4 })
+      );
+      mesh.add(line);
+    }
 
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
     // Spread dividers apart when exploded
