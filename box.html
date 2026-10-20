@@ -355,12 +355,17 @@
             <button id="modeI" class="active" onclick="setMode('inside')">Interior</button>
             <button id="modeO" onclick="setMode('outside')">Exterior</button>
           </div>
+          <div class="btn-grp" style="margin-top:8px;flex-wrap:wrap;">
+            <button id="sides4" class="active" onclick="setSides(4)">4</button>
+            <button id="sides6" onclick="setSides(6)">6</button>
+          </div>
+          <div class="hint" id="sidesHint">4 = rectangle (width × depth). 6 = regular hexagon sized by width (flat-to-flat).</div>
           <div class="dim-row">
             <div class="dim-grp"><label for="inW" id="lblW">Width (mm)</label>
               <input class="dim-inp" id="inW" type="number" step="0.5" oninput="onDim()"></div>
             <div class="dim-grp"><label for="inH" id="lblH">Height (mm)</label>
               <input class="dim-inp" id="inH" type="number" step="0.5" oninput="onDim()"></div>
-            <div class="dim-grp"><label for="inD" id="lblD">Depth (mm)</label>
+            <div class="dim-grp" id="depthGrp"><label for="inD" id="lblD">Depth (mm)</label>
               <input class="dim-inp" id="inD" type="number" step="0.5" oninput="onDim()"></div>
           </div>
           <div class="ctrl">
@@ -407,12 +412,12 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="lb-panel-body">
-          <div class="btn-grp">
+          <div class="btn-grp" style="flex-wrap:wrap;">
             <button id="lidNone" class="active" onclick="setLid('none')">None</button>
             <button id="lidFlat" onclick="setLid('flat')">Flat top</button>
             <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
           </div>
-          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = separate lid that fits over the box.</div>
+          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box.</div>
           <div id="lidSlipControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid skirt height</strong><span class="ctrl-val" id="valLidH">20.0 mm</span></div>
@@ -504,6 +509,7 @@
           <div class="hint" style="margin-bottom:10px">Current box parameters.</div>
           <div style="font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--text-dim)">
             <div>Mode: <span id="infoMode" style="color:var(--text)">Interior</span></div>
+            <div>Sides: <span id="infoSides" style="color:var(--text)">4 walls</span></div>
             <div>Lid: <span id="infoLid" style="color:var(--text)">None</span></div>
             <div>Thickness: <span id="infoT" style="color:var(--text)">3.0 mm</span></div>
             <div>Kerf: <span id="infoKerf" style="color:var(--text)">0.10 mm</span></div>
@@ -561,6 +567,7 @@ const DEFAULTS = {
   W: 150, H: 50, D: 100,   // mm
   T: 3, finger: 9, kerf: 0.1, // mm
   lid: 'none', lidH: 20, assembly: 1.0,
+  sides: 4, // 4 = full, 3 = open front, 2 = open front & back
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
 };
@@ -603,12 +610,31 @@ function setMode(m) {
 }
 
 function setLid(l) {
+  if (l === 'hinge') l = 'none'; // hinged lid temporarily removed
   state.lid = l;
   $('lidNone').classList.toggle('active', l === 'none');
   $('lidFlat').classList.toggle('active', l === 'flat');
   $('lidSlip').classList.toggle('active', l === 'slip');
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
+  rebuild();
+}
+
+function setSides(n) {
+  state.sides = n;
+  [4, 6].forEach(s => {
+    const el = $('sides' + s);
+    if (el) el.classList.toggle('active', s === n);
+  });
+  const hints = {
+    4: 'Rectangle — uses width × depth.',
+    6: 'Hexagon — regular 6-sided box. Width = flat-to-flat outer size.',
+  };
+  if ($('sidesHint')) $('sidesHint').textContent = hints[n] || '';
+  // Depth only applies to rectangular 4-sided boxes
+  const depthGrp = $('depthGrp');
+  if (depthGrp) depthGrp.style.opacity = n === 4 ? '1' : '0.35';
+  if ($('inD')) $('inD').disabled = n !== 4;
   rebuild();
 }
 function onLidH(v) {
@@ -757,6 +783,11 @@ function updateLabels() {
     const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on' };
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
+  if ($('infoSides')) {
+    const s = state.sides || 4;
+    const labels = { 4: 'Rectangle', 6: 'Hexagon' };
+    $('infoSides').textContent = (labels[s] || s) + ` (${s})`;
+  }
 }
 
 function syncInputs() {
@@ -780,6 +811,18 @@ function syncInputs() {
   $('lblD').textContent = `Depth (${state.unit})`;
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
+  if (state.lid === 'hinge') state.lid = 'none';
+  if ($('sides4')) {
+    if (![4, 6].includes(state.sides)) state.sides = 4;
+    const s = state.sides || 4;
+    [4, 6].forEach(n => {
+      const el = $('sides' + n);
+      if (el) el.classList.toggle('active', n === s);
+    });
+    const depthGrp = $('depthGrp');
+    if (depthGrp) depthGrp.style.opacity = s === 4 ? '1' : '0.35';
+    if ($('inD')) $('inD').disabled = s !== 4;
+  }
   renderDivSpacingUI();
   updateLabels();
 }
@@ -1074,6 +1117,129 @@ function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
 }
 
 /**
+ * Pin-hinge lid outline — full exterior box size (ow × od).
+ * Local: x left→right (0..lidW), y front→back (0..lidD).
+ * Circular pins stick out left/right at the back and sit in upright ears on the side walls.
+ * Front edge has a small finger tab for opening.
+ */
+function hingeLidOutline(lidW, lidD, pinR, pinLen, tabW, tabD) {
+  const pts = [];
+  const tabX0 = (lidW - tabW) / 2;
+  const tabX1 = tabX0 + tabW;
+  // Pin center sits on the side edge at the back so it lines up with ears on Left/Right walls
+  const pinCy = lidD - pinR;
+
+  // Front edge with finger tab
+  pts.push([0, 0]);
+  if (tabW > 0 && tabD > 0) {
+    pts.push([tabX0, 0], [tabX0, -tabD], [tabX1, -tabD], [tabX1, 0]);
+  }
+  pts.push([lidW, 0]);
+
+  // Right edge up to pin
+  pts.push([lidW, pinCy - pinR]);
+  // Right pin lobe (circle protruding to the right)
+  {
+    const cx = lidW + pinLen - pinR;
+    const cy = pinCy;
+    for (let i = 0; i <= 16; i++) {
+      const a = -Math.PI / 2 + (i / 16) * Math.PI;
+      pts.push([cx + pinR * Math.cos(a), cy + pinR * Math.sin(a)]);
+    }
+  }
+  pts.push([lidW, pinCy + pinR]);
+  pts.push([lidW, lidD]);
+
+  // Back edge
+  pts.push([0, lidD]);
+
+  // Left edge down to pin
+  pts.push([0, pinCy + pinR]);
+  // Left pin lobe
+  {
+    const cx = -(pinLen - pinR);
+    const cy = pinCy;
+    for (let i = 0; i <= 16; i++) {
+      const a = Math.PI / 2 + (i / 16) * Math.PI;
+      pts.push([cx + pinR * Math.cos(a), cy + pinR * Math.sin(a)]);
+    }
+  }
+  pts.push([0, pinCy - pinR]);
+  pts.push([0, 0]);
+
+  return { outline: cleanPoly(pts) };
+}
+
+/**
+ * Add an upright hinge ear to a Left/Right wall outline.
+ * Ear sticks UP above the top edge near the back, with a circular hole for the lid pin.
+ * Wall local: x along depth (0=front … panelDepth=back), y up (0…panelHeight).
+ */
+function addHingeEar(baseOutline, panelDepth, panelHeight, pinR, holeR) {
+  const topY = panelHeight;
+  // Left/Right panel local x: 0 = BACK, panelDepth = FRONT (matches 3D placement).
+  // Ear must sit near the BACK of the box.
+  // Ear outer radius: keep solid material around the hole (min ~3.5mm ring of wood)
+  const ring = Math.max(holeR * 0.9, 3.5);
+  const R = Math.max(holeR + ring, pinR * 2.6);
+  const earCx = R + 1.5;                         // near back (x ≈ 0)
+  const holeCy = topY + R * 0.7;                 // hole center up in the ear
+
+  // Upper semicircle ear points (left → top → right), y-up
+  const earArc = [];
+  for (let k = 0; k <= 20; k++) {
+    const a = Math.PI - (k / 20) * Math.PI;      // π (left) → 0 (right) through top
+    earArc.push([earCx + R * Math.cos(a), topY + Math.max(0, R * Math.sin(a))]);
+  }
+
+  // Walk base outline; when on the top edge crossing earCx, inject the ear arc
+  const base = baseOutline.slice();
+  const merged = [];
+  let inserted = false;
+  for (let i = 0; i < base.length; i++) {
+    const p = base[i];
+    const n = base[(i + 1) % base.length];
+    merged.push(p);
+    const onTop = p[1] > topY - 2 && n[1] > topY - 2 && Math.abs(p[1] - n[1]) < 2.5;
+    if (onTop && !inserted) {
+      const lo = Math.min(p[0], n[0]);
+      const hi = Math.max(p[0], n[0]);
+      if (lo <= earCx && hi >= earCx) {
+        if (n[0] >= p[0]) {
+          for (const ep of earArc) merged.push(ep);
+        } else {
+          for (let k = earArc.length - 1; k >= 0; k--) merged.push(earArc[k]);
+        }
+        inserted = true;
+      }
+    }
+  }
+
+  // Fallback if top edge wasn't detected: attach ear at back-top
+  let finalOutline;
+  if (inserted) {
+    finalOutline = cleanPoly(merged);
+  } else {
+    finalOutline = cleanPoly(base.concat([[earCx - R, topY], ...earArc, [earCx + R, topY]]));
+  }
+
+  const hole = circlePoly(earCx, holeCy, holeR);
+  return { outline: finalOutline, hole, earCx, earCy: holeCy };
+}
+
+/**
+ * Approximate circle as polygon for SVG/DXF holes.
+ */
+function circlePoly(cx, cy, r, steps = 24) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+
+/**
  * Wall slot cutouts matching divider finger joints.
  * Returns list of rectangles [x, y, w, h] in wall panel-local coords
  * for each finger of the divider (the parts that poke into the wall).
@@ -1093,13 +1259,135 @@ function wallFingerSlots(slotX, baseY, H, T) {
   return slots;
 }
 
+/** Regular N-gon vertices, flat-to-flat size, flat side on the bottom. Centered at origin. */
+function regularPolygonVerts(n, flatToFlat) {
+  const apothem = flatToFlat / 2;
+  const R = apothem / Math.cos(Math.PI / n);
+  const verts = [];
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 - Math.PI / n + i * (2 * Math.PI / n);
+    verts.push([R * Math.cos(a), R * Math.sin(a)]);
+  }
+  return { verts, R, apothem, sideLen: 2 * R * Math.sin(Math.PI / n) };
+}
+
+/**
+ * Finger-jointed outline for a regular polygon plate (bottom/top).
+ * Uses the same edgePieces / inset rules as rectangular panels so fingers
+ * on the plate mate with the bottom edge of each wall.
+ * ownEven=false → plate owns odd segments (fingers on odd, slots on even),
+ * matching walls that own even on their bottom edge.
+ */
+function polygonPlateOutline(n, flatToFlat, T, ownEven) {
+  const { verts } = regularPolygonVerts(n, flatToFlat);
+  const spec = { ownEven: !!ownEven, ownCorners: false };
+  // Precompute edge pieces for corner clipping (same idea as panelOutline)
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    const a = verts[i];
+    const b = verts[(i + 1) % n];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    edges.push({
+      a, b, len,
+      ux: (b[0] - a[0]) / len,
+      uy: (b[1] - a[1]) / len,
+      // Inward normal (CCW verts → inward is left of edge dir = (-uy, ux))
+      ix: -(b[1] - a[1]) / len,
+      iy: (b[0] - a[0]) / len,
+      pieces: edgePieces(len, spec, true, true, T),
+    });
+  }
+
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const e = edges[i];
+    const prev = edges[(i + n - 1) % n];
+    const next = edges[(i + 1) % n];
+    const prevInset = prev.pieces[prev.pieces.length - 1].inset;
+    const nextInset = next.pieces[0].inset;
+    e.pieces.forEach((p, j) => {
+      const aS = j === 0 ? Math.max(p.a, prevInset) : p.a;
+      const bS = j === e.pieces.length - 1 ? Math.min(p.b, e.len - nextInset) : p.b;
+      if (bS - aS < 1e-9) return;
+      // inset 0 = on nominal outer edge (finger); inset T = cut back inward (slot)
+      pts.push([
+        e.a[0] + e.ux * aS + e.ix * p.inset,
+        e.a[1] + e.uy * aS + e.iy * p.inset,
+      ]);
+      pts.push([
+        e.a[0] + e.ux * bS + e.ix * p.inset,
+        e.a[1] + e.uy * bS + e.iy * p.inset,
+      ]);
+    });
+  }
+  return cleanPoly(pts);
+}
+
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T, iw, ih, id } = d;
   const flat = state.lid === 'flat';
   const slip = state.lid === 'slip';
+  const hinge = state.lid === 'hinge';
+  const nSides = state.sides || 4;
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
+  d.sides = nSides;
 
+  // ---------- Regular polygon boxes (3 / 6 / 8) ----------
+  if (nSides !== 4) {
+    const poly = regularPolygonVerts(nSides, ow);
+    d.poly = poly;
+    d.od = ow; // treat depth = width for HUD
+    const sideW = poly.sideLen;
+    const wallSpecs = [
+      J(true, false),  // bottom → mates with plate (wall owns even)
+      J(true, true),   // right → mates with next wall
+      flat ? J(true, false) : null, // top
+      J(false, false), // left → mates with prev wall (odd)
+    ];
+    const defs = [
+      {
+        name: 'Bottom', role: 'bottom', w: ow, h: ow,
+        specs: null,
+        outlineOverride: polygonPlateOutline(nSides, ow, T, false),
+        poly: true,
+      },
+    ];
+    if (flat) {
+      defs.push({
+        name: 'Top', role: 'top', w: ow, h: ow,
+        specs: null,
+        outlineOverride: polygonPlateOutline(nSides, ow, T, false),
+        poly: true,
+      });
+    }
+    for (let i = 0; i < nSides; i++) {
+      defs.push({
+        name: `Side ${i + 1}`, role: 'poly-side', w: sideW, h: oh,
+        specs: wallSpecs,
+        sideIndex: i,
+        nSides,
+      });
+    }
+    // Skip slip/hinge/dividers for non-rectangular (keep geometry simple & reliable)
+    const panels = defs.map(def => {
+      let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
+      const cut = offsetPoly(outline, state.kerf / 2);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const [x, y] of cut) {
+        minX = Math.min(minX, x); minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      }
+      return {
+        ...def, outline, cut, holes: [], slots: [],
+        minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
+        area: polyArea(outline),
+      };
+    });
+    return { panels, dims: d };
+  }
+
+  // ---------- Rectangular 4-sided box (original) ----------
   //            bottom          right           top                         left
   const fb = [J(true, true),  J(true, true),  flat ? J(true, true) : null,  J(true, true)];
   const lr = [J(true, false), J(false, false), flat ? J(true, false) : null, J(false, false)];
@@ -1130,6 +1418,28 @@ function generatePanels() {
       { name: 'Lid Right', role: 'lid-right', w: lod, h: loh, specs: llr },
     );
     d.lid = { low, lod, loh, lidH: state.lidH };
+  }
+
+  // Pin-hinge lid (full exterior size) + upright ears on Left/Right walls
+  // Lid = outer box footprint (ow × od) with pins at the back.
+  // Left/Right walls get rounded ears that stick UP above the rim with pivot holes.
+  if (hinge) {
+    const pinR = Math.max(2.5, T * 0.75);       // larger pins for a solid hinge
+    const pinLen = Math.max(T * 1.3, pinR + 1); // pin sticks out into the ear
+    const tabW = Math.min(20, Math.max(8, ow * 0.12));
+    const tabD = Math.min(8, Math.max(3, T * 1.5));
+    const lidW = ow; // full exterior width
+    const lidD = od; // full exterior depth
+    // Hole larger than pin so lid swings freely (kerf + running clearance)
+    const holeR = pinR + state.kerf + 0.3;
+    const lidOutline = hingeLidOutline(lidW, lidD, pinR, pinLen, tabW, tabD);
+
+    defs.push({
+      name: 'Hinge Lid', role: 'hinge-lid', w: lidW + 2 * pinLen, h: lidD + tabD,
+      specs: null, outlineOverride: lidOutline.outline,
+      holes: [],
+    });
+    d.hinge = { pinR, pinLen, tabW, tabD, lidW, lidD, holeR, ear: true };
   }
 
   // --- Dividers ---
@@ -1178,15 +1488,24 @@ function generatePanels() {
     } else {
       outline = panelOutline(def.w, def.h, def.specs, T);
     }
+
+    // Upright hinge ears on Left/Right walls (stick up above the rim with pivot holes)
+    let extraHoles = [];
+    if (hinge && d.hinge && (def.role === 'left' || def.role === 'right')) {
+      const { pinR, holeR } = d.hinge;
+      const ear = addHingeEar(outline, def.w, def.h, pinR, holeR);
+      outline = ear.outline;
+      extraHoles.push(ear.hole);
+    }
+
     const cut = offsetPoly(outline, state.kerf / 2);
-    // Kerf-compensate holes (inset for internal cuts — enlarge hole slightly)
+    // Kerf-compensate holes (enlarge for internal cuts)
     const holes = (def.holes || []).map(h => {
-      // Simple: expand hole by kerf/2 outward (inward from material)
       const xs = h.map(p => p[0]), ys = h.map(p => p[1]);
       const minX = Math.min(...xs) - state.kerf / 2, maxX = Math.max(...xs) + state.kerf / 2;
       const minY = Math.min(...ys) - state.kerf / 2, maxY = Math.max(...ys) + state.kerf / 2;
       return [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
-    });
+    }).concat(extraHoles);
 
     // Attach wall slots for wall panels
     let slots = [];
@@ -1194,7 +1513,6 @@ function generatePanels() {
     else if (def.role === 'back') slots = wallSlots.back;
     else if (def.role === 'left') slots = wallSlots.left;
     else if (def.role === 'right') slots = wallSlots.right;
-    // Kerf-expand wall slots
     slots = slots.map(([x, y, w, h]) => [x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf]);
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1202,6 +1520,7 @@ function generatePanels() {
       minX = Math.min(minX, x); minY = Math.min(minY, y);
       maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
     }
+
     return {
       ...def, outline, cut, holes, slots,
       minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
@@ -1381,7 +1700,56 @@ function placement(role, d) {
     case 'lid-back':  return { o: V(-lhw, lidBaseY - state.lidH, -lhd),    u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
     case 'lid-left':  return { o: V(-lhw + T, lidBaseY - state.lidH, -lhd), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
     case 'lid-right': return { o: V(lhw, lidBaseY - state.lidH, -lhd),      u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    case 'hinge-lid': {
+      // Full exterior lid sitting on top of the box
+      const lidW = d.hinge ? d.hinge.lidW : ow;
+      const lidD = d.hinge ? d.hinge.lidD : od;
+      return {
+        o: V(-lidW / 2, oh, lidD / 2),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
   }
+}
+
+/** 3D placement for regular-polygon side walls and plates. */
+function placementPoly(p, d) {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const n = p.nSides || d.sides || 6;
+  const poly = d.poly || regularPolygonVerts(n, d.ow);
+  const { verts, sideLen } = poly;
+  const T = d.T;
+  const oh = d.oh;
+
+  if (p.role === 'bottom') {
+    // Plate lies in XZ plane (y up). Polygon verts are in XY → map to XZ
+    return { o: V(0, 0, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+  }
+  if (p.role === 'top') {
+    return { o: V(0, oh - T, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+  }
+  if (p.role === 'poly-side') {
+    const i = p.sideIndex || 0;
+    const a = verts[i];
+    const b = verts[(i + 1) % n];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len; // along outer edge
+    // Outward normal in polygon plane (CCW verts)
+    const nx = uy, ny = -ux;
+    // Origin at INNER face of the wall (outer edge pulled back by T), matching
+    // rectangular walls that sit with thickness on the outside of the opening.
+    // Map polygon XY → world XZ; wall local u along edge, v up, n outward.
+    return {
+      o: V(a[0] - nx * T, 0, a[1] - ny * T),
+      u: V(ux, 0, uy),
+      v: V(0, 1, 0),
+      n: V(nx, 0, ny),
+    };
+  }
+  return null;
 }
 
 const EXPLODE_DIR = {
@@ -1389,11 +1757,13 @@ const EXPLODE_DIR = {
   back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0],
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
+  'hinge-lid': [0, 1.3, -0.3],
   'div-x': [0, 0.5, 0], 'div-y': [0, 0.5, 0],
 };
 const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
+  'hinge-lid': 0xb8956a,
   'div-x': 0xc4a574, 'div-y': 0xb8956a,
 };
 
@@ -1441,9 +1811,10 @@ function rebuild3D() {
     }
     const geo = new THREE.ExtrudeGeometry(shape, { depth: d.T, bevelEnabled: false });
 
-    let pl = (p.role === 'div-x' || p.role === 'div-y')
-      ? placementDivider(p, d)
-      : placement(p.role, d);
+    let pl;
+    if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, d);
+    else if (p.role === 'poly-side' || (p.poly && (p.role === 'bottom' || p.role === 'top'))) pl = placementPoly(p, d);
+    else pl = placement(p.role, d);
     if (!pl) continue;
 
     const m = new THREE.Matrix4().makeBasis(pl.u, pl.v, pl.n);
@@ -1463,15 +1834,21 @@ function rebuild3D() {
     mesh.add(line);
 
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
-    // Spread dividers apart when exploded so they visibly separate from the box
+    // Spread dividers apart when exploded
     if (p.role === 'div-x' && d.dividers) {
       const n = Math.max(1, d.dividers.xCenters.length);
-      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1; // -1..1 across width
+      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1;
       dir = [t * 0.75, 1.0, 0];
     } else if (p.role === 'div-y' && d.dividers) {
       const n = Math.max(1, d.dividers.yCenters.length);
-      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1; // -1..1 across depth
+      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1;
       dir = [0, 1.0, t * 0.75];
+    } else if (p.role === 'poly-side' && d.poly) {
+      // Explode each side outward from center
+      const i = p.sideIndex || 0;
+      const n = p.nSides || d.sides;
+      const ang = -Math.PI / 2 - Math.PI / n + (i + 0.5) * (2 * Math.PI / n);
+      dir = [Math.cos(ang), 0.35, Math.sin(ang)];
     }
     mesh.userData = { exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount] };
     boxGroup.add(mesh);
