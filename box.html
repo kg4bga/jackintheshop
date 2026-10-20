@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2d2d2d">
-  <title>Jack In The Shop — Finger Joint Box Generator</title>
+  <title>Jack In The Shop — Box Generator Ver 0.01</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2130,7 +2130,16 @@ function buildDXF() {
 function initThree() {
   const canvas = $('threeCanvas');
   const area = $('canvasArea');
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  if (!canvas || typeof THREE === 'undefined') {
+    console.error('3D preview unavailable: Three.js not loaded');
+    return false;
+  }
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch (err) {
+    console.error('3D preview unavailable: WebGL context failed', err);
+    return false;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x484848, 1);   // LightBurn dark workspace color
 
@@ -2138,9 +2147,14 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(40, 1, 0.1, 5000);
   camera.position.set(180, 120, 220);
 
-  controls = new THREE.OrbitControls(camera, canvas);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
+  if (typeof THREE.OrbitControls === 'function') {
+    controls = new THREE.OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+  } else {
+    controls = null;
+    console.warn('OrbitControls not found — drag/zoom disabled');
+  }
 
   scene.add(new THREE.AmbientLight(0x6688aa, 0.55));
   const dir = new THREE.DirectionalLight(0xffffff, 0.75);
@@ -2155,6 +2169,7 @@ function initThree() {
   scene.add(boxGroup);
 
   function resize() {
+    if (!renderer || !camera || !area) return;
     const w = area.clientWidth, h = area.clientHeight - 22; // account for workspace header
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
@@ -2165,9 +2180,10 @@ function initThree() {
 
   (function animate() {
     requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+    if (controls) controls.update();
+    if (renderer && scene && camera) renderer.render(scene, camera);
   })();
+  return true;
 }
 
 function shapeFromPts(pts) {
@@ -2315,7 +2331,8 @@ const EXPLODE_DIR = {
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
-  'div-x': [0, 0.5, 0], 'div-y': [0, 0.5, 0],
+  // Row dividers (div-y) lift up; column dividers (div-x) stay fixed
+  'div-x': [0, 0, 0], 'div-y': [0, 1, 0],
   'dr-bottom': [0, 0.15, 0], 'dr-top': [0, 0.9, 0], 'dr-front': [0, 0.4, 0.5],
   'dr-back': [0, 0.4, -0.3], 'dr-left': [-0.4, 0.4, 0], 'dr-right': [0.4, 0.4, 0],
 };
@@ -2355,6 +2372,12 @@ function placementDivider(p, d) {
 }
 
 function rebuild3D() {
+  const { panels, dims: d } = generatePanels();
+  // Always refresh HUD / stats even if WebGL is unavailable
+  if (!boxGroup || !scene) {
+    try { updateHUD(d, panels); } catch (_) {}
+    return;
+  }
   while (boxGroup.children.length) {
     const c = boxGroup.children[0];
     c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
@@ -2362,19 +2385,48 @@ function rebuild3D() {
   }
   panels3D = [];
 
-  const { panels, dims: d } = generatePanels();
   const amount = Math.max(d.ow, d.oh, d.od) * 0.4;
 
   for (const p of panels) {
     // 3D uses the nominal (un-kerfed) outline so parts meet exactly
     const shape = shapeFromPts(p.outline);
-    // Holes: dividers always; plate slots only if fully internal (overhang > 0)
-    // Skip plate slots in 3D when they would break the mesh; SVG/DXF still get them
-    const useHoles = p.holes || [];
+    // Bounds of the panel outline — Three.js holes must sit strictly inside
+    let oMinX = Infinity, oMinY = Infinity, oMaxX = -Infinity, oMaxY = -Infinity;
+    for (const [ox, oy] of p.outline) {
+      oMinX = Math.min(oMinX, ox); oMinY = Math.min(oMinY, oy);
+      oMaxX = Math.max(oMaxX, ox); oMaxY = Math.max(oMaxY, oy);
+    }
+    const pad = 0.05;
+    const useHoles = [];
+    // Existing panel holes (plate slots, pull holes, hinge, etc.) — keep original shape
+    for (const h of (p.holes || [])) {
+      if (!h || h.length < 3) continue;
+      useHoles.push(h);
+    }
+    // Wall finger slots [x,y,w,h] (kerf-expanded). Undo kerf for 3D and clamp so
+    // slots near the top edge of the wall aren't dropped by ExtrudeGeometry.
+    const k = state.kerf || 0;
+    for (const s of (p.slots || [])) {
+      if (!s || s.length < 4) continue;
+      let [sx, sy, sw, sh] = s;
+      sx += k / 2; sy += k / 2; sw -= k; sh -= k;
+      if (sw < 0.2 || sh < 0.2) continue;
+      // Pull slightly inside the panel bounds so Three.js keeps top-edge slots
+      const x0 = Math.max(sx, oMinX + pad);
+      const y0 = Math.max(sy, oMinY + pad);
+      const x1 = Math.min(sx + sw, oMaxX - pad);
+      const y1 = Math.min(sy + sh, oMaxY - pad);
+      if (x1 - x0 < 0.2 || y1 - y0 < 0.2) continue;
+      useHoles.push([
+        [x0, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1],
+      ]);
+    }
     for (const h of useHoles) {
       if (h.length < 3) continue;
       const holePath = new THREE.Path();
-      // Ensure CW winding for Three.js holes
       const area = polyArea(h);
       const pts = area > 0 ? h.slice().reverse() : h;
       holePath.moveTo(pts[0][0], pts[0][1]);
@@ -2401,8 +2453,9 @@ function rebuild3D() {
       color, roughness: 0.65, metalness: 0.05, side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    // No edge overlay on lantern plates — slot holes were drawing lines across the surface
-    if (!(p.plate && p.holes && p.holes.length)) {
+    // No edge overlay when the mesh has internal holes/slots — those edges clutter the sides
+    const hasInternalCuts = (p.holes && p.holes.length) || (p.slots && p.slots.length);
+    if (!hasInternalCuts) {
       const line = new THREE.LineSegments(
         new THREE.EdgesGeometry(geo, 20),
         new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.4 })
@@ -2411,16 +2464,8 @@ function rebuild3D() {
     }
 
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
-    // Spread dividers apart when exploded
-    if (p.role === 'div-x' && d.dividers) {
-      const n = Math.max(1, d.dividers.xCenters.length);
-      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1;
-      dir = [t * 0.75, 1.0, 0];
-    } else if (p.role === 'div-y' && d.dividers) {
-      const n = Math.max(1, d.dividers.yCenters.length);
-      const t = n === 1 ? 0 : (p.divIndex / (n - 1)) * 2 - 1;
-      dir = [0, 1.0, t * 0.75];
-    } else if (p.role === 'poly-side' && d.poly) {
+    // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
+    if (p.role === 'poly-side' && d.poly) {
       // Explode each side outward from center
       const i = p.sideIndex || 0;
       const n = p.nSides || d.sides;
@@ -2509,6 +2554,7 @@ function setView(name, btn) {
     if (['Persp','Front','Top','Side'].includes(b.textContent.trim())) b.classList.remove('active');
   });
   if (btn) btn.classList.add('active');
+  if (!camera || !controls) return;
   const d = dims();
   const dist = Math.max(d.ow, d.oh, d.od) * 2.2;
   const midY = d.oh / 2;
@@ -2586,10 +2632,24 @@ function resetAll() {
 }
 
 window.addEventListener('load', () => {
-  initThree();
+  try {
+    initThree();
+  } catch (err) {
+    console.error('3D init failed', err);
+  }
   syncInputs();
-  rebuild();
-  setView('persp', document.querySelector('.toolbar .tb-btn[onclick*="persp"]'));
+  try {
+    rebuild();
+  } catch (err) {
+    console.error('rebuild failed', err);
+  }
+  try {
+    if (camera && controls) {
+      setView('persp', document.querySelector('.toolbar .tb-btn[onclick*="persp"]'));
+    }
+  } catch (err) {
+    console.error('setView failed', err);
+  }
 });
 </script>
 </body>
