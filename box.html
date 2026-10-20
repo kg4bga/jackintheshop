@@ -478,6 +478,44 @@
         </div>
       </div>
 
+      <!-- Drawer panel -->
+      <div class="lb-panel" id="s-drawer">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-drawer')">
+          <span class="title">Drawer</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+            <input type="checkbox" id="chkDrawer" onchange="onDrawer(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
+            <span><strong>Compartment drawers</strong> — lift-out trays</span>
+          </label>
+          <div class="hint" style="margin-top:4px">Main box stays open-top. Each Columns×Rows cell gets a finger-jointed mini box with a finger hole on the top lid so you can lift it out.</div>
+          <div id="drawerControls" style="display:none;margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Tray height</strong><span class="ctrl-val" id="valDrawerH">25.0 mm</span></div>
+              <input type="range" id="sldDrawerH" min="8" max="80" step="0.5" value="25" oninput="onDrawerH(this.value)">
+              <div class="hint" style="margin-top:4px">Wall height of each mini tray (above its bottom).</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Fit clearance</strong><span class="ctrl-val" id="valDrawerClear">0.5 mm</span></div>
+              <input type="range" id="sldDrawerClear" min="0.1" max="2" step="0.1" value="0.5" oninput="onDrawerClear(this.value)">
+              <div class="hint" style="margin-top:4px">Gap per side inside each compartment so trays slide freely.</div>
+            </div>
+            <div class="ctrl" style="margin-top:8px;">
+              <div class="ctrl-lbl"><strong>Open end</strong></div>
+              <div class="seg" style="margin-top:4px;">
+                <button type="button" id="drOpenF" class="active" onclick="onDrawerOpen('front')">Front</button>
+                <button type="button" id="drOpenB" onclick="onDrawerOpen('back')">Back</button>
+                <button type="button" id="drOpenL" onclick="onDrawerOpen('left')">Left</button>
+                <button type="button" id="drOpenR" onclick="onDrawerOpen('right')">Right</button>
+              </div>
+              <div class="hint" style="margin-top:4px">No wall on that end so you can put things in. Finger hole on the top sits next to the open end.</div>
+            </div>
+            <div class="hint" id="drawerInfo" style="margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- 3D View panel -->
       <div class="lb-panel" id="s-vis">
         <div class="lb-panel-hdr" onclick="toggleSec('s-vis')">
@@ -489,6 +527,11 @@
             <div class="ctrl-lbl"><strong>Assembly</strong><span class="ctrl-val" id="valAssembly">100%</span></div>
             <input type="range" id="sldAssembly" min="0" max="100" value="100" step="1" oninput="onAssembly(this.value)">
             <div style="display:flex;justify-content:space-between" class="hint"><span>Exploded</span><span>Assembled</span></div>
+          </div>
+          <div class="ctrl" id="drawerPullCtrl" style="margin-top:10px;display:none;">
+            <div class="ctrl-lbl"><strong>Drawer lift</strong><span class="ctrl-val" id="valDrawerPull">0%</span></div>
+            <input type="range" id="sldDrawerPull" min="0" max="100" value="0" step="1" oninput="onDrawerPull(this.value)">
+            <div style="display:flex;justify-content:space-between" class="hint"><span>In box</span><span>Lifted up</span></div>
           </div>
         </div>
       </div>
@@ -591,6 +634,8 @@ const DEFAULTS = {
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
+  drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
+  drawerPull: 0, // 0 = closed, 1 = fully pulled out
 };
 const state = { ...DEFAULTS };
 
@@ -818,6 +863,11 @@ function onAssembly(v) {
   $('valAssembly').textContent = v + '%';
   updateAssembly();
 }
+function onDrawerPull(v) {
+  state.drawerPull = Math.max(0, Math.min(1, parseFloat(v) / 100));
+  if ($('valDrawerPull')) $('valDrawerPull').textContent = Math.round(state.drawerPull * 100) + '%';
+  updateAssembly();
+}
 
 function updateLabels() {
   if ($('valW')) $('valW').textContent = fmtLen(state.W, 1, 2);
@@ -860,6 +910,20 @@ function syncInputs() {
   if ($('inRows')) $('inRows').value = state.divRows;
   if ($('sldDivH')) $('sldDivH').value = state.divHpct;
   if ($('valDivH')) $('valDivH').textContent = state.divHpct + '%';
+  if ($('chkDrawer')) $('chkDrawer').checked = !!state.drawer;
+  if ($('drawerControls')) $('drawerControls').style.display = state.drawer ? 'block' : 'none';
+  if ($('drawerPullCtrl')) $('drawerPullCtrl').style.display = state.drawer ? 'block' : 'none';
+  if ($('sldDrawerH')) $('sldDrawerH').value = state.drawerH;
+  if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
+  if ($('sldDrawerClear')) $('sldDrawerClear').value = state.drawerClear;
+  if ($('valDrawerClear')) $('valDrawerClear').textContent = fmtLen(state.drawerClear, 1, 2);
+  if ($('sldDrawerPull')) $('sldDrawerPull').value = Math.round((state.drawerPull || 0) * 100);
+  if ($('valDrawerPull')) $('valDrawerPull').textContent = Math.round((state.drawerPull || 0) * 100) + '%';
+  ['front','back','left','right'].forEach(s => {
+    const el = $('drOpen' + s[0].toUpperCase());
+    if (el) el.classList.toggle('active', (state.drawerOpen || 'front') === s);
+  });
+  
   ['inW', 'inH', 'inD'].forEach(id => $(id).step = inch ? '0.0625' : '0.5');
   $('inT').step = inch ? '0.005' : '0.1';
   $('lblW').textContent = `Width (${state.unit})`;
@@ -889,7 +953,38 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-joint', 's-lid', 's-div', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+function onDrawer(on) {
+  state.drawer = !!on;
+  const ctrls = $('drawerControls');
+  if (ctrls) ctrls.style.display = state.drawer ? 'block' : 'none';
+  if ($('drawerPullCtrl')) $('drawerPullCtrl').style.display = state.drawer ? 'block' : 'none';
+  if (!state.drawer) {
+    state.drawerPull = 0;
+    if ($('sldDrawerPull')) $('sldDrawerPull').value = 0;
+    if ($('valDrawerPull')) $('valDrawerPull').textContent = '0%';
+  }
+  rebuild();
+}
+function onDrawerH(v) {
+  state.drawerH = Math.max(5, parseFloat(v) || 25);
+  if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
+  rebuild();
+}
+function onDrawerClear(v) {
+  state.drawerClear = Math.max(0.05, parseFloat(v) || 0.5);
+  if ($('valDrawerClear')) $('valDrawerClear').textContent = fmtLen(state.drawerClear, 1, 2);
+  rebuild();
+}
+function onDrawerOpen(side) {
+  state.drawerOpen = side || 'front';
+  ['front','back','left','right'].forEach(s => {
+    const el = $('drOpen' + s[0].toUpperCase());
+    if (el) el.classList.toggle('active', state.drawerOpen === s);
+  });
+  rebuild();
+}
+
 function toggleSec(id) {
   const el = $(id);
   if (!el) return;
@@ -1668,7 +1763,6 @@ function generatePanels() {
 
   if (flat && (O > 0 || !joinWalls)) {
     // Solid plates with slots + tabbed walls.
-    // Used for overhang, or for flush when wall joints are off (so wall lengths match).
     const plateBot = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
     const plateTop = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
     defs.push({
@@ -1682,8 +1776,8 @@ function generatePanels() {
       overhang: O, plate: true,
     });
     const wallDefs = [
-      { name: 'Front', role: 'front', w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null,  vR: joinWalls ? J(true, true) : null },
-      { name: 'Back',  role: 'back',  w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null,  vR: joinWalls ? J(true, true) : null },
+      { name: 'Front', role: 'front', w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
+      { name: 'Back',  role: 'back',  w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
       { name: 'Left',  role: 'left',  w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
       { name: 'Right', role: 'right', w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
     ];
@@ -1697,7 +1791,7 @@ function generatePanels() {
     }
     d.plate = { O, plW: plateBot.plW, plH: plateBot.plH };
   } else if (flat) {
-    // Flush flat top with wall joints: classic edge finger joints
+    // Flush flat top with wall joints
     defs.push(
       { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
       { name: 'Top', role: 'top', w: ow, h: od, specs: bt },
@@ -1707,7 +1801,7 @@ function generatePanels() {
       { name: 'Right', role: 'right', w: sideD, h: oh, specs: lr },
     );
   } else {
-    // Open top
+    // Open top — main box unchanged
     defs.push(
       { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
       { name: 'Front', role: 'front', w: frontW, h: oh, specs: fb },
@@ -1757,14 +1851,108 @@ function generatePanels() {
     d.hinge = { pinR, pinLen, tabW, tabD, lidW, lidD, holeR, ear: true };
   }
 
-  // --- Dividers ---
+  // --- Lift-out compartment drawers (main box stays open-top) ---
+  // One finger-jointed mini box per divider cell; finger hole on the TOP lid to lift out.
+  const drawerOn = !!state.drawer;
+  const colCells = cellSizes(state.colWeights, iw, T);
+  const rowCells = cellSizes(state.rowWeights, id, T);
+  const trays = [];
+
+  if (drawerOn) {
+    const clear = Math.max(0.05, state.drawerClear || 0.5);
+    const openEnd = state.drawerOpen || 'front'; // front | back | left | right
+    const drIh = Math.max(T * 2, Math.min(state.drawerH || 25, ih - clear - T));
+    const drOh = drIh + 2 * T; // walls span bottom + top plate joints
+
+    // Specs: bottom/top/left/right edges — null = plain (open side)
+    // Plate edges: [bottom, right, top, left] in panelOutline order for a horizontal plate
+    //   plate local: x = width, y = depth; y=0 is front, y=h is back
+    const openF = openEnd === 'front', openB = openEnd === 'back';
+    const openL = openEnd === 'left', openR = openEnd === 'right';
+    const drPlate = [
+      openF ? null : J(false, false), // front edge of plate
+      openR ? null : J(false, false), // right
+      openB ? null : J(false, false), // back
+      openL ? null : J(false, false), // left
+    ];
+    // Front/Back walls: [bottom, right, top, left]
+    const drFb = [
+      J(true, true),
+      openR ? null : J(true, true),
+      J(true, true),
+      openL ? null : J(true, true),
+    ];
+    // Left/Right walls: [bottom, right, top, left] — right edge of left wall faces front
+    const drLeft = [
+      J(true, false),
+      openF ? null : J(false, false), // right edge → front
+      J(true, false),
+      openB ? null : J(false, false), // left edge → back
+    ];
+    const drRight = [
+      J(true, false),
+      openB ? null : J(false, false), // right edge → back
+      J(true, false),
+      openF ? null : J(false, false), // left edge → front
+    ];
+
+    let xPos = 0;
+    for (let ci = 0; ci < colCells.length; ci++) {
+      let zPos = 0;
+      for (let ri = 0; ri < rowCells.length; ri++) {
+        const cellW = colCells[ci];
+        const cellD = rowCells[ri];
+        const drW = Math.max(T * 3, cellW - 2 * clear);
+        const drD = Math.max(T * 3, cellD - 2 * clear);
+        const label = `D${ci + 1}${String.fromCharCode(65 + ri)}`;
+        const cx = xPos + cellW / 2;
+        const cz = zPos + cellD / 2;
+
+        // Finger hole on TOP next to the open end
+        const holeR = Math.min(8, Math.max(4, Math.min(drW, drD) * 0.18));
+        const m = holeR + Math.max(T, 2);
+        let hx = drW / 2, hy = drD / 2;
+        if (openF) { hx = drW / 2; hy = m; }
+        else if (openB) { hx = drW / 2; hy = drD - m; }
+        else if (openL) { hx = m; hy = drD / 2; }
+        else if (openR) { hx = drW - m; hy = drD / 2; }
+        const pullHole = circlePoly(hx, hy, holeR, 24);
+
+        defs.push({ name: `${label} Bottom`, role: 'dr-bottom', w: drW, h: drD, specs: drPlate, trayIndex: trays.length });
+        defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: drPlate, holes: [pullHole], trayIndex: trays.length });
+        if (!openF) defs.push({ name: `${label} Front`, role: 'dr-front', w: drW, h: drOh, specs: drFb, trayIndex: trays.length });
+        if (!openB) defs.push({ name: `${label} Back`, role: 'dr-back', w: drW, h: drOh, specs: drFb, trayIndex: trays.length });
+        if (!openL) defs.push({ name: `${label} Left`, role: 'dr-left', w: drD, h: drOh, specs: drLeft, trayIndex: trays.length });
+        if (!openR) defs.push({ name: `${label} Right`, role: 'dr-right', w: drD, h: drOh, specs: drRight, trayIndex: trays.length });
+
+        trays.push({
+          ci, ri, label, drW, drD, drOh, drIh, openEnd,
+          wx: -iw / 2 + cx,
+          wy: T,
+          wz: id / 2 - cz,
+          cellW, cellD,
+        });
+        zPos += cellD + T;
+      }
+      xPos += colCells[ci] + T;
+    }
+
+    d.drawer = { trays, clear, openEnd, cols: colCells.length, rows: rowCells.length };
+    if ($('drawerInfo')) {
+      const n = trays.length;
+      const t0 = trays[0];
+      $('drawerInfo').textContent = n
+        ? `${n} drawer${n > 1 ? 's' : ''} · open ${openEnd} · ~${t0.drW.toFixed(0)}×${t0.drD.toFixed(0)}×${drIh.toFixed(0)} mm`
+        : 'Set Columns & Rows for compartments.';
+    }
+  }
+
+  // --- Dividers (normal floor-plan grid; box stays open-top) ---
   const divH = Math.max(T * 2, ih * (state.divHpct / 100));
-  const xCenters = dividerCenters(state.colWeights, iw, T); // along width
-  const yCenters = dividerCenters(state.rowWeights, id, T); // along depth
+  const xCenters = dividerCenters(state.colWeights, iw, T);
+  const yCenters = dividerCenters(state.rowWeights, id, T);
   d.dividers = { divH, xCenters, yCenters };
 
-  // Wall finger-joint slots matching divider ends (same segment pattern as box)
-  // Front/Back: x along width. Left/Right: x along depth. y up from bottom of panel.
   const wallSlots = { front: [], back: [], left: [], right: [] };
   for (const cx of xCenters) {
     const sx = T + cx - T / 2;
@@ -1777,7 +1965,6 @@ function generatePanels() {
     wallSlots.right.push(...wallFingerSlots(sx, T, divH, T));
   }
 
-  // X-dividers: span depth, separate columns. Finger ends into Front/Back. Cross-laps from top.
   xCenters.forEach((cx, i) => {
     const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
     defs.push({
@@ -1786,7 +1973,6 @@ function generatePanels() {
       divIndex: i, divAxis: 'x', divPos: cx,
     });
   });
-  // Y-dividers: span width, separate rows. Finger ends into Left/Right. Cross-laps from bottom.
   yCenters.forEach((cy, i) => {
     const { outline, holes } = dividerOutline(iw, divH, T, xCenters, false);
     defs.push({
@@ -1822,7 +2008,7 @@ function generatePanels() {
       return [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
     }).concat(extraHoles);
 
-    // Attach wall slots for wall panels
+    // Attach wall slots for main-box wall panels
     let slots = [];
     if (def.role === 'front') slots = wallSlots.front;
     else if (def.role === 'back') slots = wallSlots.back;
@@ -2045,7 +2231,43 @@ function placement(role, d) {
         n: V(0, 1, 0),
       };
     }
+    }
+}
+
+/** Placement for a lift-out compartment drawer. */
+function placementTray(p, d) {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const T = d.T;
+  const trays = (d.drawer && d.drawer.trays) || [];
+  const tr = trays[p.trayIndex || 0];
+  if (!tr) return null;
+  const dw = tr.drW, dd = tr.drD, oh = tr.drOh;
+  const cx = tr.wx, cy = tr.wy != null ? tr.wy : T, cz = tr.wz;
+  switch (p.role) {
+    case 'dr-bottom':
+      return { o: V(cx - dw / 2, cy, cz + dd / 2), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'dr-top':
+      // Top lid sits at top of drawer walls
+      return { o: V(cx - dw / 2, cy + oh - T, cz + dd / 2), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'dr-front':
+      return { o: V(cx - dw / 2, cy, cz + dd / 2 - T), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    case 'dr-back':
+      return { o: V(cx - dw / 2, cy, cz - dd / 2), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    case 'dr-left':
+      return { o: V(cx - dw / 2 + T, cy, cz - dd / 2), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    case 'dr-right':
+      return { o: V(cx + dw / 2, cy, cz - dd / 2), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    default:
+      return null;
   }
+}
+
+/** Horizontal shelf plate between drawer rows. */
+function placementShelf(p, d) {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const { iw, id, T } = d;
+  const y = T + (p.shelfY || 0);
+  return { o: V(-iw / 2, y, id / 2), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
 }
 
 /** 3D placement for regular-polygon side walls and plates. */
@@ -2094,30 +2316,40 @@ const EXPLODE_DIR = {
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
   'div-x': [0, 0.5, 0], 'div-y': [0, 0.5, 0],
+  'dr-bottom': [0, 0.15, 0], 'dr-top': [0, 0.9, 0], 'dr-front': [0, 0.4, 0.5],
+  'dr-back': [0, 0.4, -0.3], 'dr-left': [-0.4, 0.4, 0], 'dr-right': [0.4, 0.4, 0],
 };
 const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
   'hinge-lid': 0xb8956a,
   'div-x': 0xc4a574, 'div-y': 0xb8956a,
+  'dr-bottom': 0xa67c52, 'dr-top': 0xb8956a, 'dr-front': 0x9a7048, 'dr-back': 0x9a7048, 'dr-left': 0x8c6440, 'dr-right': 0x8c6440,
 };
 
 /** Placement for divider panels (needs position along interior). */
 function placementDivider(p, d) {
-  const { ow, od, T, iw, id } = d;
+  const { ow, od, T } = d;
   const hw = ow / 2, hd = od / 2;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  const divH = p.h;
   if (p.role === 'div-x') {
-    // Spans depth (Z), sits at interior X = divPos. Panel local: x along depth, y up.
-    // World: origin at left-interior of divider (tabs into front/back).
     const x = -hw + T + p.divPos - T / 2;
     return { o: V(x, T, hd), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
   }
   if (p.role === 'div-y') {
-    // Spans width (X), sits at interior Z = divPos.
     const z = hd - T - p.divPos + T / 2;
     return { o: V(-hw, T, z), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, -1) };
+  }
+  // Drawer dividers — relative to tray center, sitting on drawer bottom
+  if (p.role === 'dr-div-x' && d.drawer) {
+    const { drW, drD } = d.drawer;
+    const x = -drW / 2 + T + p.divPos - T / 2;
+    return { o: V(x, 2 * T, drD / 2), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
+  }
+  if (p.role === 'dr-div-y' && d.drawer) {
+    const { drW, drD } = d.drawer;
+    const z = drD / 2 - T - p.divPos + T / 2;
+    return { o: V(-drW / 2, 2 * T, z), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, -1) };
   }
   return null;
 }
@@ -2154,6 +2386,7 @@ function rebuild3D() {
 
     let pl;
     if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, d);
+    else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, d);
     else if (p.role === 'poly-side' || (p.poly && (p.role === 'bottom' || p.role === 'top'))) pl = placementPoly(p, d);
     else pl = placement(p.role, d);
     if (!pl) continue;
@@ -2194,7 +2427,21 @@ function rebuild3D() {
       const ang = -Math.PI / 2 - Math.PI / n + (i + 0.5) * (2 * Math.PI / n);
       dir = [Math.cos(ang), 0.35, Math.sin(ang)];
     }
-    mesh.userData = { exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount] };
+    // Drawer lift — trays rise straight up out of the box
+    let pull = [0, 0, 0];
+    if (d.drawer && p.role && p.role.startsWith('dr-')) {
+      const trays = d.drawer.trays || [];
+      const tr = trays[p.trayIndex || 0];
+      // Full travel: clear the box rim (drawer height + a bit of extra lift)
+      const travel = tr
+        ? Math.max(30, (tr.drOh || 25) + (d.oh || 50) * 0.35)
+        : 50;
+      pull = [0, travel, 0];
+    }
+    mesh.userData = {
+      exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount],
+      pull,
+    };
     boxGroup.add(mesh);
     panels3D.push(mesh);
   }
@@ -2204,9 +2451,15 @@ function rebuild3D() {
 
 function updateAssembly() {
   const t = 1 - state.assembly;
+  const pullT = state.drawerPull || 0;
   for (const mesh of panels3D) {
     const e = mesh.userData.exp || [0, 0, 0];
-    mesh.position.set(e[0] * t, e[1] * t, e[2] * t);
+    const p = mesh.userData.pull || [0, 0, 0];
+    mesh.position.set(
+      e[0] * t + p[0] * pullT,
+      e[1] * t + p[1] * pullT,
+      e[2] * t + p[2] * pullT
+    );
   }
 }
 
