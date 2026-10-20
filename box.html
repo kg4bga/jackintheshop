@@ -431,6 +431,13 @@
               <input type="range" id="sldFlatOH" min="0" max="30" step="0.5" value="0" oninput="onFlatOverhang(this.value)">
               <div class="hint" style="margin-top:4px">0 = flush lid with finger joints. Increase to get lantern-style solid top &amp; bottom plates that extend past the walls, with slots for the wall fingers.</div>
             </div>
+            <div class="ctrl" style="margin-top:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
+                <span><strong>Wall finger joints</strong> — joints between side walls</span>
+              </label>
+              <div class="hint" style="margin-top:4px">Off = straight wall edges (glue only). Top &amp; bottom still join the walls.</div>
+            </div>
           </div>
           <div id="lidSlipControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
@@ -580,7 +587,7 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   W: 150, H: 50, D: 100,   // mm
   T: 3, finger: 9, kerf: 0.1, // mm
-  lid: 'none', lidH: 20, flatOverhang: 0, assembly: 1.0,
+  lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
@@ -638,6 +645,10 @@ function setLid(l) {
 function onFlatOverhang(v) {
   state.flatOverhang = Math.max(0, parseFloat(v) || 0);
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang, 1, 2);
+  rebuild();
+}
+function onWallJoints(on) {
+  state.wallJoints = !!on;
   rebuild();
 }
 
@@ -860,6 +871,7 @@ function syncInputs() {
   if (flatCtrls) flatCtrls.style.display = state.lid === 'flat' ? 'block' : 'none';
   if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
+  if ($('chkWallJoints')) $('chkWallJoints').checked = state.wallJoints !== false;
   if (state.lid === 'hinge') state.lid = 'none';
   if ($('sides4')) {
     if (![4, 6].includes(state.sides)) state.sides = 4;
@@ -1046,26 +1058,34 @@ function lanternTabs(L, T) {
 /**
  * Solid plate (top/bottom) with overhang O past the box walls.
  * Plain rectangle + a few rectangular slots per side for wall tabs.
+ * wallW / wallD = front-back / left-right wall lengths (≤ ow / od).
+ * When shorter than outer (no wall joints), slots are centered on each edge.
  */
-function solidPlateWithSlots(ow, od, T, O) {
+function solidPlateWithSlots(ow, od, T, O, wallW, wallD) {
   const plW = ow + 2 * O;
   const plH = od + 2 * O;
   const outline = [[0, 0], [plW, 0], [plW, plH], [0, plH]];
   const holes = [];
   const rectHole = (x0, y0, x1, y1) => [[x0, y0], [x0, y1], [x1, y1], [x1, y0]];
 
-  const tabsW = lanternTabs(ow, T);
-  const tabsD = lanternTabs(od, T);
+  const wW = wallW != null ? wallW : ow;
+  const wD = wallD != null ? wallD : od;
+  // Center shorter walls on each outer edge
+  const x0 = O + (ow - wW) / 2;
+  const y0 = O + (od - wD) / 2;
+
+  const tabsW = lanternTabs(wW, T);
+  const tabsD = lanternTabs(wD, T);
 
   for (const t of tabsW) {
-    holes.push(rectHole(O + t.a, O, O + t.b, O + T));             // front
-    holes.push(rectHole(O + t.a, O + od - T, O + t.b, O + od));     // back
+    holes.push(rectHole(x0 + t.a, O, x0 + t.b, O + T));                 // front
+    holes.push(rectHole(x0 + t.a, O + od - T, x0 + t.b, O + od));         // back
   }
   for (const t of tabsD) {
-    holes.push(rectHole(O, O + t.a, O + T, O + t.b));               // left
-    holes.push(rectHole(O + ow - T, O + t.a, O + ow, O + t.b));     // right
+    holes.push(rectHole(O, y0 + t.a, O + T, y0 + t.b));                   // left
+    holes.push(rectHole(O + ow - T, y0 + t.a, O + ow, y0 + t.b));         // right
   }
-  return { outline, holes, plW, plH, tabsW, tabsD };
+  return { outline, holes, plW, plH, tabsW, tabsD, wallW: wW, wallD: wD };
 }
 
 /**
@@ -1488,25 +1508,28 @@ function polygonPlateOutline(n, flatToFlat, T, ownEven) {
  * Outline = larger N-gon (flat-to-flat = inner + 2O).
  * Slots along each inner edge for wall tabs.
  */
-function solidPolygonPlateWithSlots(n, flatToFlat, T, O) {
+function solidPolygonPlateWithSlots(n, flatToFlat, T, O, wallSideLen) {
   const outer = regularPolygonVerts(n, flatToFlat + 2 * O);
-  const inner = regularPolygonVerts(n, flatToFlat);
+  const box = regularPolygonVerts(n, flatToFlat);
   const outline = outer.verts.map(v => [v[0], v[1]]);
   const holes = [];
-  const tabs = lanternTabs(inner.sideLen, T);
+  const sideLen = box.sideLen;
+  const wLen = wallSideLen != null ? wallSideLen : sideLen;
+  const edgeInset = (sideLen - wLen) / 2;
+  const tabs = lanternTabs(wLen, T);
 
   for (let i = 0; i < n; i++) {
-    const a = inner.verts[i];
-    const b = inner.verts[(i + 1) % n];
+    const a = box.verts[i];
+    const b = box.verts[(i + 1) % n];
     const dx = b[0] - a[0], dy = b[1] - a[1];
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len, uy = dy / len;
-    // Inward normal (CCW verts → left of edge)
-    const ix = -uy, iy = ux;
+    const ix = -uy, iy = ux; // inward normal
     for (const t of tabs) {
-      // Slot rectangle: along edge [t.a, t.b], inward 0..T from the inner edge
-      const p0 = [a[0] + ux * t.a, a[1] + uy * t.a];
-      const p1 = [a[0] + ux * t.b, a[1] + uy * t.b];
+      const s0 = edgeInset + t.a;
+      const s1 = edgeInset + t.b;
+      const p0 = [a[0] + ux * s0, a[1] + uy * s0];
+      const p1 = [a[0] + ux * s1, a[1] + uy * s1];
       const p2 = [p1[0] + ix * T, p1[1] + iy * T];
       const p3 = [p0[0] + ix * T, p0[1] + iy * T];
       holes.push([p0, p1, p2, p3]);
@@ -1516,7 +1539,8 @@ function solidPolygonPlateWithSlots(n, flatToFlat, T, O) {
     outline: cleanPoly(outline),
     holes,
     tabs,
-    sideLen: inner.sideLen,
+    sideLen: wLen,
+    boxSideLen: sideLen,
     plSize: flatToFlat + 2 * O,
   };
 }
@@ -1540,9 +1564,15 @@ function generatePanels() {
     const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
     const defs = [];
 
+    const joinWalls = !flat || state.wallJoints !== false;
+    // Inner side length so wall inner edges meet when joints are off
+    const innerPoly = regularPolygonVerts(nSides, Math.max(ow - 2 * T, 2 * T));
+    const wallLen = joinWalls ? sideW : innerPoly.sideLen;
+    d.wallSpan = { wallLen, joinWalls };
+
     if (flat && O > 0) {
       // Lantern-style solid plates with slots
-      const plate = solidPolygonPlateWithSlots(nSides, ow, T, O);
+      const plate = solidPolygonPlateWithSlots(nSides, ow, T, O, wallLen);
       defs.push({
         name: 'Bottom', role: 'bottom', w: plate.plSize, h: plate.plSize,
         specs: null, outlineOverride: plate.outline, holes: plate.holes,
@@ -1553,14 +1583,13 @@ function generatePanels() {
         specs: null, outlineOverride: plate.outline, holes: plate.holes,
         poly: true, plate: true, overhang: O,
       });
-      // Walls with matching tabs on top/bottom
-      const vRight = J(true, true);
-      const vLeft = J(false, false);
+      const vRight = joinWalls ? J(true, true) : null;
+      const vLeft = joinWalls ? J(false, false) : null;
       for (let i = 0; i < nSides; i++) {
         defs.push({
-          name: `Side ${i + 1}`, role: 'poly-side', w: sideW, h: oh,
+          name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
           specs: null,
-          outlineOverride: tabbedWallOutline(sideW, oh, T, vLeft, vRight, plate.tabs),
+          outlineOverride: tabbedWallOutline(wallLen, oh, T, vLeft, vRight, plate.tabs),
           sideIndex: i, nSides, tabbed: true,
         });
       }
@@ -1569,9 +1598,9 @@ function generatePanels() {
       // Flush finger-jointed plates
       const wallSpecs = [
         J(true, false),
-        J(true, true),
+        joinWalls ? J(true, true) : null,
         flat ? J(true, false) : null,
-        J(false, false),
+        joinWalls ? J(false, false) : null,
       ];
       defs.push({
         name: 'Bottom', role: 'bottom', w: ow, h: ow,
@@ -1589,7 +1618,7 @@ function generatePanels() {
       }
       for (let i = 0; i < nSides; i++) {
         defs.push({
-          name: `Side ${i + 1}`, role: 'poly-side', w: sideW, h: oh,
+          name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
           specs: wallSpecs,
           sideIndex: i, nSides,
         });
@@ -1623,17 +1652,25 @@ function generatePanels() {
   // ---------- Rectangular 4-sided box ----------
   const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
   const defs = [];
+  const joinWalls = !flat || state.wallJoints !== false;
 
-  // Wall specs shared by open-top and flush flat
-  //            bottom          right           top                         left
-  const fb = [J(true, true),  J(true, true),  flat ? J(true, true) : null,  J(true, true)];
-  const lr = [J(true, false), J(false, false), flat ? J(true, false) : null, J(false, false)];
+  // Wall specs — vertical joints optional when flat top
+  //            bottom          right                                           top                         left
+  const fb = [J(true, true),  joinWalls ? J(true, true) : null,  flat ? J(true, true) : null,  joinWalls ? J(true, true) : null];
+  const lr = [J(true, false), joinWalls ? J(false, false) : null, flat ? J(true, false) : null, joinWalls ? J(false, false) : null];
   const bt = [J(false, false), J(false, false), J(false, false), J(false, false)];
 
-  if (flat && O > 0) {
-    // Lantern-style: solid top & bottom plates with a few slots; walls with matching tabs
-    const plateBot = solidPlateWithSlots(ow, od, T, O);
-    const plateTop = solidPlateWithSlots(ow, od, T, O);
+  // When wall joints are off, walls span the INNER opening so inner edges meet
+  // (outer corner forms a V-groove whose size depends on material thickness).
+  const frontW = joinWalls ? ow : iw;
+  const sideD = joinWalls ? od : id;
+  d.wallSpan = { frontW, sideD, joinWalls };
+
+  if (flat && (O > 0 || !joinWalls)) {
+    // Solid plates with slots + tabbed walls.
+    // Used for overhang, or for flush when wall joints are off (so wall lengths match).
+    const plateBot = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
+    const plateTop = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
     defs.push({
       name: 'Bottom', role: 'bottom', w: plateBot.plW, h: plateBot.plH,
       specs: null, outlineOverride: plateBot.outline, holes: plateBot.holes,
@@ -1645,10 +1682,10 @@ function generatePanels() {
       overhang: O, plate: true,
     });
     const wallDefs = [
-      { name: 'Front', role: 'front', w: ow, tabs: plateBot.tabsW, vL: J(true, true),  vR: J(true, true) },
-      { name: 'Back',  role: 'back',  w: ow, tabs: plateBot.tabsW, vL: J(true, true),  vR: J(true, true) },
-      { name: 'Left',  role: 'left',  w: od, tabs: plateBot.tabsD, vL: J(false, false), vR: J(false, false) },
-      { name: 'Right', role: 'right', w: od, tabs: plateBot.tabsD, vL: J(false, false), vR: J(false, false) },
+      { name: 'Front', role: 'front', w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null,  vR: joinWalls ? J(true, true) : null },
+      { name: 'Back',  role: 'back',  w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null,  vR: joinWalls ? J(true, true) : null },
+      { name: 'Left',  role: 'left',  w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
+      { name: 'Right', role: 'right', w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
     ];
     for (const wd of wallDefs) {
       defs.push({
@@ -1660,23 +1697,23 @@ function generatePanels() {
     }
     d.plate = { O, plW: plateBot.plW, plH: plateBot.plH };
   } else if (flat) {
-    // Flush flat top: classic edge finger joints (no overhang)
+    // Flush flat top with wall joints: classic edge finger joints
     defs.push(
       { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
       { name: 'Top', role: 'top', w: ow, h: od, specs: bt },
-      { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
-      { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
-      { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
-      { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
+      { name: 'Front', role: 'front', w: frontW, h: oh, specs: fb },
+      { name: 'Back',  role: 'back',  w: frontW, h: oh, specs: fb },
+      { name: 'Left',  role: 'left',  w: sideD, h: oh, specs: lr },
+      { name: 'Right', role: 'right', w: sideD, h: oh, specs: lr },
     );
   } else {
     // Open top
     defs.push(
       { name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt },
-      { name: 'Front', role: 'front', w: ow, h: oh, specs: fb },
-      { name: 'Back',  role: 'back',  w: ow, h: oh, specs: fb },
-      { name: 'Left',  role: 'left',  w: od, h: oh, specs: lr },
-      { name: 'Right', role: 'right', w: od, h: oh, specs: lr },
+      { name: 'Front', role: 'front', w: frontW, h: oh, specs: fb },
+      { name: 'Back',  role: 'back',  w: frontW, h: oh, specs: fb },
+      { name: 'Left',  role: 'left',  w: sideD, h: oh, specs: lr },
+      { name: 'Right', role: 'right', w: sideD, h: oh, specs: lr },
     );
   }
 
@@ -1974,10 +2011,23 @@ function placement(role, d) {
       const O = (d.plate && d.plate.O) || 0;
       return { o: V(-hw - O, oh - T, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     }
-    case 'front':  return { o: V(-hw, 0, hd - T),  u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
-    case 'back':   return { o: V(-hw, 0, -hd),     u: V(1, 0, 0), v: V(0, 1, 0),  n: V(0, 0, 1) };
-    case 'left':   return { o: V(-hw + T, 0, -hd), u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
-    case 'right':  return { o: V(hw, 0, -hd),      u: V(0, 0, 1), v: V(0, 1, 0),  n: V(-1, 0, 0) };
+    case 'front': {
+      // Center shorter walls (no wall joints) so inner edges meet at corners
+      const fw = (d.wallSpan && d.wallSpan.frontW) || ow;
+      return { o: V(-fw / 2, 0, hd - T), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    }
+    case 'back': {
+      const fw = (d.wallSpan && d.wallSpan.frontW) || ow;
+      return { o: V(-fw / 2, 0, -hd), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
+    }
+    case 'left': {
+      const sd = (d.wallSpan && d.wallSpan.sideD) || od;
+      return { o: V(-hw + T, 0, -sd / 2), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    }
+    case 'right': {
+      const sd = (d.wallSpan && d.wallSpan.sideD) || od;
+      return { o: V(hw, 0, -sd / 2), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+    }
     // Slip-on lid: larger box centered on the main box, sitting on top
     case 'lid-top':   return { o: V(-lhw, lidBaseY, lhd),           u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     case 'lid-front': return { o: V(-lhw, lidBaseY - state.lidH, lhd - T), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
@@ -2021,13 +2071,14 @@ function placementPoly(p, d) {
     const dx = b[0] - a[0], dy = b[1] - a[1];
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len, uy = dy / len; // along outer edge
-    // Outward normal in polygon plane (CCW verts)
-    const nx = uy, ny = -ux;
-    // Origin at INNER face of the wall (outer edge pulled back by T), matching
-    // rectangular walls that sit with thickness on the outside of the opening.
-    // Map polygon XY → world XZ; wall local u along edge, v up, n outward.
+    const nx = uy, ny = -ux; // outward normal
+    // Center shorter walls on the edge so inner ends meet neighbors
+    const wallLen = (d.wallSpan && d.wallSpan.wallLen) || len;
+    const along0 = (len - wallLen) / 2;
+    const ox = a[0] + ux * along0 - nx * T;
+    const oz = a[1] + uy * along0 - ny * T;
     return {
-      o: V(a[0] - nx * T, 0, a[1] - ny * T),
+      o: V(ox, 0, oz),
       u: V(ux, 0, uy),
       v: V(0, 1, 0),
       n: V(nx, 0, ny),
