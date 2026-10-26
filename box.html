@@ -805,15 +805,18 @@ function updateGeneratorUI() {
     const el = $(id);
     if (el) el.style.display = isFrame ? 'none' : '';
   });
-  // Update dimension labels
+  // Update dimension labels + min height for frame
   if (isFrame) {
     if ($('lblW')) $('lblW').textContent = 'Length (mm)';
     if ($('lblH')) $('lblH').textContent = 'Frame depth (mm)';
     if ($('lblD')) $('lblD').textContent = 'Width (mm)';
+    if ($('sldH')) $('sldH').min = Math.max(10, 2 * (state.T || 3));
+    if (state.H < 2 * (state.T || 3)) state.H = 2 * (state.T || 3);
   } else {
     if ($('lblW')) $('lblW').textContent = 'Width (mm)';
     if ($('lblH')) $('lblH').textContent = 'Height (mm)';
     if ($('lblD')) $('lblD').textContent = 'Depth (mm)';
+    if ($('sldH')) $('sldH').min = 10;
   }
 }
 
@@ -975,8 +978,12 @@ function renderDivSpacingUI() {
 
 function onDimSlider(key, v) {
   // Slider values are always in mm
-  const n = parseFloat(v);
+  let n = parseFloat(v);
   if (!(n > 0)) return;
+  // Frame mode: wall height (H) never below 2× thickness
+  if (key === 'H' && state.generator === 'frame') {
+    n = Math.max(n, 2 * (state.T || 3));
+  }
   pushHistory();
   state[key] = n;
   const inp = $('in' + key);
@@ -985,10 +992,14 @@ function onDimSlider(key, v) {
   rebuild();
 }
 function onDimInput(key, v) {
-  const n = parseFloat(v);
+  let n = parseFloat(v);
   if (!(n > 0)) return;
+  n = fromDisp(n);
+  if (key === 'H' && state.generator === 'frame') {
+    n = Math.max(n, 2 * (state.T || 3));
+  }
   pushHistory();
-  state[key] = fromDisp(n);
+  state[key] = n;
   const sld = $('sld' + key);
   if (sld) sld.value = state[key];
   updateLabels();
@@ -1075,10 +1086,16 @@ function updateLabels() {
   if ($('valLidH')) $('valLidH').textContent = fmtLen(state.lidH, 1, 3);
   if ($('valFrameBorder')) $('valFrameBorder').textContent = fmtLen(state.frameBorder || 15, 1, 2);
   if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(state.frameFromTop || 0, 1, 2);
-  // Keep the position slider range sensible for current wall height
+  // Keep the position slider range sensible: face stays ≥ 2×T above bottom
   if ($('sldFrameFromTop')) {
-    const maxFT = Math.max(0, (state.H || 50) - 2 * (state.T || 3));
-    $('sldFrameFromTop').max = Math.max(10, maxFT);
+    const T = state.T || 3;
+    const maxFT = Math.max(0, (state.H || 50) - 3 * T);
+    $('sldFrameFromTop').min = 0;
+    $('sldFrameFromTop').max = Math.max(5, maxFT);
+    if ((state.frameFromTop || 0) > maxFT) {
+      state.frameFromTop = maxFT;
+      if ($('inFrameFromTop')) $('inFrameFromTop').value = numDisp(maxFT);
+    }
   }
   // Status bar + right panel
   if ($('sbKerf')) $('sbKerf').textContent = fmtLen(state.kerf, 2, 4);
@@ -1237,8 +1254,10 @@ function dims() {
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
   else { iw = state.W - 2 * T; ih = state.H - lidT; id = state.D - 2 * T; }
   const minI = Math.max(2, 2 * T);
-  const warn = iw < minI || ih < minI || id < minI;
-  iw = Math.max(iw, minI); ih = Math.max(ih, minI); id = Math.max(id, minI);
+  // Frame mode: wall height must be at least 2× thickness (room for bottom joints + face/underlay)
+  const minH = state.generator === 'frame' ? Math.max(minI, 2 * T) : minI;
+  const warn = iw < minI || ih < minH || id < minI;
+  iw = Math.max(iw, minI); ih = Math.max(ih, minH); id = Math.max(id, minI);
   return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT, od: id + 2 * T, T, warn };
 }
 
@@ -1869,8 +1888,9 @@ function solidPolygonPlateWithSlots(n, flatToFlat, T, O, wallSideLen) {
 function generateFramePanels(d, J) {
   const { ow, oh, od, T, iw, ih, id } = d;
   const B = Math.max(5, Math.min(state.frameBorder || 15, Math.min(ow, od) / 2 - T));
-  // Clamp so the face stays on the wall (at least T of wall above the slot bottom for strength)
-  const maxFromTop = Math.max(0, oh - 2 * T);
+  // Keep face (and its underlay) at least 2×T above the bottom so slots stay clear of bottom fingers.
+  // fromTop is distance down from the wall top; max leaves faceY >= 2*T.
+  const maxFromTop = Math.max(0, oh - 3 * T);
   const fromTop = Math.max(0, Math.min(state.frameFromTop || 0, maxFromTop));
   d.frameBorder = B;
   d.frameFromTop = fromTop;
@@ -1882,9 +1902,9 @@ function generateFramePanels(d, J) {
   d.wallSpan = { frontW, sideD, joinWalls };
 
   // Wall finger specs (same as open-top box)
-  // bottom, right, top, left
-  const fb = [J(true, true), J(true, true), null, J(true, true)]; // front/back: no top fingers (mitered face sits on rim)
-  const lr = [J(true, false), J(false, false), null, J(false, false)]; // left/right
+  // bottom, right, top, left — top edge plain (face slots are separate)
+  const fb = [J(true, true), J(true, true), null, J(true, true)];
+  const lr = [J(true, false), J(false, false), null, J(false, false)];
 
   const defs = [];
 
@@ -1909,54 +1929,35 @@ function generateFramePanels(d, J) {
   });
 
   // 3. Mitered face border pieces sit INSIDE the walls and lock with finger joints.
-  // Outer length of each face = interior span of that side. Outward fingers of depth T
-  // on the outer long edge fit into slots cut near the top of the corresponding wall.
-  // Body width = B (border). Ends are 45° so the four pieces meet at the interior corners.
-  //
-  // Local outline for a face piece:
-  //   y = 0          → tip of the outward fingers (goes into wall slots)
-  //   y = T          → base of fingers / start of body
-  //   y = T + B      → inner edge of the frame border
-  //   x runs along the length; ends are cut at 45° across the body.
+  // Outer length = interior span. Outward fingers of depth T fit wall slots.
+  // Body width = B. Ends 45° so the four pieces meet at interior corners.
+  // Local: y=0 finger tips, y=T outer body, y=T+B inner edge.
   function miterFaceOutline(L, B, T) {
-    // L = interior length of the wall this piece mates with (finger tips span L)
-    // y=0 = finger tips (into wall), y=T = base of fingers / outer body, y=T+B = inner edge
-    const segs = fingerSegments(L, true); // face owns even → fingers on even
+    const segs = fingerSegments(L, true);
     const pts = [];
     const bodyTop = T + B;
-
-    // Walk outer edge left → right, inserting vertical steps at finger/slot transitions
     let prevY = null;
     for (const seg of segs) {
       const y = seg.isFinger ? 0 : T;
       if (prevY === null) {
         pts.push([seg.a, y]);
       } else if (prevY !== y) {
-        // vertical step at the transition
         pts.push([seg.a, prevY]);
         pts.push([seg.a, y]);
       }
       pts.push([seg.b, y]);
       prevY = y;
     }
-    // Ensure we end at the right outer body corner (y=T)
     if (prevY !== T) {
       pts.push([L, prevY]);
       pts.push([L, T]);
     }
-    // Right 45° miter across the body
     pts.push([L - B, bodyTop]);
-    // Inner edge right → left
     pts.push([B, bodyTop]);
-    // Left 45° miter back to outer body
     pts.push([0, T]);
     return pts;
   }
 
-  // Matching slots cut into the walls.
-  // Slot is [x, y, w, h] in wall local coords (x along length, y up from bottom).
-  // offsetX shifts slots into the interior zone (after the vertical finger joints).
-  // fromTop moves the whole row down from the top of the wall.
   function faceSlotsForWall(L, wallH, T, offsetX, fromTop) {
     const segs = fingerSegments(L, true);
     const slots = [];
@@ -1969,9 +1970,10 @@ function generateFramePanels(d, J) {
     return slots;
   }
 
-  const faceLenW = iw; // front / back faces span interior width
-  const faceLenD = id; // left / right faces span interior depth
+  const faceLenW = iw;
+  const faceLenD = id;
 
+  // Face (with fingers) — 4 mitered strips
   defs.push({
     name: 'Face top', role: 'frame-face-top', w: faceLenW, h: T + B,
     specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T),
@@ -1991,6 +1993,27 @@ function generateFramePanels(d, J) {
     name: 'Face right', role: 'frame-face-right', w: faceLenD, h: T + B,
     specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T),
     frameFace: true,
+  });
+
+  // Underlay — single continuous frame-shaped plate (no fingers).
+  // Outer size = interior of the box; inner opening leaves a border of width B.
+  // The mitered face pieces rest on this ledge.
+  const underOuter = [
+    [0, 0],
+    [iw, 0],
+    [iw, id],
+    [0, id],
+  ];
+  const underHole = [
+    [B, B],
+    [iw - B, B],
+    [iw - B, id - B],
+    [B, id - B],
+  ];
+  defs.push({
+    name: 'Underlay', role: 'frame-under', w: iw, h: id,
+    specs: null, outlineOverride: underOuter, holes: [underHole],
+    frameUnder: true,
   });
 
   // Walls are outer length; interior starts ~T in from each end (vertical joints)
@@ -2700,6 +2723,17 @@ function placement(role, d) {
         n: V(0, 1, 0),
       };
     }
+    // Underlay — single frame-shaped plate directly under the face.
+    // Fills the interior footprint; face rests on its border of width B.
+    case 'frame-under': {
+      const underY = oh - T - (d.frameFromTop || 0) - T;
+      return {
+        o: V(-iw / 2, underY, id / 2),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
     }
 }
 
@@ -2784,9 +2818,10 @@ const EXPLODE_DIR = {
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
-  // Frame face layer lifts slightly above the walls
+  // Frame face + underlay lift slightly above the walls
   'frame-face-top': [0, 1.15, 0.35], 'frame-face-bottom': [0, 1.15, -0.35],
   'frame-face-left': [-0.35, 1.15, 0], 'frame-face-right': [0.35, 1.15, 0],
+  'frame-under': [0, 0.85, 0],
   // Row dividers (div-y) lift up; column dividers (div-x) stay fixed
   'div-x': [0, 0, 0], 'div-y': [0, 1, 0],
   'dr-bottom': [0, 0.15, 0], 'dr-top': [0, 0.9, 0], 'dr-front': [0, 0.4, 0.5],
@@ -2798,6 +2833,7 @@ const PANEL_COLOR = {
   'hinge-lid': 0xb8956a,
   'frame-face-top': 0x8b5a2b, 'frame-face-bottom': 0x8b5a2b,
   'frame-face-left': 0x7a4f24, 'frame-face-right': 0x7a4f24,
+  'frame-under': 0xc4a574,
   'div-x': 0xc4a574, 'div-y': 0xb8956a,
   'dr-bottom': 0xa67c52, 'dr-top': 0xb8956a, 'dr-front': 0x9a7048, 'dr-back': 0x9a7048, 'dr-left': 0x8c6440, 'dr-right': 0x8c6440,
 };
