@@ -1932,26 +1932,61 @@ function generateFramePanels(d, J) {
   // Outer length = interior span. Outward fingers of depth T fit wall slots.
   // Body width = B. Ends 45° so the four pieces meet at interior corners.
   // Local: y=0 finger tips, y=T outer body, y=T+B inner edge.
+  //
+  // Finger pattern is inset ≥10 mm from both ends so slots stay clear of the
+  // wall corners (stronger sides) while remaining equally spaced in the middle.
+  function frameFingerSegs(L, T) {
+    const margin = Math.max(10, T * 2); // hard minimum 10 mm from each end
+    const usable = L - 2 * margin;
+    if (usable < T * 3) {
+      // Too short for inset pattern — one centered finger, still clear of ends if possible
+      const fw = Math.min(Math.max(T, usable * 0.5), Math.max(0, L - 2 * margin));
+      const a = Math.max(margin, (L - fw) / 2);
+      const b = Math.min(L - margin, a + fw);
+      if (b <= a) return [];
+      return [{ a, b, isFinger: true }];
+    }
+    const segs = fingerSegments(usable, true);
+    return segs.map(s => ({
+      a: margin + s.a,
+      b: margin + s.b,
+      isFinger: s.isFinger,
+    }));
+  }
+
   function miterFaceOutline(L, B, T) {
-    const segs = fingerSegments(L, true);
+    const segs = frameFingerSegs(L, T);
     const pts = [];
     const bodyTop = T + B;
-    let prevY = null;
+
+    // Outer edge runs along y=T, with downward fingers (y=0) only in the middle.
+    // Always start and end at the body corners so fingers never reach the ends.
+    pts.push([0, T]);
+    let x = 0;
+    let y = T;
     for (const seg of segs) {
-      const y = seg.isFinger ? 0 : T;
-      if (prevY === null) {
+      // Advance along body to the start of this segment if needed
+      if (seg.a > x + 1e-9) {
         pts.push([seg.a, y]);
-      } else if (prevY !== y) {
-        pts.push([seg.a, prevY]);
-        pts.push([seg.a, y]);
+        x = seg.a;
+      }
+      const targetY = seg.isFinger ? 0 : T;
+      if (targetY !== y) {
+        pts.push([x, targetY]); // vertical step at finger start/end
+        y = targetY;
       }
       pts.push([seg.b, y]);
-      prevY = y;
+      x = seg.b;
     }
-    if (prevY !== T) {
-      pts.push([L, prevY]);
-      pts.push([L, T]);
+    // Return to body height if still down in a finger (do NOT extend finger to L)
+    if (y !== T) {
+      pts.push([x, T]);
+      y = T;
     }
+    // Finish outer edge to the right corner
+    if (x < L - 1e-9) pts.push([L, T]);
+
+    // Right 45° miter, inner edge, left 45° miter
     pts.push([L - B, bodyTop]);
     pts.push([B, bodyTop]);
     pts.push([0, T]);
@@ -1959,7 +1994,7 @@ function generateFramePanels(d, J) {
   }
 
   function faceSlotsForWall(L, wallH, T, offsetX, fromTop) {
-    const segs = fingerSegments(L, true);
+    const segs = frameFingerSegs(L, T);
     const slots = [];
     const slotY = wallH - T - fromTop;
     for (const seg of segs) {
