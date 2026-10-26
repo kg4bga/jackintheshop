@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2d2d2d">
-  <title>Jack In The Shop — Box Generator Ver 0.01</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.02</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -356,10 +356,14 @@
         <div class="lb-panel-body">
           <div class="hint">Measurement mode and overall size.</div>
           <div class="btn-grp">
+            <button id="genBox" class="active" onclick="setGenerator('box')">Box</button>
+            <button id="genFrame" onclick="setGenerator('frame')">Frame</button>
+          </div>
+          <div class="btn-grp" style="margin-top:8px;">
             <button id="modeI" class="active" onclick="setMode('inside')">Interior</button>
             <button id="modeO" onclick="setMode('outside')">Exterior</button>
           </div>
-          <div class="btn-grp" style="margin-top:8px;flex-wrap:wrap;">
+          <div class="btn-grp" style="margin-top:8px;flex-wrap:wrap;" id="sidesGrp">
             <button id="sides4" class="active" onclick="setSides(4)">4</button>
             <button id="sides6" onclick="setSides(6)">6</button>
           </div>
@@ -378,6 +382,18 @@
             <div class="ctrl-lbl"><strong id="lblD">Depth (mm)</strong><span class="ctrl-val" id="valD">100.0 mm</span></div>
             <input type="range" id="sldD" min="20" max="400" step="0.5" value="100" oninput="onDimSlider('D', this.value)">
             <input class="dim-inp" id="inD" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('D', this.value)">
+          </div>
+          <div class="ctrl" id="frameBorderGrp" style="display:none;">
+            <div class="ctrl-lbl"><strong>Frame border width</strong><span class="ctrl-val" id="valFrameBorder">15.0 mm</span></div>
+            <input type="range" id="sldFrameBorder" min="5" max="60" step="0.5" value="15" oninput="onFrameBorder(this.value)">
+            <input class="dim-inp" id="inFrameBorder" type="number" step="0.5" style="margin-top:4px" oninput="onFrameBorderInput(this.value)">
+            <div class="hint" style="margin-top:4px">Width of the 45° mitered face layer inside the walls.</div>
+          </div>
+          <div class="ctrl" id="framePosGrp" style="display:none;">
+            <div class="ctrl-lbl"><strong>Frame position from top</strong><span class="ctrl-val" id="valFrameFromTop">0.0 mm</span></div>
+            <input type="range" id="sldFrameFromTop" min="0" max="80" step="0.5" value="0" oninput="onFrameFromTop(this.value)">
+            <input class="dim-inp" id="inFrameFromTop" type="number" step="0.5" style="margin-top:4px" oninput="onFrameFromTopInput(this.value)">
+            <div class="hint" style="margin-top:4px">0 = flush with top of walls. Increase to lower the face down the sides.</div>
           </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
@@ -632,8 +648,11 @@
 const MM_PER_IN = 25.4;
 const DEFAULTS = {
   unit: 'mm', mode: 'inside',
-  W: 150, H: 50, D: 100,   // mm
+  generator: 'box', // 'box' | 'frame'
+  W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
   T: 3, finger: 9, kerf: 0.1, // mm
+  frameBorder: 15, // mm — width of the mitered face frame
+  frameFromTop: 0, // mm — how far the face sits below the top of the walls (0 = flush)
   lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
@@ -703,6 +722,8 @@ function undo() {
   $('lidNone').classList.toggle('active', state.lid === 'none');
   $('lidFlat').classList.toggle('active', state.lid === 'flat');
   if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
+  if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
+  if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
   if ($('sldAssembly')) {
     $('sldAssembly').value = Math.round((state.assembly || 1) * 100);
     $('valAssembly').textContent = Math.round((state.assembly || 1) * 100) + '%';
@@ -746,6 +767,54 @@ function setMode(m) {
   $('modeO').classList.toggle('active', m === 'outside');
   syncInputs();
   rebuild();
+}
+
+function setGenerator(g) {
+  if (g === state.generator) return;
+  pushHistoryNow();
+  state.generator = g;
+  $('genBox').classList.toggle('active', g === 'box');
+  $('genFrame').classList.toggle('active', g === 'frame');
+  // Frame forces rectangle, no lid/drawer
+  if (g === 'frame') {
+    state.sides = 4;
+    state.lid = 'none';
+    state.drawer = false;
+    if ($('chkDrawer')) $('chkDrawer').checked = false;
+    if ($('sides4')) $('sides4').classList.add('active');
+    if ($('sides6')) $('sides6').classList.remove('active');
+    if ($('lidNone')) {
+      $('lidNone').classList.add('active');
+      $('lidFlat').classList.remove('active');
+      if ($('lidSlip')) $('lidSlip').classList.remove('active');
+    }
+  }
+  updateGeneratorUI();
+  syncInputs();
+  rebuild();
+}
+
+function updateGeneratorUI() {
+  const isFrame = state.generator === 'frame';
+  if ($('sidesGrp')) $('sidesGrp').style.display = isFrame ? 'none' : '';
+  if ($('sidesHint')) $('sidesHint').style.display = isFrame ? 'none' : '';
+  if ($('frameBorderGrp')) $('frameBorderGrp').style.display = isFrame ? '' : 'none';
+  if ($('framePosGrp')) $('framePosGrp').style.display = isFrame ? '' : 'none';
+  // Hide lid / divider / drawer panels for frame
+  ['s-lid', 's-div', 's-drawer'].forEach(id => {
+    const el = $(id);
+    if (el) el.style.display = isFrame ? 'none' : '';
+  });
+  // Update dimension labels
+  if (isFrame) {
+    if ($('lblW')) $('lblW').textContent = 'Length (mm)';
+    if ($('lblH')) $('lblH').textContent = 'Frame depth (mm)';
+    if ($('lblD')) $('lblD').textContent = 'Width (mm)';
+  } else {
+    if ($('lblW')) $('lblW').textContent = 'Width (mm)';
+    if ($('lblH')) $('lblH').textContent = 'Height (mm)';
+    if ($('lblD')) $('lblD').textContent = 'Depth (mm)';
+  }
 }
 
 function setLid(l) {
@@ -925,6 +994,42 @@ function onDimInput(key, v) {
   updateLabels();
   rebuild();
 }
+function onFrameBorder(v) {
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  pushHistory();
+  state.frameBorder = n;
+  if ($('inFrameBorder')) $('inFrameBorder').value = numDisp(n);
+  if ($('valFrameBorder')) $('valFrameBorder').textContent = fmtLen(n, 1, 2);
+  rebuild();
+}
+function onFrameBorderInput(v) {
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  pushHistory();
+  state.frameBorder = fromDisp(n);
+  if ($('sldFrameBorder')) $('sldFrameBorder').value = state.frameBorder;
+  if ($('valFrameBorder')) $('valFrameBorder').textContent = fmtLen(state.frameBorder, 1, 2);
+  rebuild();
+}
+function onFrameFromTop(v) {
+  const n = parseFloat(v);
+  if (isNaN(n) || n < 0) return;
+  pushHistory();
+  state.frameFromTop = n;
+  if ($('inFrameFromTop')) $('inFrameFromTop').value = numDisp(n);
+  if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(n, 1, 2);
+  rebuild();
+}
+function onFrameFromTopInput(v) {
+  const n = parseFloat(v);
+  if (isNaN(n) || n < 0) return;
+  pushHistory();
+  state.frameFromTop = fromDisp(n);
+  if ($('sldFrameFromTop')) $('sldFrameFromTop').value = state.frameFromTop;
+  if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(state.frameFromTop, 1, 2);
+  rebuild();
+}
 function onDim() {
   // legacy fallback if any caller remains
   onDimInput('W', $('inW').value);
@@ -968,6 +1073,13 @@ function updateLabels() {
   $('valFinger').textContent = fmtLen(state.finger, 1, 3);
   $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('valLidH')) $('valLidH').textContent = fmtLen(state.lidH, 1, 3);
+  if ($('valFrameBorder')) $('valFrameBorder').textContent = fmtLen(state.frameBorder || 15, 1, 2);
+  if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(state.frameFromTop || 0, 1, 2);
+  // Keep the position slider range sensible for current wall height
+  if ($('sldFrameFromTop')) {
+    const maxFT = Math.max(0, (state.H || 50) - 2 * (state.T || 3));
+    $('sldFrameFromTop').max = Math.max(10, maxFT);
+  }
   // Status bar + right panel
   if ($('sbKerf')) $('sbKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoT')) $('infoT').textContent = fmtLen(state.T, 1, 3);
@@ -978,9 +1090,13 @@ function updateLabels() {
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
   if ($('infoSides')) {
-    const s = state.sides || 4;
-    const labels = { 4: 'Rectangle', 6: 'Hexagon' };
-    $('infoSides').textContent = (labels[s] || s) + ` (${s})`;
+    if (state.generator === 'frame') {
+      $('infoSides').textContent = 'Frame';
+    } else {
+      const s = state.sides || 4;
+      const labels = { 4: 'Rectangle', 6: 'Hexagon' };
+      $('infoSides').textContent = (labels[s] || s) + ` (${s})`;
+    }
   }
 }
 
@@ -1005,6 +1121,14 @@ function syncInputs() {
   if ($('drawerControls')) $('drawerControls').style.display = state.drawer ? 'block' : 'none';
   if ($('drawerPullCtrl')) $('drawerPullCtrl').style.display = state.drawer ? 'block' : 'none';
   if ($('sldDrawerH')) $('sldDrawerH').value = state.drawerH;
+  // Frame + generator UI
+  if ($('sldFrameBorder')) $('sldFrameBorder').value = state.frameBorder || 15;
+  if ($('inFrameBorder')) $('inFrameBorder').value = numDisp(state.frameBorder || 15);
+  if ($('sldFrameFromTop')) $('sldFrameFromTop').value = state.frameFromTop || 0;
+  if ($('inFrameFromTop')) $('inFrameFromTop').value = numDisp(state.frameFromTop || 0);
+  if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
+  if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
+  updateGeneratorUI();
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   if ($('sldDrawerClear')) $('sldDrawerClear').value = state.drawerClear;
   if ($('valDrawerClear')) $('valDrawerClear').textContent = fmtLen(state.drawerClear, 1, 2);
@@ -1736,6 +1860,185 @@ function solidPolygonPlateWithSlots(n, flatToFlat, T, O, wallSideLen) {
   };
 }
 
+/**
+ * Frame generator: 3 layers —
+ * 1. Back (bottom plate with finger joints to the walls)
+ * 2. Edges (4 walls, finger-jointed, height = frame depth)
+ * 3. Face layer: 4 mitered (45°) border pieces that sit on the rim
+ */
+function generateFramePanels(d, J) {
+  const { ow, oh, od, T, iw, ih, id } = d;
+  const B = Math.max(5, Math.min(state.frameBorder || 15, Math.min(ow, od) / 2 - T));
+  // Clamp so the face stays on the wall (at least T of wall above the slot bottom for strength)
+  const maxFromTop = Math.max(0, oh - 2 * T);
+  const fromTop = Math.max(0, Math.min(state.frameFromTop || 0, maxFromTop));
+  d.frameBorder = B;
+  d.frameFromTop = fromTop;
+  d.isFrame = true;
+
+  const joinWalls = true;
+  const frontW = ow;
+  const sideD = od;
+  d.wallSpan = { frontW, sideD, joinWalls };
+
+  // Wall finger specs (same as open-top box)
+  // bottom, right, top, left
+  const fb = [J(true, true), J(true, true), null, J(true, true)]; // front/back: no top fingers (mitered face sits on rim)
+  const lr = [J(true, false), J(false, false), null, J(false, false)]; // left/right
+
+  const defs = [];
+
+  // 1. Back panel (bottom)
+  defs.push({
+    name: 'Back', role: 'bottom', w: ow, h: od,
+    specs: [J(false, false), J(false, false), J(false, false), J(false, false)],
+  });
+
+  // 2. Edge walls (height = oh = frame depth)
+  defs.push({
+    name: 'Front edge', role: 'front', w: frontW, h: oh, specs: fb,
+  });
+  defs.push({
+    name: 'Back edge', role: 'back', w: frontW, h: oh, specs: fb,
+  });
+  defs.push({
+    name: 'Left edge', role: 'left', w: sideD, h: oh, specs: lr,
+  });
+  defs.push({
+    name: 'Right edge', role: 'right', w: sideD, h: oh, specs: lr,
+  });
+
+  // 3. Mitered face border pieces sit INSIDE the walls and lock with finger joints.
+  // Outer length of each face = interior span of that side. Outward fingers of depth T
+  // on the outer long edge fit into slots cut near the top of the corresponding wall.
+  // Body width = B (border). Ends are 45° so the four pieces meet at the interior corners.
+  //
+  // Local outline for a face piece:
+  //   y = 0          → tip of the outward fingers (goes into wall slots)
+  //   y = T          → base of fingers / start of body
+  //   y = T + B      → inner edge of the frame border
+  //   x runs along the length; ends are cut at 45° across the body.
+  function miterFaceOutline(L, B, T) {
+    // L = interior length of the wall this piece mates with (finger tips span L)
+    // y=0 = finger tips (into wall), y=T = base of fingers / outer body, y=T+B = inner edge
+    const segs = fingerSegments(L, true); // face owns even → fingers on even
+    const pts = [];
+    const bodyTop = T + B;
+
+    // Walk outer edge left → right, inserting vertical steps at finger/slot transitions
+    let prevY = null;
+    for (const seg of segs) {
+      const y = seg.isFinger ? 0 : T;
+      if (prevY === null) {
+        pts.push([seg.a, y]);
+      } else if (prevY !== y) {
+        // vertical step at the transition
+        pts.push([seg.a, prevY]);
+        pts.push([seg.a, y]);
+      }
+      pts.push([seg.b, y]);
+      prevY = y;
+    }
+    // Ensure we end at the right outer body corner (y=T)
+    if (prevY !== T) {
+      pts.push([L, prevY]);
+      pts.push([L, T]);
+    }
+    // Right 45° miter across the body
+    pts.push([L - B, bodyTop]);
+    // Inner edge right → left
+    pts.push([B, bodyTop]);
+    // Left 45° miter back to outer body
+    pts.push([0, T]);
+    return pts;
+  }
+
+  // Matching slots cut into the walls.
+  // Slot is [x, y, w, h] in wall local coords (x along length, y up from bottom).
+  // offsetX shifts slots into the interior zone (after the vertical finger joints).
+  // fromTop moves the whole row down from the top of the wall.
+  function faceSlotsForWall(L, wallH, T, offsetX, fromTop) {
+    const segs = fingerSegments(L, true);
+    const slots = [];
+    const slotY = wallH - T - fromTop;
+    for (const seg of segs) {
+      if (seg.isFinger) {
+        slots.push([offsetX + seg.a, slotY, seg.b - seg.a, T]);
+      }
+    }
+    return slots;
+  }
+
+  const faceLenW = iw; // front / back faces span interior width
+  const faceLenD = id; // left / right faces span interior depth
+
+  defs.push({
+    name: 'Face top', role: 'frame-face-top', w: faceLenW, h: T + B,
+    specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T),
+    frameFace: true,
+  });
+  defs.push({
+    name: 'Face bottom', role: 'frame-face-bottom', w: faceLenW, h: T + B,
+    specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T),
+    frameFace: true,
+  });
+  defs.push({
+    name: 'Face left', role: 'frame-face-left', w: faceLenD, h: T + B,
+    specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T),
+    frameFace: true,
+  });
+  defs.push({
+    name: 'Face right', role: 'frame-face-right', w: faceLenD, h: T + B,
+    specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T),
+    frameFace: true,
+  });
+
+  // Walls are outer length; interior starts ~T in from each end (vertical joints)
+  const slotsFront = faceSlotsForWall(faceLenW, oh, T, T, fromTop);
+  const slotsBack  = faceSlotsForWall(faceLenW, oh, T, T, fromTop);
+  const slotsLeft  = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
+  const slotsRight = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
+
+  // Build panels (same pipeline as box)
+  const panels = defs.map(def => {
+    let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
+    const cut = offsetPoly(outline, state.kerf / 2);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of cut) {
+      minX = Math.min(minX, x); minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+    const holes = (def.holes || []).map(h => {
+      if (!h || h.length < 3) return h;
+      const ccw = polyArea(h) > 0 ? h : h.slice().reverse();
+      return offsetPoly(ccw, state.kerf / 2);
+    });
+
+    // Attach face-joint slots to the walls
+    let slots = [];
+    if (def.role === 'front') slots = slotsFront.map(s => s.slice());
+    else if (def.role === 'back') slots = slotsBack.map(s => s.slice());
+    else if (def.role === 'left') slots = slotsLeft.map(s => s.slice());
+    else if (def.role === 'right') slots = slotsRight.map(s => s.slice());
+
+    // Expand slots for kerf (same as main rectangular path)
+    slots = slots.map(([x, y, w, h]) => [
+      x - state.kerf / 2,
+      y - state.kerf / 2,
+      w + state.kerf,
+      h + state.kerf,
+    ]);
+
+    return {
+      ...def, outline, cut, holes, slots,
+      minX, minY, maxX, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
+      area: polyArea(outline),
+    };
+  });
+
+  return { panels, dims: d };
+}
+
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T, iw, ih, id } = d;
@@ -1745,6 +2048,11 @@ function generatePanels() {
   const nSides = state.sides || 4;
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
   d.sides = nSides;
+
+  // ---------- Frame generator ----------
+  if (state.generator === 'frame') {
+    return generateFramePanels(d, J);
+  }
 
   // ---------- Regular polygon boxes (6) ----------
   if (nSides !== 4) {
@@ -2301,7 +2609,7 @@ function shapeFromPts(pts) {
 
 /** Panel-local (u, v, thickness) → world basis. Box sits on y = 0, centred on x/z. */
 function placement(role, d) {
-  const { ow, oh, od, T } = d, hw = ow / 2, hd = od / 2;
+  const { ow, oh, od, T, iw, id } = d, hw = ow / 2, hd = od / 2;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   // Slip lid outer sizes
   const low = ow + 2 * T, lod = od + 2 * T;
@@ -2349,6 +2657,46 @@ function placement(role, d) {
         o: V(-lidW / 2, oh, lidD / 2),
         u: V(1, 0, 0),
         v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
+    // Frame face layer sits INSIDE the walls.
+    // Outline local y=0 = tip of outward fingers (into wall slots),
+    // local y = T + B = inner edge of the border.
+    // frameFromTop moves the whole face (and matching slots) down from the wall top.
+    case 'frame-face-top': {
+      const faceY = oh - T - (d.frameFromTop || 0);
+      return {
+        o: V(-iw / 2, faceY, hd),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
+    case 'frame-face-bottom': {
+      const faceY = oh - T - (d.frameFromTop || 0);
+      return {
+        o: V(-iw / 2, faceY, -hd),
+        u: V(1, 0, 0),
+        v: V(0, 0, 1),
+        n: V(0, 1, 0),
+      };
+    }
+    case 'frame-face-left': {
+      const faceY = oh - T - (d.frameFromTop || 0);
+      return {
+        o: V(-hw, faceY, -id / 2),
+        u: V(0, 0, 1),
+        v: V(1, 0, 0),
+        n: V(0, 1, 0),
+      };
+    }
+    case 'frame-face-right': {
+      const faceY = oh - T - (d.frameFromTop || 0);
+      return {
+        o: V(hw, faceY, -id / 2),
+        u: V(0, 0, 1),
+        v: V(-1, 0, 0),
         n: V(0, 1, 0),
       };
     }
@@ -2436,6 +2784,9 @@ const EXPLODE_DIR = {
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
+  // Frame face layer lifts slightly above the walls
+  'frame-face-top': [0, 1.15, 0.35], 'frame-face-bottom': [0, 1.15, -0.35],
+  'frame-face-left': [-0.35, 1.15, 0], 'frame-face-right': [0.35, 1.15, 0],
   // Row dividers (div-y) lift up; column dividers (div-x) stay fixed
   'div-x': [0, 0, 0], 'div-y': [0, 1, 0],
   'dr-bottom': [0, 0.15, 0], 'dr-top': [0, 0.9, 0], 'dr-front': [0, 0.4, 0.5],
@@ -2445,6 +2796,8 @@ const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
   'hinge-lid': 0xb8956a,
+  'frame-face-top': 0x8b5a2b, 'frame-face-bottom': 0x8b5a2b,
+  'frame-face-left': 0x7a4f24, 'frame-face-right': 0x7a4f24,
   'div-x': 0xc4a574, 'div-y': 0xb8956a,
   'dr-bottom': 0xa67c52, 'dr-top': 0xb8956a, 'dr-front': 0x9a7048, 'dr-back': 0x9a7048, 'dr-left': 0x8c6440, 'dr-right': 0x8c6440,
 };
@@ -2703,7 +3056,8 @@ function refreshSVGPreview() {
 
 function fileBase() {
   const d = dims();
-  return `jackintheshop_box_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
+  const prefix = state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
+  return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
   const blob = new Blob([data], { type });
@@ -2731,6 +3085,8 @@ function resetAll() {
   $('lidNone').classList.add('active');
   $('lidFlat').classList.remove('active');
   if ($('lidSlip')) $('lidSlip').classList.remove('active');
+  if ($('genBox')) $('genBox').classList.add('active');
+  if ($('genFrame')) $('genFrame').classList.remove('active');
   $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
   syncInputs();
   rebuild();
