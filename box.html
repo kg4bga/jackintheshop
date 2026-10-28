@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.02</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.1</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2270,8 +2270,16 @@ function generateFramePanels(d, J) {
     });
   }
 
+  // Underlay hole border:
+  //  - Normal: B (same as face, measured from interior walls).
+  //  - Outside-cap (joints on underlay, fromTop≈0): face inner opening = exterior−2B.
+  //    Underlay outer = interior (exterior−2T), so border must be B−T to match the same opening.
+  const underB = outsideFace ? Math.max(0.5, B - T) : B;
   const underHole = [
-    [B, B], [iw - B, B], [iw - B, id - B], [B, id - B],
+    [underB, underB],
+    [iw - underB, underB],
+    [iw - underB, id - underB],
+    [underB, id - underB],
   ];
   if (jointsOnUnder) {
     defs.push({
