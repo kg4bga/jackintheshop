@@ -333,9 +333,9 @@
     .modal-close:hover { color: #fff; }
     .modal-body {
       flex: 1; overflow: auto; padding: 12px; background: var(--modal-bg); min-height: 280px;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; /* children use margin:auto so tall sheets scroll instead of being clipped at the top */
     }
-    .modal-body svg { max-width: 100%; height: auto; background: var(--svg-preview-bg); border-radius: 2px; }
+    .modal-body svg { margin: auto; flex: 0 0 auto; max-width: 100%; height: auto; background: var(--svg-preview-bg); border-radius: 2px; }
     .modal-footer {
       display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px;
       border-top: 1px solid var(--border); background: var(--surface);
@@ -518,8 +518,9 @@
             <button id="lidFlat" onclick="setLid('flat')">Flat top</button>
             <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
             <button id="lidSlide" onclick="setLid('slide')">Slide-in</button>
+            <button id="lidHinge" onclick="setLid('hinge')">Hinged</button>
           </div>
-          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel.</div>
+          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.</div>
           <div id="lidSlideControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Slide direction</strong></div>
@@ -556,6 +557,30 @@
               </label>
               <div class="hint" style="margin-top:4px">Off = straight wall edges (glue only). Top &amp; bottom still join the walls.</div>
             </div>
+          </div>
+          <div id="lidHingeControls" style="display:none; margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Finger tab width</strong><span class="ctrl-val" id="valHingeTabW">20.0 mm</span></div>
+              <input type="range" id="sldHingeTabW" min="8" max="60" step="0.5" value="20" oninput="onHingeTabW(this.value)">
+              <div class="hint" style="margin-top:4px">Width of the tab on the lid front. The front wall gets a matching notch.</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Tab overhang</strong><span class="ctrl-val" id="valHingeTabOver">8.0 mm</span></div>
+              <input type="range" id="sldHingeTabOver" min="3" max="25" step="0.5" value="8" oninput="onHingeTabOver(this.value)">
+              <div class="hint" style="margin-top:4px">How far the tab sticks out past the front wall — your fingernail grip.</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Lid clearance</strong><span class="ctrl-val" id="valHingeClear">0.30 mm</span></div>
+              <input type="range" id="sldHingeClear" min="0.1" max="1" step="0.05" value="0.3" oninput="onHingeClear(this.value)">
+              <div class="hint" style="margin-top:4px">Gap between the lid and the inside walls. The lid is sized to the box interior minus this gap on every side.</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Open lid</strong><span class="ctrl-val" id="valHingeOpen">0°</span></div>
+              <input type="range" id="sldHingeOpen" min="0" max="100" value="0" step="1" oninput="onHingeOpen(this.value)">
+              <div style="display:flex;justify-content:space-between" class="hint"><span>Closed</span><span>Open</span></div>
+              <div class="hint" style="margin-top:2px">3D preview only — swings the lid about its back tabs. Not part of the exported file.</div>
+            </div>
+            <div class="hint" style="margin-top:6px"><strong>Assembly:</strong> glue the box together but leave the front wall off. Slide the lid in from the front, push one back tab through its ring hole, then centre it so both tabs sit in their rings. Finally fit the front wall — the finger tab drops into the notch. Interior height is measured under the lid; dividers and drawers are kept below it.</div>
           </div>
           <div id="lidSlipControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
@@ -767,6 +792,10 @@ const DEFAULTS = {
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
   slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
   slipLift: 0, // slip-on lid: 0 = on the box, 1 = fully lifted off (view-only)
+  hingeTabW: 20, // hinged lid: finger tab width (mm)
+  hingeTabOver: 8, // hinged lid: how far the finger tab sticks out past the front wall (mm)
+  hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
+  hingeOpen: 0, // hinged lid: 0 = closed, 1 = fully open (view-only)
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
@@ -831,6 +860,7 @@ function undo() {
   $('lidFlat').classList.toggle('active', state.lid === 'flat');
   if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
   if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
+  if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
   if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
   if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
   if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
@@ -1006,7 +1036,6 @@ function updateGeneratorUI() {
 }
 
 function setLid(l) {
-  if (l === 'hinge') l = 'none'; // hinged lid temporarily removed
   if (l === state.lid) return;
   pushHistoryNow();
   state.lid = l;
@@ -1014,6 +1043,9 @@ function setLid(l) {
   $('lidFlat').classList.toggle('active', l === 'flat');
   $('lidSlip').classList.toggle('active', l === 'slip');
   if ($('lidSlide')) $('lidSlide').classList.toggle('active', l === 'slide');
+  if ($('lidHinge')) $('lidHinge').classList.toggle('active', l === 'hinge');
+  const hingeCtrls = $('lidHingeControls');
+  if (hingeCtrls) hingeCtrls.style.display = l === 'hinge' ? 'block' : 'none';
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
   const flatCtrls = $('lidFlatControls');
@@ -1021,10 +1053,11 @@ function setLid(l) {
   const slideCtrls = $('lidSlideControls');
   if (slideCtrls) slideCtrls.style.display = l === 'slide' ? 'block' : 'none';
   const hints = {
-    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel.',
+    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.',
     flat: 'Flat top = closed box with finger-jointed or slotted top plate.',
     slip: 'Slip-on = lid that fits over the box.',
     slide: 'Slide-in = two frame layers form a channel; panel slides in from the chosen side.',
+    hinge: 'Hinged = lid sits inside the box. Tabs at the back of the lid turn in rings on the side walls; the finger tab at the front rests in a notch in the front wall. Rectangular boxes only.',
   };
   if ($('lidHint')) $('lidHint').textContent = hints[l] || hints.none;
   rebuild();
@@ -1044,6 +1077,16 @@ function onSlideBorder(v) {
   state.slideBorder = Math.max(4, parseFloat(v) || 15);
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder, 1, 2);
   rebuild();
+}
+const HINGE_MAX_DEG = 110;
+function onHingeTabW(v)    { pushHistory(); state.hingeTabW = parseFloat(v);    updateLabels(); rebuild(); }
+function onHingeTabOver(v) { pushHistory(); state.hingeTabOver = parseFloat(v); updateLabels(); rebuild(); }
+function onHingeClear(v)   { pushHistory(); state.hingeClear = parseFloat(v);   updateLabels(); rebuild(); }
+function onHingeOpen(v) {
+  // View-only — not recorded in undo history, never affects exports
+  state.hingeOpen = Math.max(0, Math.min(1, parseFloat(v) / 100));
+  if ($('valHingeOpen')) $('valHingeOpen').textContent = Math.round(state.hingeOpen * HINGE_MAX_DEG) + '°';
+  updateAssembly();
 }
 function onSlipLift(v) {
   // View-only — not recorded in undo history, never affects exports
@@ -1321,6 +1364,10 @@ function updateLabels() {
   $('valFinger').textContent = fmtLen(state.finger, 1, 3);
   $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('valLidH')) $('valLidH').textContent = fmtLen(state.lidH, 1, 3);
+  if ($('valHingeTabW')) $('valHingeTabW').textContent = fmtLen(state.hingeTabW, 1, 2);
+  if ($('valHingeTabOver')) $('valHingeTabOver').textContent = fmtLen(state.hingeTabOver, 1, 2);
+  if ($('valHingeClear')) $('valHingeClear').textContent = fmtLen(state.hingeClear, 2, 3);
+  if ($('valHingeOpen')) $('valHingeOpen').textContent = Math.round((state.hingeOpen || 0) * HINGE_MAX_DEG) + '°';
   if ($('valFrameBorder')) $('valFrameBorder').textContent = fmtLen(state.frameBorder || 15, 1, 2);
   if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(state.frameFromTop || 0, 1, 2);
   // Keep the position slider range sensible: face stays ≥ 2×T above bottom
@@ -1340,7 +1387,7 @@ function updateLabels() {
   if ($('infoKerf')) $('infoKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
   if ($('infoLid')) {
-    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', slide: 'Slide-in' };
+    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', slide: 'Slide-in', hinge: 'Hinged (inside)' };
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
@@ -1432,7 +1479,13 @@ function syncInputs() {
   if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
   if ($('chkWallJoints')) $('chkWallJoints').checked = state.wallJoints !== false;
-  if (state.lid === 'hinge') state.lid = 'none';
+  const hingeCtrls = $('lidHingeControls');
+  if (hingeCtrls) hingeCtrls.style.display = state.lid === 'hinge' ? 'block' : 'none';
+  if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
+  if ($('sldHingeTabW')) $('sldHingeTabW').value = state.hingeTabW;
+  if ($('sldHingeTabOver')) $('sldHingeTabOver').value = state.hingeTabOver;
+  if ($('sldHingeClear')) $('sldHingeClear').value = state.hingeClear;
+  if ($('sldHingeOpen')) $('sldHingeOpen').value = Math.round((state.hingeOpen || 0) * 100);
   if ($('sides4')) {
     if (![4, 6].includes(state.sides)) state.sides = 4;
     const s = state.sides || 4;
@@ -1542,7 +1595,8 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 function dims() {
   const T = state.T;
-  const lidT = state.lid === 'flat' ? 2 * T : T;
+  // Flat and hinged lids both occupy one thickness at the top, so the interior height stays what you typed.
+  const lidT = (state.lid === 'flat' || hingeActive()) ? 2 * T : T;
   let iw, ih, id;
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
   else { iw = state.W - 2 * T; ih = state.H - lidT; id = state.D - 2 * T; }
@@ -1927,114 +1981,126 @@ function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
 }
 
 /**
- * Pin-hinge lid outline — full exterior box size (ow × od).
- * Local: x left→right (0..lidW), y front→back (0..lidD).
- * Circular pins stick out left/right at the back and sit in upright ears on the side walls.
- * Front edge has a small finger tab for opening.
+ * Hinged lid that sits INSIDE the box (top flush with the wall tops).
+ *
+ *  - Two small lobes stick out sideways at the back corners of the lid and
+ *    pass through round holes in a "ring" (a little bump above the rim) on the
+ *    Left/Right walls. That is the hinge.
+ *  - A finger tab sticks out of the front edge and rests in a notch cut into
+ *    the Front wall, so the lid is supported and easy to lift.
+ *
+ * Lid local coords: u = across the width (0 = left edge of the lid body),
+ *                   v = from the FRONT edge (v = 0) toward the back; tab is at v < 0.
  */
-function hingeLidOutline(lidW, lidD, pinR, pinLen, tabW, tabD) {
-  const pts = [];
-  const tabX0 = (lidW - tabW) / 2;
-  const tabX1 = tabX0 + tabW;
-  // Pin center sits on the side edge at the back so it lines up with ears on Left/Right walls
-  const pinCy = lidD - pinR;
-
-  // Front edge with finger tab
-  pts.push([0, 0]);
-  if (tabW > 0 && tabD > 0) {
-    pts.push([tabX0, 0], [tabX0, -tabD], [tabX1, -tabD], [tabX1, 0]);
+function arcPts(cx, cy, r, a0, a1, steps = 8) {
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + (a1 - a0) * (i / steps);
+    out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
   }
-  pts.push([lidW, 0]);
+  return out;
+}
 
-  // Right edge up to pin
-  pts.push([lidW, pinCy - pinR]);
-  // Right pin lobe (circle protruding to the right)
-  {
-    const cx = lidW + pinLen - pinR;
-    const cy = pinCy;
-    for (let i = 0; i <= 16; i++) {
-      const a = -Math.PI / 2 + (i / 16) * Math.PI;
-      pts.push([cx + pinR * Math.cos(a), cy + pinR * Math.sin(a)]);
-    }
-  }
-  pts.push([lidW, pinCy + pinR]);
-  pts.push([lidW, lidD]);
+function hingeActive() {
+  return state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
+}
 
-  // Back edge
-  pts.push([0, lidD]);
+/** All hinge-lid dimensions in one place (mm). Needs dims() output. */
+function hingeGeom(d) {
+  const { iw, id, od, oh, T } = d;
+  const k = state.kerf || 0;
+  const gap = Math.max(0.1, state.hingeClear || 0.3) + k / 2;   // running clearance round the lid
+  const pw = Math.max(2, T * 0.7);                              // half-width of a hinge lobe
+  const holeR = Math.hypot(pw, T / 2) + 0.25;                   // lobe cross-section must swing freely
+  const ring = Math.max(2.5, T * 0.9);                          // wood left round the hole
+  const R = holeR + ring;                                       // outer radius of the ring
+  const w = Math.sqrt(R * R - (T / 2) * (T / 2));               // half-width of the ring where it meets the rim
+  const xc = T + 0.3 + w;                                       // hole centre, measured from the BACK of a side wall
+  const lidW = iw - 2 * gap;                                    // lid is scaled to the INSIDE of the box
+  const lidD = id - 2 * gap;
+  const zf = id / 2 - gap;                                      // world z of the lid's front edge
+  const lobeLen = gap + T - 0.4;                                // reaches almost to the outside face of the wall
+  const tabW = Math.max(6, Math.min(state.hingeTabW || 20, lidW - 4 * pw - 8));
+  const tabLen = gap + T + Math.max(2, state.hingeTabOver || 8); // through the front wall + finger overhang
+  const pivotZ = -od / 2 + xc;
+  const vp = zf - pivotZ;                                       // pivot position in lid-local v
+  const notchW = tabW + 2 * gap + k;                            // notch in the front wall
+  const pivotY = oh - T / 2;                                    // lid mid-plane
+  const warn = id < 40 || iw < 40 || vp + pw > lidD;
+  // The part of the lid behind the pivot dips into the box as the lid opens. Anything standing right
+  // under it (front-to-back dividers, lift-out trays) needs a relief of this size at the back.
+  const aBack = lidD - vp;
+  const swing = Math.hypot(aBack, T / 2);
+  const relW = (xc - T) + T + 1;            // from the inside face of the back wall to just past the pivot
+  const relD = swing - T / 2 + 0.5;         // measured down from the lid underside
+  return { gap, pw, holeR, R, xc, lidW, lidD, zf, lobeLen, tabW, tabLen, pivotZ, pivotY, vp, notchW, warn, aBack, relW, relD };
+}
 
-  // Left edge down to pin
-  pts.push([0, pinCy + pinR]);
-  // Left pin lobe
-  {
-    const cx = -(pinLen - pinR);
-    const cy = pinCy;
-    for (let i = 0; i <= 16; i++) {
-      const a = Math.PI / 2 + (i / 16) * Math.PI;
-      pts.push([cx + pinR * Math.cos(a), cy + pinR * Math.sin(a)]);
-    }
-  }
-  pts.push([0, pinCy - pinR]);
-  pts.push([0, 0]);
-
-  return { outline: cleanPoly(pts) };
+function hingeLidOutline(g) {
+  const { lidW, lidD, tabW, tabLen, lobeLen, pw, vp } = g;
+  const rt = Math.min(3, tabW / 4, tabLen / 2);
+  const rl = Math.min(pw * 0.8, lobeLen * 0.8);
+  const t0 = (lidW - tabW) / 2, t1 = t0 + tabW;
+  const pts = [[0, 0]];
+  // front edge + finger tab (rounded corners)
+  pts.push([t0, 0], [t0, -tabLen + rt]);
+  pts.push(...arcPts(t0 + rt, -tabLen + rt, rt, Math.PI, 1.5 * Math.PI));
+  pts.push(...arcPts(t1 - rt, -tabLen + rt, rt, 1.5 * Math.PI, 2 * Math.PI));
+  pts.push([t1, 0], [lidW, 0]);
+  // right edge + right hinge lobe
+  const x1 = lidW + lobeLen;
+  pts.push([lidW, vp - pw], [x1 - rl, vp - pw]);
+  pts.push(...arcPts(x1 - rl, vp - pw + rl, rl, -Math.PI / 2, 0));
+  pts.push([x1, vp + pw - rl]);
+  pts.push(...arcPts(x1 - rl, vp + pw - rl, rl, 0, Math.PI / 2));
+  pts.push([lidW, vp + pw], [lidW, lidD]);
+  // back edge
+  pts.push([0, lidD], [0, vp + pw]);
+  // left hinge lobe
+  const x0 = -lobeLen;
+  pts.push([x0 + rl, vp + pw]);
+  pts.push(...arcPts(x0 + rl, vp + pw - rl, rl, Math.PI / 2, Math.PI));
+  pts.push([x0, vp - pw + rl]);
+  pts.push(...arcPts(x0 + rl, vp - pw + rl, rl, Math.PI, 1.5 * Math.PI));
+  pts.push([0, vp - pw], [0, 0]);
+  return cleanPoly(pts);
 }
 
 /**
- * Add an upright hinge ear to a Left/Right wall outline.
- * Ear sticks UP above the top edge near the back, with a circular hole for the lid pin.
- * Wall local: x along depth (0=front … panelDepth=back), y up (0…panelHeight).
+ * Insert points into a flat top edge (y = topY) of a CCW outline (Y up).
+ * `leftToRight()` returns the points ordered by increasing x; they are
+ * reversed automatically when the outline runs right→left along the top.
  */
-function addHingeEar(baseOutline, panelDepth, panelHeight, pinR, holeR) {
-  const topY = panelHeight;
-  // Left/Right panel local x: 0 = BACK, panelDepth = FRONT (matches 3D placement).
-  // Ear must sit near the BACK of the box.
-  // Ear outer radius: keep solid material around the hole (min ~3.5mm ring of wood)
-  const ring = Math.max(holeR * 0.9, 3.5);
-  const R = Math.max(holeR + ring, pinR * 2.6);
-  const earCx = R + 1.5;                         // near back (x ≈ 0)
-  const holeCy = topY + R * 0.7;                 // hole center up in the ear
-
-  // Upper semicircle ear points (left → top → right), y-up
-  const earArc = [];
-  for (let k = 0; k <= 20; k++) {
-    const a = Math.PI - (k / 20) * Math.PI;      // π (left) → 0 (right) through top
-    earArc.push([earCx + R * Math.cos(a), topY + Math.max(0, R * Math.sin(a))]);
-  }
-
-  // Walk base outline; when on the top edge crossing earCx, inject the ear arc
-  const base = baseOutline.slice();
-  const merged = [];
-  let inserted = false;
-  for (let i = 0; i < base.length; i++) {
-    const p = base[i];
-    const n = base[(i + 1) % base.length];
-    merged.push(p);
-    const onTop = p[1] > topY - 2 && n[1] > topY - 2 && Math.abs(p[1] - n[1]) < 2.5;
-    if (onTop && !inserted) {
-      const lo = Math.min(p[0], n[0]);
-      const hi = Math.max(p[0], n[0]);
-      if (lo <= earCx && hi >= earCx) {
-        if (n[0] >= p[0]) {
-          for (const ep of earArc) merged.push(ep);
-        } else {
-          for (let k = earArc.length - 1; k >= 0; k--) merged.push(earArc[k]);
-        }
-        inserted = true;
-      }
+function insertOnTopEdge(outline, topY, x0, x1, leftToRight) {
+  const out = [];
+  let done = false;
+  for (let i = 0; i < outline.length; i++) {
+    const p = outline[i], n = outline[(i + 1) % outline.length];
+    out.push(p);
+    if (done) continue;
+    if (Math.abs(p[1] - topY) < 1e-6 && Math.abs(n[1] - topY) < 1e-6 &&
+        Math.min(p[0], n[0]) <= x0 + 1e-6 && Math.max(p[0], n[0]) >= x1 - 1e-6) {
+      const pts = leftToRight();
+      if (n[0] < p[0]) pts.reverse();
+      out.push(...pts);
+      done = true;
     }
   }
+  return { outline: done ? cleanPoly(out) : outline, ok: done };
+}
 
-  // Fallback if top edge wasn't detected: attach ear at back-top
-  let finalOutline;
-  if (inserted) {
-    finalOutline = cleanPoly(merged);
-  } else {
-    finalOutline = cleanPoly(base.concat([[earCx - R, topY], ...earArc, [earCx + R, topY]]));
-  }
+/** Round ring above the rim of a side wall. Hole centre sits on the lid mid-plane (topY - T/2). */
+function addHingeRing(outline, topY, T, xc, R) {
+  const yc = topY - T / 2;
+  const alpha = Math.asin(Math.min(1, (T / 2) / R));
+  const w = R * Math.cos(alpha);
+  return insertOnTopEdge(outline, topY, xc - w, xc + w, () => arcPts(xc, yc, R, Math.PI - alpha, alpha, 24));
+}
 
-  const hole = circlePoly(earCx, holeCy, holeR);
-  return { outline: finalOutline, hole, earCx, earCy: holeCy };
+/** Rectangular notch in the top edge of the front wall for the lid's finger tab. */
+function addTopNotch(outline, topY, xc, nw, depth) {
+  const x0 = xc - nw / 2, x1 = xc + nw / 2;
+  return insertOnTopEdge(outline, topY, x0, x1, () => [[x0, topY], [x0, topY - depth], [x1, topY - depth], [x1, topY]]);
 }
 
 /**
@@ -2504,7 +2570,7 @@ function generatePanels() {
   const { ow, oh, od, T, iw, ih, id } = d;
   const flat = state.lid === 'flat';
   const slip = state.lid === 'slip';
-  const hinge = state.lid === 'hinge';
+  const hinge = hingeActive();
   const slide = state.lid === 'slide';
   const nSides = state.sides || 4;
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
@@ -2944,26 +3010,16 @@ function generatePanels() {
     }
   }
 
-  // Pin-hinge lid (full exterior size) + upright ears on Left/Right walls
-  // Lid = outer box footprint (ow × od) with pins at the back.
-  // Left/Right walls get rounded ears that stick UP above the rim with pivot holes.
+  // Inside-fit hinged lid: scaled to the interior, back lobes turn in rings on the side walls,
+  // front finger tab rests in a notch in the front wall (see hingeGeom).
   if (hinge) {
-    const pinR = Math.max(2.5, T * 0.75);       // larger pins for a solid hinge
-    const pinLen = Math.max(T * 1.3, pinR + 1); // pin sticks out into the ear
-    const tabW = Math.min(20, Math.max(8, ow * 0.12));
-    const tabD = Math.min(8, Math.max(3, T * 1.5));
-    const lidW = ow; // full exterior width
-    const lidD = od; // full exterior depth
-    // Hole larger than pin so lid swings freely (kerf + running clearance)
-    const holeR = pinR + state.kerf + 0.3;
-    const lidOutline = hingeLidOutline(lidW, lidD, pinR, pinLen, tabW, tabD);
-
+    const g = hingeGeom(d);
     defs.push({
-      name: 'Hinge Lid', role: 'hinge-lid', w: lidW + 2 * pinLen, h: lidD + tabD,
-      specs: null, outlineOverride: lidOutline.outline,
-      holes: [],
+      name: 'Hinge Lid', role: 'hinge-lid', w: g.lidW + 2 * g.lobeLen, h: g.lidD + g.tabLen,
+      specs: null, outlineOverride: hingeLidOutline(g), holes: [],
     });
-    d.hinge = { pinR, pinLen, tabW, tabD, lidW, lidD, holeR, ear: true };
+    d.hinge = g;
+    d.hingeWarn = g.warn;
   }
 
   // --- Lift-out compartment drawers (main box stays open-top) ---
@@ -2976,7 +3032,7 @@ function generatePanels() {
   if (drawerOn) {
     const clear = Math.max(0.05, state.drawerClear || 0.5);
     const openEnd = state.drawerOpen || 'front'; // front | back | left | right
-    const drIh = Math.max(T * 2, Math.min(state.drawerH || 25, ih - clear - T));
+    const drIh = Math.max(T * 2, Math.min(state.drawerH || 25, ih - clear - (hinge && d.hinge ? 2 * T + d.hinge.relD : T)));
     const drOh = drIh + 2 * T; // walls span bottom + top plate joints
 
     // Specs: bottom/top/left/right edges — null = plain (open side)
@@ -3063,7 +3119,7 @@ function generatePanels() {
   }
 
   // --- Dividers (normal floor-plan grid; box stays open-top) ---
-  const divH = Math.max(T * 2, ih * (state.divHpct / 100));
+  const divH = Math.max(T * 2, Math.min(ih * (state.divHpct / 100), hinge ? ih - 0.5 : Infinity));
   const xCenters = dividerCenters(state.colWeights, iw, T);
   const yCenters = dividerCenters(state.rowWeights, id, T);
   d.dividers = { divH, xCenters, yCenters };
@@ -3101,7 +3157,14 @@ function generatePanels() {
   }
 
   xCenters.forEach((cx, i) => {
-    const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
+    let { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
+    if (hinge && d.hinge) {
+      // Relief at the back-top so the rear of the hinged lid can swing down past this divider
+      const xr1 = id + 2 * T - T, xr0 = xr1 - d.hinge.relW;
+      const rel = insertOnTopEdge(outline, divH, xr0, xr1,
+        () => [[xr0, divH], [xr0, divH - d.hinge.relD], [xr1, divH - d.hinge.relD], [xr1, divH]]);
+      outline = rel.outline;
+    }
     defs.push({
       name: `Div X${i + 1}`, role: 'div-x', w: id + 2 * T, h: divH,
       specs: null, outlineOverride: outline, holes,
@@ -3125,13 +3188,20 @@ function generatePanels() {
       outline = panelOutline(def.w, def.h, def.specs, T);
     }
 
-    // Upright hinge ears on Left/Right walls (stick up above the rim with pivot holes)
+    // Hinged lid: ring + pivot hole on the Left/Right walls, finger-tab notch in the Front wall
     let extraHoles = [];
-    if (hinge && d.hinge && (def.role === 'left' || def.role === 'right')) {
-      const { pinR, holeR } = d.hinge;
-      const ear = addHingeEar(outline, def.w, def.h, pinR, holeR);
-      outline = ear.outline;
-      extraHoles.push(ear.hole);
+    if (hinge && d.hinge) {
+      const g = d.hinge;
+      if (def.role === 'left' || def.role === 'right') {
+        const ring = addHingeRing(outline, def.h, T, g.xc, g.R);
+        if (ring.ok) {
+          outline = ring.outline;
+          extraHoles.push(circlePoly(g.xc, def.h - T / 2, g.holeR + state.kerf / 2, 32));
+        }
+      } else if (def.role === 'front') {
+        const nt = addTopNotch(outline, def.h, def.w / 2, g.notchW, T);
+        if (nt.ok) outline = nt.outline;
+      }
     }
 
     const cut = offsetPoly(outline, state.kerf / 2);
@@ -3405,11 +3475,11 @@ function placement(role, d) {
       };
     }
     case 'hinge-lid': {
-      // Full exterior lid sitting on top of the box
-      const lidW = d.hinge ? d.hinge.lidW : ow;
-      const lidD = d.hinge ? d.hinge.lidD : od;
+      // Inside-fit lid: top flush with the wall tops, front edge just behind the front wall
+      const lidW = d.hinge ? d.hinge.lidW : iw;
+      const zf = d.hinge ? d.hinge.zf : id / 2;
       return {
-        o: V(-lidW / 2, oh, lidD / 2),
+        o: V(-lidW / 2, oh - T, zf),
         u: V(1, 0, 0),
         v: V(0, 0, -1),
         n: V(0, 1, 0),
@@ -3770,6 +3840,7 @@ function rebuild3D() {
       pull,
       slidePull,
       slipLift,
+      hingePivot: (p.role === 'hinge-lid' && d.hinge) ? new THREE.Vector3(0, d.hinge.pivotY, d.hinge.pivotZ) : null,
     };
     boxGroup.add(mesh);
     panels3D.push(mesh);
@@ -3788,11 +3859,18 @@ function updateAssembly() {
     const p = mesh.userData.pull || [0, 0, 0];
     const sp = mesh.userData.slidePull || [0, 0, 0];
     const sl = mesh.userData.slipLift || [0, 0, 0];
-    mesh.position.set(
-      e[0] * t + p[0] * pullT + sp[0] * slideT + sl[0] * liftT,
-      e[1] * t + p[1] * pullT + sp[1] * slideT + sl[1] * liftT,
-      e[2] * t + p[2] * pullT + sp[2] * slideT + sl[2] * liftT
-    );
+    let px = e[0] * t + p[0] * pullT + sp[0] * slideT + sl[0] * liftT;
+    let py = e[1] * t + p[1] * pullT + sp[1] * slideT + sl[1] * liftT;
+    let pz = e[2] * t + p[2] * pullT + sp[2] * slideT + sl[2] * liftT;
+    // Hinged lid: rotate about the pivot axis (X axis through the back tabs); front edge swings UP
+    const hp = mesh.userData.hingePivot;
+    if (hp) {
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(state.hingeOpen || 0) * HINGE_MAX_DEG * Math.PI / 180);
+      const rp = hp.clone().applyQuaternion(q);
+      mesh.quaternion.copy(q);
+      px += hp.x - rp.x; py += hp.y - rp.y; pz += hp.z - rp.z;
+    }
+    mesh.position.set(px, py, pz);
   }
 }
 
@@ -3827,6 +3905,9 @@ function updateHUD(d, panels) {
   const wb = $('warnBox');
   if (d.warn) {
     wb.textContent = 'Box is too small for this material thickness — interior was clamped to a minimum. Increase the size or reduce thickness.';
+    wb.classList.add('show');
+  } else if (d.hingeWarn) {
+    wb.textContent = 'Box is too small for the hinged lid (rings and back tabs need room). Increase the width/depth.';
     wb.classList.add('show');
   } else wb.classList.remove('show');
 }
@@ -3916,6 +3997,7 @@ function resetAll() {
   $('lidFlat').classList.remove('active');
   if ($('lidSlip')) $('lidSlip').classList.remove('active');
   if ($('lidSlide')) $('lidSlide').classList.remove('active');
+  if ($('lidHinge')) $('lidHinge').classList.remove('active');
   if ($('genBox')) $('genBox').classList.add('active');
   if ($('genFrame')) $('genFrame').classList.remove('active');
   $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
