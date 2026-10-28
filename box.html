@@ -432,6 +432,12 @@
             <input type="range" id="sldD" min="20" max="400" step="0.5" value="100" oninput="onDimSlider('D', this.value)">
             <input class="dim-inp" id="inD" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('D', this.value)">
           </div>
+          <div class="ctrl" id="raiseGrp">
+            <div class="ctrl-lbl"><strong>Bottom height (raise)</strong><span class="ctrl-val" id="valRaise">0.0 mm</span></div>
+            <input type="range" id="sldRaise" min="0" max="60" step="0.5" value="0" oninput="onRaiseSlider(this.value)">
+            <input class="dim-inp" id="inRaise" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onRaiseInput(this.value)">
+            <div class="hint" style="margin-top:4px" id="raiseHint">0 = bottom flush with the lower edge of the walls. Raise it to lift the bottom and its finger joints up the walls; the walls extend below it and the joints become slots. Interior mode keeps the interior height (walls get taller); Exterior mode keeps the overall height.</div>
+          </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
             <input type="range" id="sldT" min="1" max="12" step="0.1" oninput="onThicknessSlider(this.value)">
@@ -796,6 +802,7 @@ const DEFAULTS = {
   hingeTabOver: 8, // hinged lid: how far the finger tab sticks out past the front wall (mm)
   hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
   hingeOpen: 0, // hinged lid: 0 = closed, 1 = fully open (view-only)
+  bottomRaise: 0, // mm the bottom panel (and its finger joints) sits above the lower edge of the walls
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
@@ -1077,6 +1084,38 @@ function onSlideBorder(v) {
   state.slideBorder = Math.max(4, parseFloat(v) || 15);
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder, 1, 2);
   rebuild();
+}
+function onRaiseSlider(v) {
+  const n = parseFloat(v);
+  if (!(n >= 0)) return;
+  pushHistory();
+  state.bottomRaise = n;
+  if ($('inRaise')) $('inRaise').value = numDisp(n);
+  updateLabels(); rebuild();
+}
+function onRaiseInput(v) {
+  const n = fromDisp(parseFloat(v));
+  if (!(n >= 0)) return;
+  pushHistory();
+  state.bottomRaise = n;
+  if ($('sldRaise')) $('sldRaise').value = n;
+  updateLabels(); rebuild();
+}
+/** Dim the raise control when it does not apply (hexagon, frame, lantern-style flat top). */
+function syncRaiseUI() {
+  const ok = raiseApplicable();
+  if ($('raiseGrp')) $('raiseGrp').style.opacity = ok ? '1' : '0.35';
+  if ($('sldRaise')) $('sldRaise').disabled = !ok;
+  if ($('inRaise')) $('inRaise').disabled = !ok;
+  if ($('raiseHint')) $('raiseHint').style.display = ok ? '' : 'none';
+  if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(bottomRaise(), 1, 2) : 'n/a';
+  if (ok && $('sldRaise')) {
+    // Exterior mode: cannot lift the bottom past the point where the interior would vanish
+    const T = state.T;
+    const lidT = (state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+    const maxR = state.mode === 'inside' ? 60 : Math.max(0, Math.min(60, state.H - lidT - Math.max(2, 2 * T)));
+    $('sldRaise').max = maxR;
+  }
 }
 const HINGE_MAX_DEG = 110;
 function onHingeTabW(v)    { pushHistory(); state.hingeTabW = parseFloat(v);    updateLabels(); rebuild(); }
@@ -1364,6 +1403,7 @@ function updateLabels() {
   $('valFinger').textContent = fmtLen(state.finger, 1, 3);
   $('valKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('valLidH')) $('valLidH').textContent = fmtLen(state.lidH, 1, 3);
+  syncRaiseUI();
   if ($('valHingeTabW')) $('valHingeTabW').textContent = fmtLen(state.hingeTabW, 1, 2);
   if ($('valHingeTabOver')) $('valHingeTabOver').textContent = fmtLen(state.hingeTabOver, 1, 2);
   if ($('valHingeClear')) $('valHingeClear').textContent = fmtLen(state.hingeClear, 2, 3);
@@ -1482,6 +1522,8 @@ function syncInputs() {
   const hingeCtrls = $('lidHingeControls');
   if (hingeCtrls) hingeCtrls.style.display = state.lid === 'hinge' ? 'block' : 'none';
   if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
+  if ($('sldRaise')) $('sldRaise').value = state.bottomRaise || 0;
+  if ($('inRaise')) $('inRaise').value = numDisp(state.bottomRaise || 0);
   if ($('sldHingeTabW')) $('sldHingeTabW').value = state.hingeTabW;
   if ($('sldHingeTabOver')) $('sldHingeTabOver').value = state.hingeTabOver;
   if ($('sldHingeClear')) $('sldHingeClear').value = state.hingeClear;
@@ -1593,14 +1635,27 @@ function enforceFrameHeight() {
 }
 
 /** Interior / exterior dimensions (mm). */
+/** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
+function raiseApplicable() {
+  if (state.generator === 'frame' || (state.sides || 4) !== 4) return false;
+  if (state.lid === 'flat' && ((state.flatOverhang || 0) > 0 || state.wallJoints === false)) return false;
+  return true;
+}
+function bottomRaise() {
+  return raiseApplicable() ? Math.max(0, state.bottomRaise || 0) : 0;
+}
+
 function dims() {
   const T = state.T;
   // Flat and hinged lids both occupy one thickness at the top, so the interior height stays what you typed.
   const lidT = (state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+  const minI = Math.max(2, 2 * T);
+  // Raised bottom: Interior mode keeps the interior height (walls grow); Exterior mode keeps the overall height.
+  let rz = bottomRaise();
+  if (state.mode !== 'inside') rz = Math.min(rz, Math.max(0, state.H - lidT - minI));
   let iw, ih, id;
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
-  else { iw = state.W - 2 * T; ih = state.H - lidT; id = state.D - 2 * T; }
-  const minI = Math.max(2, 2 * T);
+  else { iw = state.W - 2 * T; ih = state.H - lidT - rz; id = state.D - 2 * T; }
   // Frame: outside wall height (oh) floors at 2×T, or 2×T+6 mm with dividers.
   // oh = ih + lidT, so the interior floor is that minimum minus one thickness.
   const minIh = state.generator === 'frame'
@@ -1608,7 +1663,7 @@ function dims() {
     : minI;
   const warn = iw < minI || ih < minIh || id < minI;
   iw = Math.max(iw, minI); ih = Math.max(ih, minIh); id = Math.max(id, minI);
-  return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT, od: id + 2 * T, T, warn };
+  return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT + rz, od: id + 2 * T, T, warn, raise: rz, thinRaise: rz > 0 && rz < T };
 }
 
 /**
@@ -2568,6 +2623,7 @@ function clipOutlineBelow(pts, yMax) {
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T, iw, ih, id } = d;
+  const rz = d.raise || 0;
   const flat = state.lid === 'flat';
   const slip = state.lid === 'slip';
   const hinge = hingeActive();
@@ -2682,8 +2738,9 @@ function generatePanels() {
 
   // Wall specs — vertical joints optional when flat top
   //            bottom          right                                           top                         left
-  const fb = [J(true, true),  joinWalls ? J(true, true) : null,  flat ? J(true, true) : null,  joinWalls ? J(true, true) : null];
-  const lr = [J(true, false), joinWalls ? J(false, false) : null, flat ? J(true, false) : null, joinWalls ? J(false, false) : null];
+  // Raised bottom: the walls' lower edge is plain (the bottom plate's fingers go into slots instead)
+  const fb = [rz > 0 ? null : J(true, true),  joinWalls ? J(true, true) : null,  flat ? J(true, true) : null,  joinWalls ? J(true, true) : null];
+  const lr = [rz > 0 ? null : J(true, false), joinWalls ? J(false, false) : null, flat ? J(true, false) : null, joinWalls ? J(false, false) : null];
   const bt = [J(false, false), J(false, false), J(false, false), J(false, false)];
 
   // When wall joints are off, walls span the INNER opening so inner edges meet
@@ -3099,7 +3156,7 @@ function generatePanels() {
         trays.push({
           ci, ri, label, drW, drD, drOh, drIh, openEnd,
           wx: -iw / 2 + cx,
-          wy: T,
+          wy: T + rz,
           wz: id / 2 - cz,
           cellW, cellD,
         });
@@ -3125,12 +3182,25 @@ function generatePanels() {
   d.dividers = { divH, xCenters, yCenters };
 
   const wallSlots = { front: [], back: [], left: [], right: [] };
+  // Raised bottom: slots in every wall where the bottom plate's fingers enter.
+  // Same finger pattern the plate uses on its own edges (spec J(false,false), corners left to the walls).
+  if (rz > 0) {
+    const plateSlots = (L, arr) => {
+      for (const pc of edgePieces(L, J(false, false), true, true, T)) {
+        if (pc.inset !== 0) continue;
+        const a = Math.max(pc.a, T), b = Math.min(pc.b, L - T);
+        if (b - a > 1e-6) arr.push([a, rz, b - a, T]);
+      }
+    };
+    plateSlots(frontW, wallSlots.front); plateSlots(frontW, wallSlots.back);
+    plateSlots(sideD, wallSlots.left);   plateSlots(sideD, wallSlots.right);
+  }
   // Front/Back: local x = 0 at LEFT exterior, interior starts at x = T.
   // xCenters are measured from the left interior face → matches local x.
   for (const cx of xCenters) {
     const sx = T + cx - T / 2;
-    wallSlots.front.push(...wallFingerSlots(sx, T, divH, T));
-    wallSlots.back.push(...wallFingerSlots(sx, T, divH, T));
+    wallSlots.front.push(...wallFingerSlots(sx, T + rz, divH, T));
+    wallSlots.back.push(...wallFingerSlots(sx, T + rz, divH, T));
   }
   // Left/Right: local x = 0 at BACK exterior (u = +Z). Interior runs
   // back → front. yCenters are measured from the FRONT (same as 3D
@@ -3141,8 +3211,8 @@ function generatePanels() {
   for (const cy of yCenters) {
     const fromBack = id - cy;
     const sx = sideInteriorStart + fromBack - T / 2;
-    wallSlots.left.push(...wallFingerSlots(sx, T, divH, T));
-    wallSlots.right.push(...wallFingerSlots(sx, T, divH, T));
+    wallSlots.left.push(...wallFingerSlots(sx, T + rz, divH, T));
+    wallSlots.right.push(...wallFingerSlots(sx, T + rz, divH, T));
   }
 
   // Slide-in frame slots + entry notch on walls
@@ -3423,7 +3493,7 @@ function placement(role, d) {
   switch (role) {
     case 'bottom': {
       const O = (d.plate && d.plate.O) || 0;
-      return { o: V(-hw - O, 0, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+      return { o: V(-hw - O, d.raise || 0, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     }
     case 'top': {
       const O = (d.plate && d.plate.O) || 0;
@@ -3684,11 +3754,11 @@ function placementDivider(p, d) {
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   if (p.role === 'div-x') {
     const x = -hw + T + p.divPos - T / 2;
-    return { o: V(x, T, hd), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
+    return { o: V(x, T + (d.raise || 0), hd), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
   }
   if (p.role === 'div-y') {
     const z = hd - T - p.divPos + T / 2;
-    return { o: V(-hw, T, z), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, -1) };
+    return { o: V(-hw, T + (d.raise || 0), z), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, -1) };
   }
   // Drawer dividers — relative to tray center, sitting on drawer bottom
   if (p.role === 'dr-div-x' && d.drawer) {
@@ -3906,6 +3976,9 @@ function updateHUD(d, panels) {
   if (d.warn) {
     wb.textContent = 'Box is too small for this material thickness — interior was clamped to a minimum. Increase the size or reduce thickness.';
     wb.classList.add('show');
+  } else if (d.thinRaise) {
+    wb.textContent = 'Bottom raise is thinner than the material, so only a thin sliver of wall remains under the bottom slots. Use 0 or at least one material thickness.';
+    wb.classList.add('show');
   } else if (d.hingeWarn) {
     wb.textContent = 'Box is too small for the hinged lid (rings and back tabs need room). Increase the width/depth.';
     wb.classList.add('show');
@@ -3914,6 +3987,7 @@ function updateHUD(d, panels) {
 
 // ---------- Actions ----------
 function rebuild() {
+  syncRaiseUI();
   rebuild3D();
   if ($('svgModal').classList.contains('show')) refreshSVGPreview();
 }
