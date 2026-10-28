@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.1</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.02</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -517,8 +517,32 @@
             <button id="lidNone" class="active" onclick="setLid('none')">None</button>
             <button id="lidFlat" onclick="setLid('flat')">Flat top</button>
             <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
+            <button id="lidSlide" onclick="setLid('slide')">Slide-in</button>
           </div>
-          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box.</div>
+          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel.</div>
+          <div id="lidSlideControls" style="display:none; margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Slide direction</strong></div>
+              <div class="btn-grp" style="margin-top:4px;">
+                <button type="button" id="slideDirF" class="active" onclick="onSlideDir('front')">Front</button>
+                <button type="button" id="slideDirB" onclick="onSlideDir('back')">Back</button>
+                <button type="button" id="slideDirL" onclick="onSlideDir('left')">Left</button>
+                <button type="button" id="slideDirR" onclick="onSlideDir('right')">Right</button>
+              </div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Frame border</strong><span class="ctrl-val" id="valSlideBorder">15.0 mm</span></div>
+              <input type="range" id="sldSlideBorder" min="4" max="80" step="0.5" value="15" oninput="onSlideBorder(this.value)">
+              <div class="hint" style="margin-top:4px">Border width of the two channel frames. Increase toward solid (small opening).</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Slide lid out</strong><span class="ctrl-val" id="valSlidePull">0%</span></div>
+              <input type="range" id="sldSlidePull" min="0" max="100" value="0" step="1" oninput="onSlidePull(this.value)">
+              <div style="display:flex;justify-content:space-between" class="hint"><span>Closed</span><span>Slid out</span></div>
+              <div class="hint" style="margin-top:2px">3D preview only — slides the lid panel out through the open side. Not part of the exported file.</div>
+            </div>
+            <div class="hint" style="margin-top:6px">Two U-shaped frames at the top of the box (finger-jointed like a flat lid). Open on the slide side. Entry wall is shortened so the panel slides in. Gap between frames = material + 0.5 mm.</div>
+          </div>
           <div id="lidFlatControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid overhang</strong><span class="ctrl-val" id="valFlatOH">0.0 mm</span></div>
@@ -729,11 +753,13 @@ const DEFAULTS = {
   frameFromTop: 0, // mm — how far the face sits below the top of the walls (0 = flush)
   frameJoint: 'face', // 'face' = fingers on the mitered frame, 'under' = fingers on the underlay
   lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
+  slideDir: 'front', slideBorder: 15, slideFromTop: 3,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
+  slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
@@ -797,6 +823,7 @@ function undo() {
   $('lidNone').classList.toggle('active', state.lid === 'none');
   $('lidFlat').classList.toggle('active', state.lid === 'flat');
   if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
+  if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
   if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
   if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
   if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
@@ -979,10 +1006,48 @@ function setLid(l) {
   $('lidNone').classList.toggle('active', l === 'none');
   $('lidFlat').classList.toggle('active', l === 'flat');
   $('lidSlip').classList.toggle('active', l === 'slip');
+  if ($('lidSlide')) $('lidSlide').classList.toggle('active', l === 'slide');
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
   const flatCtrls = $('lidFlatControls');
   if (flatCtrls) flatCtrls.style.display = l === 'flat' ? 'block' : 'none';
+  const slideCtrls = $('lidSlideControls');
+  if (slideCtrls) slideCtrls.style.display = l === 'slide' ? 'block' : 'none';
+  const hints = {
+    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel.',
+    flat: 'Flat top = closed box with finger-jointed or slotted top plate.',
+    slip: 'Slip-on = lid that fits over the box.',
+    slide: 'Slide-in = two frame layers form a channel; panel slides in from the chosen side.',
+  };
+  if ($('lidHint')) $('lidHint').textContent = hints[l] || hints.none;
+  rebuild();
+}
+function onSlideDir(dir) {
+  if ((dir || 'front') === state.slideDir) return;
+  pushHistoryNow();
+  state.slideDir = dir || 'front';
+  ['front','back','left','right'].forEach(s => {
+    const el = $('slideDir' + s[0].toUpperCase());
+    if (el) el.classList.toggle('active', state.slideDir === s);
+  });
+  rebuild();
+}
+function onSlideBorder(v) {
+  pushHistory();
+  state.slideBorder = Math.max(4, parseFloat(v) || 15);
+  if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder, 1, 2);
+  rebuild();
+}
+function onSlidePull(v) {
+  // View-only — not recorded in undo history, never affects exports
+  state.slidePull = Math.max(0, Math.min(1, parseFloat(v) / 100));
+  if ($('valSlidePull')) $('valSlidePull').textContent = Math.round(state.slidePull * 100) + '%';
+  updateAssembly();
+}
+function onSlideFromTop(v) {
+  pushHistory();
+  state.slideFromTop = Math.max(3, parseFloat(v) || 3);
+  if ($('valSlideFromTop')) $('valSlideFromTop').textContent = fmtLen(state.slideFromTop, 1, 2);
   rebuild();
 }
 function onFlatOverhang(v) {
@@ -1262,8 +1327,19 @@ function updateLabels() {
   if ($('infoKerf')) $('infoKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
   if ($('infoLid')) {
-    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on' };
+    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', slide: 'Slide-in' };
     $('infoLid').textContent = lidNames[state.lid] || 'None';
+  }
+  if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
+  if ($('valSlideFromTop')) $('valSlideFromTop').textContent = fmtLen(state.slideFromTop || 3, 1, 2);
+  if ($('sldSlideFromTop')) {
+    const maxFT = Math.max(10, (state.H || 50) - 5);
+    $('sldSlideFromTop').max = maxFT;
+    if ((state.slideFromTop || 3) > maxFT) state.slideFromTop = maxFT;
+  }
+  if ($('sldSlideBorder')) {
+    const maxB = Math.max(10, Math.min(state.W || 150, state.D || 100) / 2 - 2);
+    $('sldSlideBorder').max = maxB;
   }
   if ($('infoSides')) {
     if (state.generator === 'frame') {
@@ -1327,6 +1403,17 @@ function syncInputs() {
   if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
   const flatCtrls = $('lidFlatControls');
   if (flatCtrls) flatCtrls.style.display = state.lid === 'flat' ? 'block' : 'none';
+  const slideCtrls = $('lidSlideControls');
+  if (slideCtrls) slideCtrls.style.display = state.lid === 'slide' ? 'block' : 'none';
+  if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
+  if ($('sldSlideBorder')) $('sldSlideBorder').value = state.slideBorder || 15;
+  if ($('sldSlidePull')) $('sldSlidePull').value = Math.round((state.slidePull || 0) * 100);
+  if ($('valSlidePull')) $('valSlidePull').textContent = Math.round((state.slidePull || 0) * 100) + '%';
+  if ($('sldSlideFromTop')) $('sldSlideFromTop').value = state.slideFromTop || 3;
+  ['front','back','left','right'].forEach(s => {
+    const el = $('slideDir' + s[0].toUpperCase());
+    if (el) el.classList.toggle('active', (state.slideDir || 'front') === s);
+  });
   if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
   if ($('chkWallJoints')) $('chkWallJoints').checked = state.wallJoints !== false;
@@ -2378,12 +2465,32 @@ function generateFramePanels(d, J) {
   return { panels, dims: d };
 }
 
+/**
+ * Clip a closed polygon to the half-plane y <= yMax (Sutherland–Hodgman).
+ * Used to cut the top off a full-height wall while keeping its finger joints.
+ */
+function clipOutlineBelow(pts, yMax) {
+  const out = [];
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    const aIn = a[1] <= yMax + 1e-9, bIn = b[1] <= yMax + 1e-9;
+    if (aIn) out.push(a);
+    if (aIn !== bIn) {
+      const t = (yMax - a[1]) / (b[1] - a[1]);
+      out.push([a[0] + t * (b[0] - a[0]), yMax]);
+    }
+  }
+  return cleanPoly(out);
+}
+
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T, iw, ih, id } = d;
   const flat = state.lid === 'flat';
   const slip = state.lid === 'slip';
   const hinge = state.lid === 'hinge';
+  const slide = state.lid === 'slide';
   const nSides = state.sides || 4;
   const J = (ownEven, ownCorners) => ({ ownEven, ownCorners });
   d.sides = nSides;
@@ -2572,6 +2679,256 @@ function generatePanels() {
     d.lid = { low, lod, loh, lidH: state.lidH };
   }
 
+  // --- Slide-in lid: two U-shaped frames at top + sliding panel ---
+  if (slide) {
+    const border = Math.max(4, Math.min(state.slideBorder || 15, Math.min(ow, od) / 2 - 2));
+    const gap = T + 0.5;
+    const dir = state.slideDir || 'front';
+    // Upper frame at very top (like flat lid): plate bottom at oh - T
+    // Lower frame below with gap between the two plates
+    const upperY = oh - T;
+    const lowerY = upperY - gap - T; // bottom of lower plate
+    d.slide = { border, gap, dir, upperY, lowerY, fromTop: 0 };
+
+    /**
+     * True U-shaped frame (3 sides only).
+     * Outer size ow × od. Open on `dir` side — no bar on that side.
+     * Finger tabs on the three outer edges (depth T) for wall joints/slots.
+     * Border width = `border` for the three arms.
+     * Local coords: x 0→ow (left→right), y 0→od (front→back).
+     */
+    function slideUFrameOutline(ow, od, T, border, dir) {
+      const b = border;
+      // Same joint rules as bottom plate → mates with wall tops / lower-frame slots
+      const spec = { ownEven: false, ownCorners: false };
+
+      function jointEdge(L, startCorner, endCorner) {
+        return edgePieces(L, spec, startCorner, endCorner, T);
+      }
+
+      // Emit only the portion of an edge where param s is in [sMin, sMax]
+      function emitEdgeRange(pcs, sMin, sMax, map) {
+        const pts = [];
+        for (const p of pcs) {
+          const a = Math.max(p.a, sMin);
+          const b2 = Math.min(p.b, sMax);
+          if (b2 - a < 1e-9) continue;
+          pts.push(map(a, p.inset), map(b2, p.inset));
+        }
+        return pts;
+      }
+
+      const outPts = [];
+      // Outer jointed edges are generated on the FULL outer length so finger
+      // positions match the wall top joints.  The open-side arms are then
+      // clipped so they stop at the interior face (y=T or x=T).
+      if (dir === 'front') {
+        // left/right arms: full od, but only emit y >= T (interior front)
+        const left = jointEdge(od, false, true);
+        const back = jointEdge(ow, true, true);
+        const right = jointEdge(od, true, false);
+        // left: s = y, only s >= T
+        outPts.push(...emitEdgeRange(left, T, od - T, (s, i) => [i, s]));
+        // back: trimmed T at both ends so the corner squares are cut out (no diagonal slivers)
+        outPts.push(...emitEdgeRange(back, T, ow - T, (s, i) => [s, od - i]));
+        // right: emit high-to-low, only s in [T, od-T]
+        {
+          const pcs = right;
+          for (let j = pcs.length - 1; j >= 0; j--) {
+            const p = pcs[j];
+            const a = Math.max(p.a, T);
+            const b2 = Math.min(p.b, od - T);
+            if (b2 - a < 1e-9) continue;
+            outPts.push([ow - p.inset, b2], [ow - p.inset, a]);
+          }
+        }
+        // Close open front at interior y = T
+        outPts.push([ow, T], [ow - b, T], [ow - b, od - b], [b, od - b], [b, T], [0, T]);
+      } else if (dir === 'back') {
+        // left/right arms: full od, only emit y <= od-T
+        const left = jointEdge(od, true, false);
+        const front = jointEdge(ow, true, true);
+        const right = jointEdge(od, false, true);
+        // left high-to-low, only s in [T, od-T]
+        {
+          const pcs = left;
+          for (let j = pcs.length - 1; j >= 0; j--) {
+            const p = pcs[j];
+            const a = Math.max(p.a, T);
+            const b2 = Math.min(p.b, od - T);
+            if (b2 - a < 1e-9) continue;
+            outPts.push([p.inset, b2], [p.inset, a]);
+          }
+        }
+        // front: trimmed T at both ends (corner squares cut out)
+        outPts.push(...emitEdgeRange(front, T, ow - T, (s, i) => [s, i]));
+        // right low-to-high, only s in [T, od-T]
+        outPts.push(...emitEdgeRange(right, T, od - T, (s, i) => [ow - i, s]));
+        // Close open back at interior y = od-T
+        outPts.push([ow, od - T], [ow - b, od - T], [ow - b, b], [b, b], [b, od - T], [0, od - T]);
+      } else if (dir === 'left') {
+        // front/back arms: full ow, only emit x >= T
+        const front = jointEdge(ow, false, true);
+        const right = jointEdge(od, true, true);
+        const back = jointEdge(ow, true, false);
+        // front: only s in [T, ow-T]
+        outPts.push(...emitEdgeRange(front, T, ow - T, (s, i) => [s, i]));
+        // right: trimmed T at both ends (corner squares cut out)
+        outPts.push(...emitEdgeRange(right, T, od - T, (s, i) => [ow - i, s]));
+        // back high-to-low (x decreasing), only s in [T, ow-T]
+        {
+          const pcs = back;
+          for (let j = pcs.length - 1; j >= 0; j--) {
+            const p = pcs[j];
+            const a = Math.max(p.a, T);
+            const b2 = Math.min(p.b, ow - T);
+            if (b2 - a < 1e-9) continue;
+            outPts.push([b2, od - p.inset], [a, od - p.inset]);
+          }
+        }
+        // Close open left at interior x = T
+        outPts.push([T, od], [T, od - b], [ow - b, od - b], [ow - b, b], [T, b], [T, 0]);
+      } else {
+        // right open: front/back arms full ow, only emit x <= ow-T
+        const back = jointEdge(ow, false, true);
+        const left = jointEdge(od, true, true);
+        const front = jointEdge(ow, true, false);
+        // back high-to-low, only s in [T, ow-T]
+        {
+          const pcs = back;
+          for (let j = pcs.length - 1; j >= 0; j--) {
+            const p = pcs[j];
+            const a = Math.max(p.a, T);
+            const b2 = Math.min(p.b, ow - T);
+            if (b2 - a < 1e-9) continue;
+            outPts.push([b2, od - p.inset], [a, od - p.inset]);
+          }
+        }
+        // left: trimmed T at both ends (corner squares cut out)
+        {
+          const pcs = left;
+          for (let j = pcs.length - 1; j >= 0; j--) {
+            const p = pcs[j];
+            const a = Math.max(p.a, T);
+            const b2 = Math.min(p.b, od - T);
+            if (b2 - a < 1e-9) continue;
+            outPts.push([p.inset, b2], [p.inset, a]);
+          }
+        }
+        // front low-to-high, only s <= ow-T
+        outPts.push(...emitEdgeRange(front, T, ow - T, (s, i) => [s, i]));
+        // Close open right at interior x = ow-T
+        outPts.push([ow - T, 0], [ow - T, b], [b, b], [b, od - b], [ow - T, od - b], [ow - T, od]);
+      }
+
+      return { outline: cleanPoly(outPts), holes: [], ow, od };
+    }
+
+    const fr = slideUFrameOutline(ow, od, T, border, dir);
+
+    // Upper frame: at top — uses edge finger joints with wall tops (like flat lid).
+    // We already built fingers into the U outline; walls on 3 sides get matching top-edge joints.
+    defs.push({
+      name: 'Slide frame upper', role: 'slide-frame-upper', w: fr.ow, h: fr.od,
+      specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
+    });
+    defs.push({
+      name: 'Slide frame lower', role: 'slide-frame-lower', w: fr.ow, h: fr.od,
+      specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
+    });
+
+    // Sliding panel
+    const clear = 0.6;
+    let slW, slD;
+    if (dir === 'front' || dir === 'back') {
+      slW = Math.max(10, iw - 2 * clear);
+      slD = Math.max(10, id - clear);
+    } else {
+      slW = Math.max(10, iw - clear);
+      slD = Math.max(10, id - 2 * clear);
+    }
+    const pullW = Math.min(28, Math.max(12, (dir === 'left' || dir === 'right' ? slD : slW) * 0.22));
+    const pullD = Math.min(10, Math.max(5, T * 1.8));
+    function sliderOutline(w, dht, dir, pullW, pullD) {
+      // Pull tab sticks OUTWARD from the open edge (not cut into the panel).
+      if (dir === 'front') {
+        const x0 = (w - pullW) / 2, x1 = x0 + pullW;
+        return [[0, 0], [x0, 0], [x0, -pullD], [x1, -pullD], [x1, 0], [w, 0], [w, dht], [0, dht]];
+      }
+      if (dir === 'back') {
+        const x0 = (w - pullW) / 2, x1 = x0 + pullW;
+        return [[0, 0], [w, 0], [w, dht], [x1, dht], [x1, dht + pullD], [x0, dht + pullD], [x0, dht], [0, dht]];
+      }
+      if (dir === 'left') {
+        const y0 = (dht - pullW) / 2, y1 = y0 + pullW;
+        return [[0, 0], [w, 0], [w, dht], [0, dht], [0, y1], [-pullD, y1], [-pullD, y0], [0, y0]];
+      }
+      const y0 = (dht - pullW) / 2, y1 = y0 + pullW;
+      return [[0, 0], [w, 0], [w, y0], [w + pullD, y0], [w + pullD, y1], [w, y1], [w, dht], [0, dht]];
+    }
+    defs.push({
+      name: 'Slide panel', role: 'slide-panel', w: slW, h: slD,
+      specs: null, outlineOverride: sliderOutline(slW, slD, dir, pullW, pullD),
+    });
+    d.slide.slW = slW;
+    d.slide.slD = slD;
+
+    // Lower frame mid-wall slots on the THREE non-entry walls only
+    function edgeSlots(L, slotY, T, offset) {
+      const segs = fingerSegments(L, false); // match U-frame finger parity
+      const slots = [];
+      for (const seg of segs) {
+        if (seg.isFinger) slots.push([offset + seg.a, slotY, seg.b - seg.a, T]);
+      }
+      return slots;
+    }
+    const xOff = 0; // outer-aligned fingers on full wall width
+    const zOff = 0;
+    const fs = { front: [], back: [], left: [], right: [] };
+    // Upper frame joints with wall TOPS on 3 sides — handled by wall top edge specs below.
+    // Lower frame: mid-wall slots on 3 non-entry sides
+    if (dir !== 'front') fs.front.push(...edgeSlots(ow, lowerY, T, xOff));
+    if (dir !== 'back')  fs.back.push(...edgeSlots(ow, lowerY, T, xOff));
+    if (dir !== 'left')  fs.left.push(...edgeSlots(od, lowerY, T, zOff));
+    if (dir !== 'right') fs.right.push(...edgeSlots(od, lowerY, T, zOff));
+    d.slide.frameSlots = fs;
+
+    // Entry wall shortened so the panel can slide in above it: its top reaches
+    // the TOP face of the lower frame plate (= the floor of the channel the panel
+    // slides in), so the panel rides directly on top of the wall.
+    d.slide.entryWallH = Math.max(T * 2, lowerY + T);
+    d.slide.entryWall = dir;
+
+    // Patch walls: entry wall shorter; other three get top finger joints for upper frame
+    const entryH = d.slide.entryWallH;
+    const topJ = J(true, true); // even fingers on wall top, mating upper frame
+    for (const def of defs) {
+      if (!def.role) continue;
+      if (def.role === dir) {
+        // entry wall — shortened so its top reaches the underside of the lid.
+        // Build the outline at the FULL wall height first so the vertical finger
+        // joints use exactly the same spacing as the neighbouring (full-height)
+        // walls, then cut the top off at entryH. (Building it directly at the
+        // shorter height changes the finger count/size and the joints no longer mate.)
+        if (def.specs) {
+          const sp = def.specs.slice();
+          sp[2] = null; // top plain
+          def.specs = sp;
+          def.outlineOverride = clipOutlineBelow(panelOutline(def.w, oh, sp, T), entryH);
+        }
+        def.h = entryH;
+      } else if (['front','back','left','right'].includes(def.role)) {
+        // non-entry walls — finger joints on top for upper frame
+        if (def.specs) {
+          const sp = def.specs.slice();
+          sp[2] = topJ;
+          def.specs = sp;
+          def.outlineOverride = null;
+        }
+      }
+    }
+  }
+
   // Pin-hinge lid (full exterior size) + upright ears on Left/Right walls
   // Lid = outer box footprint (ow × od) with pins at the back.
   // Left/Right walls get rounded ears that stick UP above the rim with pivot holes.
@@ -2717,6 +3074,17 @@ function generatePanels() {
     wallSlots.right.push(...wallFingerSlots(sx, T, divH, T));
   }
 
+  // Slide-in frame slots + entry notch on walls
+  if (slide && d.slide && d.slide.frameSlots) {
+    const fs = d.slide.frameSlots;
+    const offW = joinWalls ? 0 : 0; // frames are outer size; slots along full wall width
+    // Front/Back wall local x: 0 at left exterior. Frame spans full ow.
+    wallSlots.front.push(...(fs.front || []));
+    wallSlots.back.push(...(fs.back || []));
+    wallSlots.left.push(...(fs.left || []));
+    wallSlots.right.push(...(fs.right || []));
+  }
+
   xCenters.forEach((cx, i) => {
     const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
     defs.push({
@@ -2766,6 +3134,13 @@ function generatePanels() {
     else if (def.role === 'back') slots = wallSlots.back;
     else if (def.role === 'left') slots = wallSlots.left;
     else if (def.role === 'right') slots = wallSlots.right;
+    // Entry notch for slide-in lid (pass-through for the panel)
+    if (slide && d.slide && d.slide.entryNotch) {
+      const en = d.slide.entryNotch;
+      if (en.wall === def.role) {
+        slots = slots.concat([[en.x, en.y, en.w, en.h]]);
+      }
+    }
     slots = slots.map(([x, y, w, h]) => [x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf]);
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -2992,6 +3367,28 @@ function placement(role, d) {
     case 'lid-back':  return { o: V(-lhw, lidBaseY - state.lidH, -lhd),    u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
     case 'lid-left':  return { o: V(-lhw + T, lidBaseY - state.lidH, -lhd), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
     case 'lid-right': return { o: V(lhw, lidBaseY - state.lidH, -lhd),      u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
+
+    case 'slide-frame-lower': {
+      const sy = (d.slide && d.slide.lowerY != null) ? d.slide.lowerY : (oh - 3 * T);
+      return { o: V(-hw, sy, hd), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    }
+    case 'slide-frame-upper': {
+      // Fixed at very top of box (same as flat lid top plate)
+      const sy = oh - T;
+      return { o: V(-hw, sy, hd), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    }
+    case 'slide-panel': {
+      const sl = d.slide || {};
+      const gap = sl.gap != null ? sl.gap : (T + 0.5);
+      const sy = (sl.lowerY != null) ? (sl.lowerY + T) : (oh - 2 * T - gap);
+      const slW = sl.slW || iw, slD = sl.slD || id;
+      return {
+        o: V(-slW / 2, sy, slD / 2),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
     case 'hinge-lid': {
       // Full exterior lid sitting on top of the box
       const lidW = d.hinge ? d.hinge.lidW : ow;
@@ -3169,6 +3566,9 @@ const EXPLODE_DIR = {
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
+  'slide-frame-lower': [0, 0.7, 0],
+  'slide-frame-upper': [0, 1.0, 0],
+  'slide-panel': [0, 0.5, 1.2],
   // Frame face + underlay lift slightly above the walls
   'frame-face-top': [0, 1.15, 0.35], 'frame-face-bottom': [0, 1.15, -0.35],
   'frame-face-left': [-0.35, 1.15, 0], 'frame-face-right': [0.35, 1.15, 0],
@@ -3182,6 +3582,9 @@ const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
   'hinge-lid': 0xb8956a,
+  'slide-frame-lower': 0xc4a574,
+  'slide-frame-upper': 0xb8956a,
+  'slide-panel': 0xd4b483,
   'frame-face-top': 0x8b5a2b, 'frame-face-bottom': 0x8b5a2b,
   'frame-face-left': 0x7a4f24, 'frame-face-right': 0x7a4f24,
   'frame-under': 0xc4a574,
@@ -3328,9 +3731,22 @@ function rebuild3D() {
         : 50;
       pull = [0, travel, 0];
     }
+    // Slide-in lid panel: slides straight out through the open (entry) side.
+    // Full travel = far enough that the whole panel clears the box.
+    let slidePull = [0, 0, 0];
+    if (p.role === 'slide-panel' && d.slide) {
+      const sd = d.slide.dir || 'front';
+      const axis = { front: [0, 0, 1], back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0] }[sd] || [0, 0, 1];
+      const alongZ = (sd === 'front' || sd === 'back');
+      const boxHalf = (alongZ ? d.od : d.ow) / 2;
+      const panelLen = alongZ ? (d.slide.slD || d.id) : (d.slide.slW || d.iw);
+      const travel = boxHalf + panelLen / 2 + 5;
+      slidePull = [axis[0] * travel, 0, axis[2] * travel];
+    }
     mesh.userData = {
       exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount],
       pull,
+      slidePull,
     };
     boxGroup.add(mesh);
     panels3D.push(mesh);
@@ -3342,13 +3758,15 @@ function rebuild3D() {
 function updateAssembly() {
   const t = 1 - state.assembly;
   const pullT = state.drawerPull || 0;
+  const slideT = state.slidePull || 0;
   for (const mesh of panels3D) {
     const e = mesh.userData.exp || [0, 0, 0];
     const p = mesh.userData.pull || [0, 0, 0];
+    const sp = mesh.userData.slidePull || [0, 0, 0];
     mesh.position.set(
-      e[0] * t + p[0] * pullT,
-      e[1] * t + p[1] * pullT,
-      e[2] * t + p[2] * pullT
+      e[0] * t + p[0] * pullT + sp[0] * slideT,
+      e[1] * t + p[1] * pullT + sp[1] * slideT,
+      e[2] * t + p[2] * pullT + sp[2] * slideT
     );
   }
 }
@@ -3472,6 +3890,7 @@ function resetAll() {
   $('lidNone').classList.add('active');
   $('lidFlat').classList.remove('active');
   if ($('lidSlip')) $('lidSlip').classList.remove('active');
+  if ($('lidSlide')) $('lidSlide').classList.remove('active');
   if ($('genBox')) $('genBox').classList.add('active');
   if ($('genFrame')) $('genFrame').classList.remove('active');
   $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
