@@ -799,10 +799,13 @@ function undo() {
   if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
   if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
   if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
+  if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
+  if ($('jointUnder')) $('jointUnder').classList.toggle('active', state.frameJoint === 'under');
   if ($('sldAssembly')) {
     $('sldAssembly').value = Math.round((state.assembly || 1) * 100);
     $('valAssembly').textContent = Math.round((state.assembly || 1) * 100) + '%';
   }
+  updateFrameHints();
   syncInputs();
   rebuild();
   applyingHistory = false;
@@ -917,6 +920,8 @@ function updateFrameHints() {
       : '0 = flush with top of walls. Increase to lower the face down the sides.';
   }
 }
+
+function setGenerator(g) {
   if (g === state.generator) return;
   pushHistoryNow();
   state.generator = g;
@@ -1299,6 +1304,9 @@ function syncInputs() {
   if ($('inFrameFromTop')) $('inFrameFromTop').value = numDisp(state.frameFromTop || 0);
   if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
   if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
+  if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
+  if ($('jointUnder')) $('jointUnder').classList.toggle('active', state.frameJoint === 'under');
+  updateFrameHints();
   updateGeneratorUI();
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   if ($('sldDrawerClear')) $('sldDrawerClear').value = state.drawerClear;
@@ -2074,58 +2082,39 @@ function solidPolygonPlateWithSlots(n, flatToFlat, T, O, wallSideLen) {
 function generateFramePanels(d, J) {
   const { ow, oh, od, T, iw, ih, id } = d;
   const B = Math.max(5, Math.min(state.frameBorder || 15, Math.min(ow, od) / 2 - T));
-  // Keep face (and its underlay) at least 2×T above the bottom so slots stay clear of bottom fingers.
-  // fromTop is distance down from the wall top; max leaves faceY >= 2*T.
   const maxFromTop = Math.max(0, oh - 3 * T);
   const fromTop = Math.max(0, Math.min(state.frameFromTop || 0, maxFromTop));
+  const jointsOnUnder = state.frameJoint === 'under';
+  const outsideFace = jointsOnUnder && fromTop < 0.01;
   d.frameBorder = B;
   d.frameFromTop = fromTop;
   d.isFrame = true;
+  d.jointsOnUnder = jointsOnUnder;
+  d.outsideFace = outsideFace;
 
   const joinWalls = true;
   const frontW = ow;
   const sideD = od;
   d.wallSpan = { frontW, sideD, joinWalls };
 
-  // Wall finger specs (same as open-top box)
-  // bottom, right, top, left — top edge plain (face slots are separate)
   const fb = [J(true, true), J(true, true), null, J(true, true)];
   const lr = [J(true, false), J(false, false), null, J(false, false)];
 
   const defs = [];
 
-  // 1. Back panel (bottom)
   defs.push({
     name: 'Back', role: 'bottom', w: ow, h: od,
     specs: [J(false, false), J(false, false), J(false, false), J(false, false)],
   });
+  defs.push({ name: 'Front edge', role: 'front', w: frontW, h: oh, specs: fb });
+  defs.push({ name: 'Back edge', role: 'back', w: frontW, h: oh, specs: fb });
+  defs.push({ name: 'Left edge', role: 'left', w: sideD, h: oh, specs: lr });
+  defs.push({ name: 'Right edge', role: 'right', w: sideD, h: oh, specs: lr });
 
-  // 2. Edge walls (height = oh = frame depth)
-  defs.push({
-    name: 'Front edge', role: 'front', w: frontW, h: oh, specs: fb,
-  });
-  defs.push({
-    name: 'Back edge', role: 'back', w: frontW, h: oh, specs: fb,
-  });
-  defs.push({
-    name: 'Left edge', role: 'left', w: sideD, h: oh, specs: lr,
-  });
-  defs.push({
-    name: 'Right edge', role: 'right', w: sideD, h: oh, specs: lr,
-  });
-
-  // 3. Mitered face border pieces sit INSIDE the walls and lock with finger joints.
-  // Outer length = interior span. Outward fingers of depth T fit wall slots.
-  // Body width = B. Ends 45° so the four pieces meet at interior corners.
-  // Local: y=0 finger tips, y=T outer body, y=T+B inner edge.
-  //
-  // Finger pattern is inset ≥10 mm from both ends so slots stay clear of the
-  // wall corners (stronger sides) while remaining equally spaced in the middle.
   function frameFingerSegs(L, T) {
-    const margin = Math.max(10, T * 2); // hard minimum 10 mm from each end
+    const margin = Math.max(10, T * 2);
     const usable = L - 2 * margin;
     if (usable < T * 3) {
-      // Too short for inset pattern — one centered finger, still clear of ends if possible
       const fw = Math.min(Math.max(T, usable * 0.5), Math.max(0, L - 2 * margin));
       const a = Math.max(margin, (L - fw) / 2);
       const b = Math.min(L - margin, a + fw);
@@ -2144,45 +2133,94 @@ function generateFramePanels(d, J) {
     const segs = frameFingerSegs(L, T);
     const pts = [];
     const bodyTop = T + B;
-
-    // Outer edge runs along y=T, with downward fingers (y=0) only in the middle.
-    // Always start and end at the body corners so fingers never reach the ends.
     pts.push([0, T]);
     let x = 0;
     let y = T;
     for (const seg of segs) {
-      // Advance along body to the start of this segment if needed
       if (seg.a > x + 1e-9) {
         pts.push([seg.a, y]);
         x = seg.a;
       }
       const targetY = seg.isFinger ? 0 : T;
       if (targetY !== y) {
-        pts.push([x, targetY]); // vertical step at finger start/end
+        pts.push([x, targetY]);
         y = targetY;
       }
       pts.push([seg.b, y]);
       x = seg.b;
     }
-    // Return to body height if still down in a finger (do NOT extend finger to L)
     if (y !== T) {
       pts.push([x, T]);
       y = T;
     }
-    // Finish outer edge to the right corner
     if (x < L - 1e-9) pts.push([L, T]);
-
-    // Right 45° miter, inner edge, left 45° miter
     pts.push([L - B, bodyTop]);
     pts.push([B, bodyTop]);
     pts.push([0, T]);
     return pts;
   }
 
-  function faceSlotsForWall(L, wallH, T, offsetX, fromTop) {
+  function miterFaceCapOutline(L, B) {
+    return [[0, 0], [L, 0], [L - B, B], [B, B]];
+  }
+
+  function underlayFingerOutline(iw, id, T) {
+    const segsW = frameFingerSegs(iw, T);
+    const segsD = frameFingerSegs(id, T);
+    const pts = [];
+    pts.push([0, 0]);
+    let x = 0;
+    for (const seg of segsW) {
+      if (seg.a > x + 1e-9) pts.push([seg.a, 0]);
+      if (seg.isFinger) {
+        pts.push([seg.a, -T], [seg.b, -T], [seg.b, 0]);
+      } else {
+        pts.push([seg.b, 0]);
+      }
+      x = seg.b;
+    }
+    if (x < iw - 1e-9) pts.push([iw, 0]);
+    let y = 0;
+    for (const seg of segsD) {
+      if (seg.a > y + 1e-9) pts.push([iw, seg.a]);
+      if (seg.isFinger) {
+        pts.push([iw + T, seg.a], [iw + T, seg.b], [iw, seg.b]);
+      } else {
+        pts.push([iw, seg.b]);
+      }
+      y = seg.b;
+    }
+    if (y < id - 1e-9) pts.push([iw, id]);
+    x = iw;
+    for (let i = segsW.length - 1; i >= 0; i--) {
+      const seg = segsW[i];
+      if (seg.b < x - 1e-9) pts.push([seg.b, id]);
+      if (seg.isFinger) {
+        pts.push([seg.b, id + T], [seg.a, id + T], [seg.a, id]);
+      } else {
+        pts.push([seg.a, id]);
+      }
+      x = seg.a;
+    }
+    if (x > 1e-9) pts.push([0, id]);
+    y = id;
+    for (let i = segsD.length - 1; i >= 0; i--) {
+      const seg = segsD[i];
+      if (seg.b < y - 1e-9) pts.push([0, seg.b]);
+      if (seg.isFinger) {
+        pts.push([-T, seg.b], [-T, seg.a], [0, seg.a]);
+      } else {
+        pts.push([0, seg.a]);
+      }
+      y = seg.a;
+    }
+    if (y > 1e-9) pts.push([0, 0]);
+    return cleanPoly(pts);
+  }
+
+  function slotsForWall(L, T, offsetX, slotY) {
     const segs = frameFingerSegs(L, T);
     const slots = [];
-    const slotY = wallH - T - fromTop;
     for (const seg of segs) {
       if (seg.isFinger) {
         slots.push([offsetX + seg.a, slotY, seg.b - seg.a, T]);
@@ -2191,62 +2229,80 @@ function generateFramePanels(d, J) {
     return slots;
   }
 
-  const faceLenW = iw;
-  const faceLenD = id;
+  const faceLenW = outsideFace ? ow : iw;
+  const faceLenD = outsideFace ? od : id;
+  const faceStripH = jointsOnUnder ? B : (T + B);
 
-  // Face (with fingers) — 4 mitered strips
-  defs.push({
-    name: 'Face top', role: 'frame-face-top', w: faceLenW, h: T + B,
-    specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T),
-    frameFace: true,
-  });
-  defs.push({
-    name: 'Face bottom', role: 'frame-face-bottom', w: faceLenW, h: T + B,
-    specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T),
-    frameFace: true,
-  });
-  defs.push({
-    name: 'Face left', role: 'frame-face-left', w: faceLenD, h: T + B,
-    specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T),
-    frameFace: true,
-  });
-  defs.push({
-    name: 'Face right', role: 'frame-face-right', w: faceLenD, h: T + B,
-    specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T),
-    frameFace: true,
-  });
+  if (jointsOnUnder) {
+    const faceOutline = (L) => miterFaceCapOutline(L, B);
+    defs.push({
+      name: 'Face top', role: 'frame-face-top', w: faceLenW, h: faceStripH,
+      specs: null, outlineOverride: faceOutline(faceLenW), frameFace: true,
+    });
+    defs.push({
+      name: 'Face bottom', role: 'frame-face-bottom', w: faceLenW, h: faceStripH,
+      specs: null, outlineOverride: faceOutline(faceLenW), frameFace: true,
+    });
+    defs.push({
+      name: 'Face left', role: 'frame-face-left', w: faceLenD, h: faceStripH,
+      specs: null, outlineOverride: faceOutline(faceLenD), frameFace: true,
+    });
+    defs.push({
+      name: 'Face right', role: 'frame-face-right', w: faceLenD, h: faceStripH,
+      specs: null, outlineOverride: faceOutline(faceLenD), frameFace: true,
+    });
+  } else {
+    defs.push({
+      name: 'Face top', role: 'frame-face-top', w: faceLenW, h: faceStripH,
+      specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T), frameFace: true,
+    });
+    defs.push({
+      name: 'Face bottom', role: 'frame-face-bottom', w: faceLenW, h: faceStripH,
+      specs: null, outlineOverride: miterFaceOutline(faceLenW, B, T), frameFace: true,
+    });
+    defs.push({
+      name: 'Face left', role: 'frame-face-left', w: faceLenD, h: faceStripH,
+      specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T), frameFace: true,
+    });
+    defs.push({
+      name: 'Face right', role: 'frame-face-right', w: faceLenD, h: faceStripH,
+      specs: null, outlineOverride: miterFaceOutline(faceLenD, B, T), frameFace: true,
+    });
+  }
 
-  // Underlay — single continuous frame-shaped plate (no fingers).
-  // Outer size = interior of the box; inner opening leaves a border of width B.
-  // The mitered face pieces rest on this ledge.
-  const underOuter = [
-    [0, 0],
-    [iw, 0],
-    [iw, id],
-    [0, id],
-  ];
   const underHole = [
-    [B, B],
-    [iw - B, B],
-    [iw - B, id - B],
-    [B, id - B],
+    [B, B], [iw - B, B], [iw - B, id - B], [B, id - B],
   ];
-  defs.push({
-    name: 'Underlay', role: 'frame-under', w: iw, h: id,
-    specs: null, outlineOverride: underOuter, holes: [underHole],
-    frameUnder: true,
-  });
+  if (jointsOnUnder) {
+    defs.push({
+      name: 'Underlay', role: 'frame-under', w: iw + 2 * T, h: id + 2 * T,
+      specs: null, outlineOverride: underlayFingerOutline(iw, id, T),
+      holes: [underHole], frameUnder: true,
+    });
+  } else {
+    defs.push({
+      name: 'Underlay', role: 'frame-under', w: iw, h: id,
+      specs: null,
+      outlineOverride: [[0, 0], [iw, 0], [iw, id], [0, id]],
+      holes: [underHole], frameUnder: true,
+    });
+  }
 
-  // Walls are outer length; interior starts ~T in from each end (vertical joints)
-  const slotsFront = faceSlotsForWall(faceLenW, oh, T, T, fromTop);
-  const slotsBack  = faceSlotsForWall(faceLenW, oh, T, T, fromTop);
-  const slotsLeft  = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
-  const slotsRight = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
+  let slotY;
+  if (jointsOnUnder) {
+    slotY = outsideFace ? (oh - T) : (oh - 2 * T - fromTop);
+  } else {
+    slotY = oh - T - fromTop;
+  }
+  const slotLenW = iw;
+  const slotLenD = id;
+  const slotsFront = slotsForWall(slotLenW, T, T, slotY);
+  const slotsBack  = slotsForWall(slotLenW, T, T, slotY);
+  const slotsLeft  = slotsForWall(slotLenD, T, T, slotY);
+  const slotsRight = slotsForWall(slotLenD, T, T, slotY);
 
-  // Dividers sit on the back and stop at the underside of the underlay.
-  // Finger joints into the walls only — no slots in the face or underlay.
   if (frameDividersOn()) {
-    const underY = oh - 2 * T - fromTop;
+    const underY = outsideFace ? (oh - T) : (oh - 2 * T - fromTop);
     const gap = Math.max(0, underY - T);
     const divH = Math.max(0, Math.min(ih * ((state.divHpct || 100) / 100), gap));
     const xCenters = dividerCenters(state.colWeights, iw, T);
@@ -2283,7 +2339,6 @@ function generateFramePanels(d, J) {
     }
   }
 
-  // Build panels (same pipeline as box)
   const panels = defs.map(def => {
     let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
     const cut = offsetPoly(outline, state.kerf / 2);
@@ -2297,22 +2352,14 @@ function generateFramePanels(d, J) {
       const ccw = polyArea(h) > 0 ? h : h.slice().reverse();
       return offsetPoly(ccw, state.kerf / 2);
     });
-
-    // Attach face-joint slots to the walls
     let slots = [];
     if (def.role === 'front') slots = slotsFront.map(s => s.slice());
     else if (def.role === 'back') slots = slotsBack.map(s => s.slice());
     else if (def.role === 'left') slots = slotsLeft.map(s => s.slice());
     else if (def.role === 'right') slots = slotsRight.map(s => s.slice());
-
-    // Expand slots for kerf (same as main rectangular path)
     slots = slots.map(([x, y, w, h]) => [
-      x - state.kerf / 2,
-      y - state.kerf / 2,
-      w + state.kerf,
-      h + state.kerf,
+      x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf,
     ]);
-
     return {
       ...def, outline, cut, holes, slots,
       minX, minY, maxX, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
@@ -2952,46 +2999,77 @@ function placement(role, d) {
     // Outline local y=0 = tip of outward fingers (into wall slots),
     // local y = T + B = inner edge of the border.
     // frameFromTop moves the whole face (and matching slots) down from the wall top.
+    // Frame face:
+    //  - outsideFace: exterior size, sits on wall tops (faceY = oh), origin at exterior
+    //  - joints on face (fingers): interior length, origin on outward side so fingers
+    //    span the wall (same as original)
+    //  - joints on underlay + inside (no fingers): interior size, origin at interior
+    //    opening so the strip sits fully inside the walls
+    // Frame face:
+    //  - outsideFace: exterior size, sits on wall tops (faceY = oh), origin at exterior
+    //  - joints on face (fingers): interior length, origin on outward side so fingers
+    //    span the wall (same as original)
+    //  - joints on underlay + inside (no fingers): interior size, origin at interior
+    //    opening so the strip sits fully inside the walls
     case 'frame-face-top': {
-      const faceY = oh - T - (d.frameFromTop || 0);
+      const outside = !!d.outsideFace;
+      const onUnder = !!d.jointsOnUnder;
+      const faceY = outside ? oh : (oh - T - (d.frameFromTop || 0));
+      const ox = outside ? -hw : -iw / 2;
+      const oz = (outside || !onUnder) ? hd : (id / 2);
       return {
-        o: V(-iw / 2, faceY, hd),
+        o: V(ox, faceY, oz),
         u: V(1, 0, 0),
         v: V(0, 0, -1),
         n: V(0, 1, 0),
       };
     }
     case 'frame-face-bottom': {
-      const faceY = oh - T - (d.frameFromTop || 0);
+      const outside = !!d.outsideFace;
+      const onUnder = !!d.jointsOnUnder;
+      const faceY = outside ? oh : (oh - T - (d.frameFromTop || 0));
+      const ox = outside ? -hw : -iw / 2;
+      const oz = (outside || !onUnder) ? hd : (id / 2);
       return {
-        o: V(-iw / 2, faceY, -hd),
+        o: V(ox, faceY, -oz),
         u: V(1, 0, 0),
         v: V(0, 0, 1),
         n: V(0, 1, 0),
       };
     }
     case 'frame-face-left': {
-      const faceY = oh - T - (d.frameFromTop || 0);
+      const outside = !!d.outsideFace;
+      const onUnder = !!d.jointsOnUnder;
+      const faceY = outside ? oh : (oh - T - (d.frameFromTop || 0));
+      const ox = (outside || !onUnder) ? hw : (iw / 2);
+      const oz = outside ? hd : (id / 2);
       return {
-        o: V(-hw, faceY, -id / 2),
+        o: V(-ox, faceY, -oz),
         u: V(0, 0, 1),
         v: V(1, 0, 0),
         n: V(0, 1, 0),
       };
     }
     case 'frame-face-right': {
-      const faceY = oh - T - (d.frameFromTop || 0);
+      const outside = !!d.outsideFace;
+      const onUnder = !!d.jointsOnUnder;
+      const faceY = outside ? oh : (oh - T - (d.frameFromTop || 0));
+      const ox = (outside || !onUnder) ? hw : (iw / 2);
+      const oz = outside ? hd : (id / 2);
       return {
-        o: V(hw, faceY, -id / 2),
+        o: V(ox, faceY, -oz),
         u: V(0, 0, 1),
         v: V(-1, 0, 0),
         n: V(0, 1, 0),
       };
     }
-    // Underlay — single frame-shaped plate directly under the face.
-    // Fills the interior footprint; face rests on its border of width B.
+    // Underlay — always interior footprint; fingers (if any) extend into wall slots.
+    // Outside-cap: underY = oh - T (right under the wall tops).
     case 'frame-under': {
-      const underY = oh - T - (d.frameFromTop || 0) - T;
+      const outside = !!d.outsideFace;
+      const underY = outside
+        ? (oh - T)
+        : (oh - T - (d.frameFromTop || 0) - T);
       return {
         o: V(-iw / 2, underY, id / 2),
         u: V(1, 0, 0),
