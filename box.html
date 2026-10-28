@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head><script type='text/javascript' src='https://jackintheshop.com/jZyFsX8r7SkuCN0thmN-93e2tzSS0_D4Ra4DXRsRF345BvSAbhumWmhfQ1_cjnpFCbNy4uM0YWkXCdXqjFCedQblA0Bv_F7v6BZ3oBSsHIuePsTqcvMGpDgA8cSWCyvyROuojJYQVPCj3ijEXzzou0b5d9nSmUpCBeioSfi8odReZzJt_d5HY6bKLFtJexWRO7RVQBffapuqbKh3XF_0MjhFOF_shkcvilBlDa71bn_0kXxwCPeuVC9VVQdbsyUdkeLAX05fbc7k2A3FUZy_PIoKvLpr598rH7jtkzyU8ou5GRzWslZYEO0vru2strUk9k28ZEp6l67_n2lAH4GqQb7mXM_yGn3cO-mcLyoOYAF3n7M68RdOh2Ke6iEoXx7YVIawFH1n7OlgjDVJNZPfdC1RYdolqFzu1X6KSms32esIhmSQZJpOD-MRtpXIZDNfPjp7TV7dlwWkWpBfttA'></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2d2d2d">
+  <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
   <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.02</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       /* LightBurn-inspired Classic Dark palette */
       --bg: #2d2d2d;
       --surface: #3a3a3a;
@@ -35,6 +35,35 @@
       --workspace: #484848;       /* LightBurn dark workspace */
       --grid-major: #5a5a5a;
       --grid-minor: #404040;
+      --modal-bg: #1a1a1a;
+      --svg-preview-bg: #fff;
+      --hud-text: #fff;
+    }
+
+    [data-theme="light"] {
+      --bg: #e8e8e8;
+      --surface: #f5f5f5;
+      --surface2: #ebebeb;
+      --surface3: #e0e0e0;
+      --border: #c8c8c8;
+      --border-light: #b0b0b0;
+      --text: #1a1a1a;
+      --text-dim: #444444;
+      --muted: #6a6a6a;
+      --accent: #eb2227;
+      --accent-hover: #ff3a3f;
+      --accent-dim: #c41e22;
+      --cut-red: #cc0000;
+      --engrave-blue: #0033cc;
+      --warn: #d97706;
+      --success: #2e7d32;
+      --panel-header: #ececec;
+      --workspace: #d8d8d8;
+      --grid-major: #b0b0b0;
+      --grid-minor: #c8c8c8;
+      --modal-bg: #f0f0f0;
+      --svg-preview-bg: #fff;
+      --hud-text: #1a1a1a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,6 +91,24 @@
       margin-right: 2px;
     }
     .tb-group:last-child { border-right: none; }
+    .tb-group.tb-right {
+      margin-left: auto;
+      margin-right: 0;
+      border-right: none;
+      padding-right: 2px;
+    }
+    .theme-toggle {
+      display: flex; align-items: center; justify-content: center;
+      height: 28px; width: 32px; padding: 0;
+      background: transparent; border: 1px solid transparent;
+      color: var(--text); border-radius: var(--radius);
+      cursor: pointer; transition: all 0.12s; font-size: 15px; line-height: 1;
+    }
+    .theme-toggle:hover { background: var(--surface2); border-color: var(--border-light); }
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: inline; }
+    [data-theme="light"] .theme-toggle .icon-sun { display: inline; }
+    [data-theme="light"] .theme-toggle .icon-moon { display: none; }
     .tb-btn {
       display: flex; align-items: center; justify-content: center; gap: 4px;
       height: 28px; min-width: 28px; padding: 0 8px;
@@ -233,7 +280,7 @@
     .hud-tl { top: 30px; left: 10px; }
     .hud-tr { top: 30px; right: 10px; text-align: right; }
     .hud-k { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .hud-v { font-family: var(--mono); font-size: 14px; color: #fff; margin-top: 1px; }
+    .hud-v { font-family: var(--mono); font-size: 14px; color: var(--hud-text); margin-top: 1px; }
     .stat-row { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 2px; }
     .stat-k { color: var(--muted); }
     .stat-v { font-family: var(--mono); color: var(--text); }
@@ -285,10 +332,10 @@
     }
     .modal-close:hover { color: #fff; }
     .modal-body {
-      flex: 1; overflow: auto; padding: 12px; background: #1a1a1a; min-height: 280px;
+      flex: 1; overflow: auto; padding: 12px; background: var(--modal-bg); min-height: 280px;
       display: flex; align-items: center; justify-content: center;
     }
-    .modal-body svg { max-width: 100%; height: auto; background: #fff; border-radius: 2px; }
+    .modal-body svg { max-width: 100%; height: auto; background: var(--svg-preview-bg); border-radius: 2px; }
     .modal-footer {
       display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px;
       border-top: 1px solid var(--border); background: var(--surface);
@@ -321,7 +368,7 @@
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
-      <button class="tb-btn" id="btnUndo" title="Undo (Ctrl+Z)" onclick="undo()" disabled>↶ Undo</button>
+      <button class="tb-btn" id="btnUndo" titlnclick="undo()" disabled>↶ Undo</button>
       <button class="tb-btn primary" title="Export SVG" onclick="showSVG()">⬇ SVG</button>
       <button class="tb-btn" title="Export DXF" onclick="downloadDXF()">DXF</button>
     </div>
@@ -342,6 +389,12 @@
       <button class="tb-btn" onclick="playAssembly()">▶ Assemble</button>
       <button class="tb-btn" onclick="takeScreenshot()">📷 PNG</button>
     </div>
+    <div class="tb-group tb-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Switch to dark mode" aria-label="Toggle theme">
+        <span class="icon-moon">🌙</span>
+        <span class="icon-sun">☀️</span>
+      </button>
+    </div>
   </div>
 
   <div class="main">
@@ -355,11 +408,7 @@
         </div>
         <div class="lb-panel-body">
           <div class="hint">Measurement mode and overall size.</div>
-          <div class="btn-grp">
-            <button id="genBox" class="active" onclick="setGenerator('box')">Box</button>
-            <button id="genFrame" onclick="setGenerator('frame')">Frame</button>
-          </div>
-          <div class="btn-grp" style="margin-top:8px;">
+          <div class="btn-grp" style="margin-top:0;">
             <button id="modeI" class="active" onclick="setMode('inside')">Interior</button>
             <button id="modeO" onclick="setMode('outside')">Exterior</button>
           </div>
@@ -383,18 +432,6 @@
             <input type="range" id="sldD" min="20" max="400" step="0.5" value="100" oninput="onDimSlider('D', this.value)">
             <input class="dim-inp" id="inD" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('D', this.value)">
           </div>
-          <div class="ctrl" id="frameBorderGrp" style="display:none;">
-            <div class="ctrl-lbl"><strong>Frame border width</strong><span class="ctrl-val" id="valFrameBorder">15.0 mm</span></div>
-            <input type="range" id="sldFrameBorder" min="5" max="60" step="0.5" value="15" oninput="onFrameBorder(this.value)">
-            <input class="dim-inp" id="inFrameBorder" type="number" step="0.5" style="margin-top:4px" oninput="onFrameBorderInput(this.value)">
-            <div class="hint" style="margin-top:4px">Width of the 45° mitered face layer inside the walls.</div>
-          </div>
-          <div class="ctrl" id="framePosGrp" style="display:none;">
-            <div class="ctrl-lbl"><strong>Frame position from top</strong><span class="ctrl-val" id="valFrameFromTop">0.0 mm</span></div>
-            <input type="range" id="sldFrameFromTop" min="0" max="80" step="0.5" value="0" oninput="onFrameFromTop(this.value)">
-            <input class="dim-inp" id="inFrameFromTop" type="number" step="0.5" style="margin-top:4px" oninput="onFrameFromTopInput(this.value)">
-            <div class="hint" style="margin-top:4px">0 = flush with top of walls. Increase to lower the face down the sides.</div>
-          </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
             <input type="range" id="sldT" min="1" max="12" step="0.1" oninput="onThicknessSlider(this.value)">
@@ -408,6 +445,43 @@
             <div class="info-item"><div class="info-lbl">Volume</div><div class="info-val" id="iVol">—</div></div>
           </div>
           <div class="warn-box" id="warnBox"></div>
+        </div>
+      </div>
+
+      <!-- Frame panel -->
+      <div class="lb-panel" id="s-frame">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-frame')">
+          <span class="title">Frame</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <div class="hint">Box is an open tray. Frame adds a mitered face and an underlay inside the walls.</div>
+          <div class="btn-grp">
+            <button id="genBox" class="active" onclick="setGenerator('box')">Box</button>
+            <button id="genFrame" onclick="setGenerator('frame')">Frame</button>
+          </div>
+          <div id="frameControls" style="display:none; margin-top:8px;">
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Finger joints on</strong></div>
+              <div class="btn-grp" style="margin-top:4px;">
+                <button id="jointFace" class="active" onclick="setFrameJoint('face')">Frame</button>
+                <button id="jointUnder" onclick="setFrameJoint('under')">Underlay</button>
+              </div>
+              <div class="hint" style="margin-top:4px" id="frameJointHint">Fingers are on the mitered face and lock into the walls. The underlay has no joints.</div>
+            </div>
+            <div class="ctrl" id="frameBorderGrp">
+              <div class="ctrl-lbl"><strong>Frame border width</strong><span class="ctrl-val" id="valFrameBorder">15.0 mm</span></div>
+              <input type="range" id="sldFrameBorder" min="5" max="60" step="0.5" value="15" oninput="onFrameBorder(this.value)">
+              <input class="dim-inp" id="inFrameBorder" type="number" step="0.5" style="margin-top:4px" oninput="onFrameBorderInput(this.value)">
+              <div class="hint" style="margin-top:4px">Width of the 45° mitered face layer inside the walls.</div>
+            </div>
+            <div class="ctrl" id="framePosGrp">
+              <div class="ctrl-lbl"><strong>Frame position from top</strong><span class="ctrl-val" id="valFrameFromTop">0.0 mm</span></div>
+              <input type="range" id="sldFrameFromTop" min="0" max="80" step="0.5" value="0" oninput="onFrameFromTop(this.value)">
+              <input class="dim-inp" id="inFrameFromTop" type="number" step="0.5" style="margin-top:4px" oninput="onFrameFromTopInput(this.value)">
+              <div class="hint" style="margin-top:4px" id="framePosHint">0 = flush with top of walls. Increase to lower the face down the sides.</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -653,6 +727,7 @@ const DEFAULTS = {
   T: 3, finger: 9, kerf: 0.1, // mm
   frameBorder: 15, // mm — width of the mitered face frame
   frameFromTop: 0, // mm — how far the face sits below the top of the walls (0 = flush)
+  frameJoint: 'face', // 'face' = fingers on the mitered frame, 'under' = fingers on the underlay
   lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHpct: 100,
@@ -744,6 +819,55 @@ function fmtLen(mm, decMM = 1, decIN = 3) {
 }
 const $ = id => document.getElementById(id);
 
+// ---------- Theme (light / dark) ----------
+function getTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+function applyThemeToScene(theme) {
+  if (!renderer || !scene) return;
+  const isLight = theme === 'light';
+  renderer.setClearColor(isLight ? 0xd8d8d8 : 0x484848, 1);
+  const old = scene.children.find(c => c.isGridHelper || c.type === 'GridHelper');
+  if (old) {
+    scene.remove(old);
+    if (old.geometry) old.geometry.dispose();
+    if (old.material) {
+      if (Array.isArray(old.material)) old.material.forEach(m => m.dispose());
+      else old.material.dispose();
+    }
+  }
+  scene.add(new THREE.GridHelper(
+    600, 30,
+    isLight ? 0xb0b0b0 : 0x5a5a5a,
+    isLight ? 0xc8c8c8 : 0x404040
+  ));
+}
+
+function setTheme(theme) {
+  if (theme !== 'light' && theme !== 'dark') theme = 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  try { localStorage.setItem('jits-box-theme', theme); } catch (_) {}
+  const meta = $('themeColorMeta');
+  if (meta) meta.content = theme === 'light' ? '#e8e8e8' : '#2d2d2d';
+  const btn = $('themeToggle');
+  if (btn) btn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  applyThemeToScene(theme);
+}
+
+function toggleTheme() {
+  setTheme(getTheme() === 'light' ? 'dark' : 'light');
+}
+
+function initTheme() {
+  let theme = 'light';
+  try {
+    const saved = localStorage.getItem('jits-box-theme');
+    if (saved === 'light' || saved === 'dark') theme = saved;
+  } catch (_) {}
+  setTheme(theme);
+}
+
 // ---------- UI handlers ----------
 function setUnit(u) {
   if (u === state.unit) return;
@@ -769,7 +893,30 @@ function setMode(m) {
   rebuild();
 }
 
-function setGenerator(g) {
+function setFrameJoint(which) {
+  if (which !== 'face' && which !== 'under') which = 'face';
+  if (which === state.frameJoint) return;
+  pushHistoryNow();
+  state.frameJoint = which;
+  if ($('jointFace')) $('jointFace').classList.toggle('active', which === 'face');
+  if ($('jointUnder')) $('jointUnder').classList.toggle('active', which === 'under');
+  updateFrameHints();
+  rebuild();
+}
+
+function updateFrameHints() {
+  const onUnder = state.frameJoint === 'under';
+  if ($('frameJointHint')) {
+    $('frameJointHint').textContent = onUnder
+      ? 'Fingers are on the underlay. At the top, the face caps the outside of the box. Drop it and the face fits the inside.'
+      : 'Fingers are on the mitered face and lock into the walls. The underlay has no joints.';
+  }
+  if ($('framePosHint')) {
+    $('framePosHint').textContent = onUnder
+      ? '0 = face sits on the wall tops, outer edge flush with the outside of the box. Any lower and the face fits the inside opening.'
+      : '0 = flush with top of walls. Increase to lower the face down the sides.';
+  }
+}
   if (g === state.generator) return;
   pushHistoryNow();
   state.generator = g;
@@ -798,20 +945,19 @@ function updateGeneratorUI() {
   const isFrame = state.generator === 'frame';
   if ($('sidesGrp')) $('sidesGrp').style.display = isFrame ? 'none' : '';
   if ($('sidesHint')) $('sidesHint').style.display = isFrame ? 'none' : '';
-  if ($('frameBorderGrp')) $('frameBorderGrp').style.display = isFrame ? '' : 'none';
-  if ($('framePosGrp')) $('framePosGrp').style.display = isFrame ? '' : 'none';
-  // Hide lid / divider / drawer panels for frame
-  ['s-lid', 's-div', 's-drawer'].forEach(id => {
+  if ($('frameControls')) $('frameControls').style.display = isFrame ? '' : 'none';
+  // Hide lid / drawer in frame mode. Dividers stay available.
+  ['s-lid', 's-drawer'].forEach(id => {
     const el = $(id);
     if (el) el.style.display = isFrame ? 'none' : '';
   });
+  if ($('s-div')) $('s-div').style.display = '';
   // Update dimension labels + min height for frame
   if (isFrame) {
     if ($('lblW')) $('lblW').textContent = 'Length (mm)';
     if ($('lblH')) $('lblH').textContent = 'Frame depth (mm)';
     if ($('lblD')) $('lblD').textContent = 'Width (mm)';
-    if ($('sldH')) $('sldH').min = Math.max(10, 2 * (state.T || 3));
-    if (state.H < 2 * (state.T || 3)) state.H = 2 * (state.T || 3);
+    enforceFrameHeight();
   } else {
     if ($('lblW')) $('lblW').textContent = 'Width (mm)';
     if ($('lblH')) $('lblH').textContent = 'Height (mm)';
@@ -888,6 +1034,8 @@ function onDivGrid() {
   state.divCols = c;
   state.divRows = r;
   renderDivSpacingUI();
+  enforceFrameHeight();
+  updateLabels();
   rebuild();
 }
 function onDivH(v) {
@@ -970,8 +1118,11 @@ function renderDivSpacingUI() {
   const nx = Math.max(0, state.divCols - 1);
   const ny = Math.max(0, state.divRows - 1);
   if (info) {
+    const cap = state.generator === 'frame'
+      ? ' Frame: height stops under the underlay.'
+      : '';
     info.textContent = (nx || ny)
-      ? `${nx} width-divider(s) · ${ny} depth-divider(s) · cross-lap where they meet`
+      ? `${nx} width-divider(s) · ${ny} depth-divider(s) · cross-lap where they meet.${cap}`
       : 'No dividers (1×1 grid)';
   }
 }
@@ -980,9 +1131,10 @@ function onDimSlider(key, v) {
   // Slider values are always in mm
   let n = parseFloat(v);
   if (!(n > 0)) return;
-  // Frame mode: wall height (H) never below 2× thickness
+  // Frame mode: outside wall height never below 2× thickness,
+  // or 2× thickness + 6 mm when a divider grid is on.
   if (key === 'H' && state.generator === 'frame') {
-    n = Math.max(n, 2 * (state.T || 3));
+    n = Math.max(n, frameMinSliderH());
   }
   pushHistory();
   state[key] = n;
@@ -996,7 +1148,7 @@ function onDimInput(key, v) {
   if (!(n > 0)) return;
   n = fromDisp(n);
   if (key === 'H' && state.generator === 'frame') {
-    n = Math.max(n, 2 * (state.T || 3));
+    n = Math.max(n, frameMinSliderH());
   }
   pushHistory();
   state[key] = n;
@@ -1051,6 +1203,7 @@ function onThicknessSlider(v) {
   pushHistory();
   state.T = parseFloat(v);
   $('inT').value = numDisp(state.T);
+  enforceFrameHeight();
   updateLabels(); rebuild();
 }
 function onThicknessInput(v) {
@@ -1059,6 +1212,7 @@ function onThicknessInput(v) {
   pushHistory();
   state.T = fromDisp(n);
   $('sldT').value = state.T;
+  enforceFrameHeight();
   updateLabels(); rebuild();
 }
 function onFinger(v) { pushHistory(); state.finger = parseFloat(v); updateLabels(); rebuild(); }
@@ -1185,7 +1339,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -1246,6 +1400,35 @@ function toggleSec(id) {
 // Core geometry
 // ============================================================
 
+/** True when the frame has at least one internal divider. */
+function frameDividersOn() {
+  return (state.divCols || 1) > 1 || (state.divRows || 1) > 1;
+}
+
+/** Minimum outside wall height (mm) for a frame. */
+function frameMinOutside(T) {
+  return 2 * T + (frameDividersOn() ? 6 : 0);
+}
+
+/** Minimum value of the height slider, in the same space as state.H. */
+function frameMinSliderH() {
+  const T = state.T || 3;
+  const minOh = frameMinOutside(T);
+  if (state.mode === 'outside') return minOh;
+  const lidT = state.lid === 'flat' ? 2 * T : T;
+  return Math.max(0.5, minOh - lidT);
+}
+
+function enforceFrameHeight() {
+  if (state.generator !== 'frame') return;
+  const minH = frameMinSliderH();
+  if ($('sldH')) $('sldH').min = minH;
+  if (state.H < minH) state.H = minH;
+  if ($('sldH')) $('sldH').value = state.H;
+  if ($('inH')) $('inH').value = numDisp(state.H);
+  if ($('valH')) $('valH').textContent = fmtLen(state.H, 1, 2);
+}
+
 /** Interior / exterior dimensions (mm). */
 function dims() {
   const T = state.T;
@@ -1254,10 +1437,13 @@ function dims() {
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
   else { iw = state.W - 2 * T; ih = state.H - lidT; id = state.D - 2 * T; }
   const minI = Math.max(2, 2 * T);
-  // Frame mode: wall height must be at least 2× thickness (room for bottom joints + face/underlay)
-  const minH = state.generator === 'frame' ? Math.max(minI, 2 * T) : minI;
-  const warn = iw < minI || ih < minH || id < minI;
-  iw = Math.max(iw, minI); ih = Math.max(ih, minH); id = Math.max(id, minI);
+  // Frame: outside wall height (oh) floors at 2×T, or 2×T+6 mm with dividers.
+  // oh = ih + lidT, so the interior floor is that minimum minus one thickness.
+  const minIh = state.generator === 'frame'
+    ? Math.max(0.5, frameMinOutside(T) - lidT)
+    : minI;
+  const warn = iw < minI || ih < minIh || id < minI;
+  iw = Math.max(iw, minI); ih = Math.max(ih, minIh); id = Math.max(id, minI);
   return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT, od: id + 2 * T, T, warn };
 }
 
@@ -2057,6 +2243,46 @@ function generateFramePanels(d, J) {
   const slotsLeft  = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
   const slotsRight = faceSlotsForWall(faceLenD, oh, T, T, fromTop);
 
+  // Dividers sit on the back and stop at the underside of the underlay.
+  // Finger joints into the walls only — no slots in the face or underlay.
+  if (frameDividersOn()) {
+    const underY = oh - 2 * T - fromTop;
+    const gap = Math.max(0, underY - T);
+    const divH = Math.max(0, Math.min(ih * ((state.divHpct || 100) / 100), gap));
+    const xCenters = dividerCenters(state.colWeights, iw, T);
+    const yCenters = dividerCenters(state.rowWeights, id, T);
+    d.dividers = { divH, xCenters, yCenters, gap };
+    if (divH > 0.4) {
+      for (const cx of xCenters) {
+        const sx = T + cx - T / 2;
+        slotsFront.push(...wallFingerSlots(sx, T, divH, T));
+        slotsBack.push(...wallFingerSlots(sx, T, divH, T));
+      }
+      for (const cy of yCenters) {
+        const fromBack = id - cy;
+        const sx = T + fromBack - T / 2;
+        slotsLeft.push(...wallFingerSlots(sx, T, divH, T));
+        slotsRight.push(...wallFingerSlots(sx, T, divH, T));
+      }
+      xCenters.forEach((cx, i) => {
+        const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
+        defs.push({
+          name: `Div X${i + 1}`, role: 'div-x', w: id + 2 * T, h: divH,
+          specs: null, outlineOverride: outline, holes,
+          divIndex: i, divAxis: 'x', divPos: cx,
+        });
+      });
+      yCenters.forEach((cy, i) => {
+        const { outline, holes } = dividerOutline(iw, divH, T, xCenters, false);
+        defs.push({
+          name: `Div Y${i + 1}`, role: 'div-y', w: iw + 2 * T, h: divH,
+          specs: null, outlineOverride: outline, holes,
+          divIndex: i, divAxis: 'y', divPos: cy,
+        });
+      });
+    }
+  }
+
   // Build panels (same pipeline as box)
   const panels = defs.map(def => {
     let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
@@ -2612,7 +2838,8 @@ function initThree() {
     return false;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x484848, 1);   // LightBurn dark workspace color
+  const isLight = getTheme() === 'light';
+  renderer.setClearColor(isLight ? 0xd8d8d8 : 0x484848, 1);
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(40, 1, 0.1, 5000);
@@ -2633,8 +2860,11 @@ function initThree() {
   const dir2 = new THREE.DirectionalLight(0x88aaff, 0.25);
   dir2.position.set(-60, 40, -80); scene.add(dir2);
 
-  const grid = new THREE.GridHelper(600, 30, 0x5a5a5a, 0x404040);
-  scene.add(grid);
+  scene.add(new THREE.GridHelper(
+    600, 30,
+    isLight ? 0xb0b0b0 : 0x5a5a5a,
+    isLight ? 0xc8c8c8 : 0x404040
+  ));
 
   boxGroup = new THREE.Group();
   scene.add(boxGroup);
@@ -3174,11 +3404,13 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('load', () => {
+  initTheme();
   try {
     initThree();
   } catch (err) {
     console.error('3D init failed', err);
   }
+  applyThemeToScene(getTheme());
   syncInputs();
   updateUndoBtn();
   try {
