@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.02</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.1</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -563,6 +563,12 @@
               <input type="range" id="sldLidH" min="8" max="80" step="0.5" value="20" oninput="onLidH(this.value)">
               <div class="hint" style="margin-top:4px">How far the lid sides hang down over the box. Lid outer size = box outer + 2× thickness for a tight fit.</div>
             </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Lift lid off</strong><span class="ctrl-val" id="valSlipLift">0%</span></div>
+              <input type="range" id="sldSlipLift" min="0" max="100" value="0" step="1" oninput="onSlipLift(this.value)">
+              <div style="display:flex;justify-content:space-between" class="hint"><span>On box</span><span>Lifted off</span></div>
+              <div class="hint" style="margin-top:2px">3D preview only — pulls the lid straight up off the box. Not part of the exported file.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -760,6 +766,7 @@ const DEFAULTS = {
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
   slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
+  slipLift: 0, // slip-on lid: 0 = on the box, 1 = fully lifted off (view-only)
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
@@ -1037,6 +1044,12 @@ function onSlideBorder(v) {
   state.slideBorder = Math.max(4, parseFloat(v) || 15);
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder, 1, 2);
   rebuild();
+}
+function onSlipLift(v) {
+  // View-only — not recorded in undo history, never affects exports
+  state.slipLift = Math.max(0, Math.min(1, parseFloat(v) / 100));
+  if ($('valSlipLift')) $('valSlipLift').textContent = Math.round(state.slipLift * 100) + '%';
+  updateAssembly();
 }
 function onSlidePull(v) {
   // View-only — not recorded in undo history, never affects exports
@@ -1365,6 +1378,8 @@ function syncInputs() {
   $('sldFinger').value = state.finger;
   $('sldKerf').value = state.kerf;
   if ($('sldLidH')) $('sldLidH').value = state.lidH;
+  if ($('sldSlipLift')) $('sldSlipLift').value = Math.round((state.slipLift || 0) * 100);
+  if ($('valSlipLift')) $('valSlipLift').textContent = Math.round((state.slipLift || 0) * 100) + '%';
   if ($('inCols')) $('inCols').value = state.divCols;
   if ($('inRows')) $('inRows').value = state.divRows;
   if ($('sldDivH')) $('sldDivH').value = state.divHpct;
@@ -3743,10 +3758,18 @@ function rebuild3D() {
       const travel = boxHalf + panelLen / 2 + 5;
       slidePull = [axis[0] * travel, 0, axis[2] * travel];
     }
+    // Slip-on lid (top + 4 skirt panels): lifts straight up off the box.
+    // Full travel = skirt height + clearance, so the skirt ends well above the rim.
+    let slipLift = [0, 0, 0];
+    if (state.lid === 'slip' && p.role && p.role.startsWith('lid-')) {
+      const skirt = (d.lid && d.lid.lidH != null) ? d.lid.lidH : state.lidH;
+      slipLift = [0, skirt + Math.max(30, d.oh * 0.5), 0];
+    }
     mesh.userData = {
       exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount],
       pull,
       slidePull,
+      slipLift,
     };
     boxGroup.add(mesh);
     panels3D.push(mesh);
@@ -3759,14 +3782,16 @@ function updateAssembly() {
   const t = 1 - state.assembly;
   const pullT = state.drawerPull || 0;
   const slideT = state.slidePull || 0;
+  const liftT = state.slipLift || 0;
   for (const mesh of panels3D) {
     const e = mesh.userData.exp || [0, 0, 0];
     const p = mesh.userData.pull || [0, 0, 0];
     const sp = mesh.userData.slidePull || [0, 0, 0];
+    const sl = mesh.userData.slipLift || [0, 0, 0];
     mesh.position.set(
-      e[0] * t + p[0] * pullT + sp[0] * slideT,
-      e[1] * t + p[1] * pullT + sp[1] * slideT,
-      e[2] * t + p[2] * pullT + sp[2] * slideT
+      e[0] * t + p[0] * pullT + sp[0] * slideT + sl[0] * liftT,
+      e[1] * t + p[1] * pullT + sp[1] * slideT + sl[1] * liftT,
+      e[2] * t + p[2] * pullT + sp[2] * slideT + sl[2] * liftT
     );
   }
 }
