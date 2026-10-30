@@ -416,7 +416,7 @@
             <button id="sides4" class="active" onclick="setSides(4)">4</button>
             <button id="sides6" onclick="setSides(6)">6</button>
           </div>
-          <div class="hint" id="sidesHint">4 = rectangle (width × depth). 6 = regular hexagon sized by width (flat-to-flat).</div>
+         
           <div class="ctrl">
             <div class="ctrl-lbl"><strong id="lblW">Width (mm)</strong><span class="ctrl-val" id="valW">150.0 mm</span></div>
             <input type="range" id="sldW" min="20" max="400" step="0.5" value="150" oninput="onDimSlider('W', this.value)">
@@ -455,29 +455,24 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="lb-panel-body">
-          <div class="hint">Raise the bottom plate above the lower edge of the walls, then cut notches under it to leave decorative corner feet. Rectangular boxes only (not hexagon, frame, or lantern-style flat tops).</div>
-          <div class="ctrl" id="raiseGrp">
+            <div class="ctrl" id="raiseGrp">
             <div class="ctrl-lbl"><strong>Bottom height (raise)</strong><span class="ctrl-val" id="valRaise">0.0 mm</span></div>
             <input type="range" id="sldRaise" min="0" max="60" step="0.5" value="0" oninput="onRaiseSlider(this.value)">
             <input class="dim-inp" id="inRaise" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onRaiseInput(this.value)">
-            <div class="hint" style="margin-top:4px" id="raiseHint">0 = bottom flush with the lower edge of the walls. Raise it to lift the bottom and its finger joints up the walls; the walls extend below it and the joints become slots. Interior mode keeps the interior height (walls get taller); Exterior mode keeps the overall height.</div>
           </div>
           <div class="ctrl" id="footCutoutGrp">
             <div class="ctrl-lbl"><strong>Cutout height</strong><span class="ctrl-val" id="valFootCut">0.0 mm</span></div>
             <input type="range" id="sldFootCut" min="0" max="60" step="0.5" value="0" oninput="onFootCutSlider(this.value)">
             <input class="dim-inp" id="inFootCut" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onFootCutInput(this.value)">
-            <div class="hint" style="margin-top:4px" id="footCutHint">Height of the notch cut from the bottom of each wall between the corners. Only active when the bottom is raised; limited so the cutout stays under the bottom plate.</div>
           </div>
           <div class="ctrl" id="footRoundGrp">
             <div class="ctrl-lbl"><strong>Cutout roundness</strong><span class="ctrl-val" id="valFootRound">0%</span></div>
             <input type="range" id="sldFootRound" min="0" max="100" step="1" value="0" oninput="onFootRound(this.value)">
-            <div class="hint" style="margin-top:4px" id="footRoundHint">0 = square notch. Increase to round the inside corners. 100% is a full arch between the feet.</div>
           </div>
           <div class="ctrl" id="footBellyGrp">
             <div class="ctrl-lbl"><strong>Belly</strong><span class="ctrl-val" id="valFootBelly">0%</span></div>
             <input type="range" id="sldFootBelly" min="0" max="100" step="1" value="0" oninput="onFootBelly(this.value)">
-            <div class="hint" style="margin-top:4px" id="footBellyHint">0 = flat across the top of the cutout. Increase to drop a curve in the middle, between the feet.</div>
-          </div>
+            </div>
         </div>
       </div>
 
@@ -488,7 +483,7 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="lb-panel-body">
-          <div class="hint">Box is an open tray. Frame adds a mitered face and an underlay inside the walls.</div>
+          
           <div class="btn-grp">
             <button id="genBox" class="active" onclick="setGenerator('box')">Box</button>
             <button id="genFrame" onclick="setGenerator('frame')">Frame</button>
@@ -500,7 +495,7 @@
                 <button id="jointFace" class="active" onclick="setFrameJoint('face')">Frame</button>
                 <button id="jointUnder" onclick="setFrameJoint('under')">Underlay</button>
               </div>
-              <div class="hint" style="margin-top:4px" id="frameJointHint">Fingers are on the mitered face and lock into the walls. The underlay has no joints.</div>
+              
             </div>
             <div class="ctrl" id="frameBorderGrp">
               <div class="ctrl-lbl"><strong>Frame border width</strong><span class="ctrl-val" id="valFrameBorder">15.0 mm</span></div>
@@ -512,7 +507,7 @@
               <div class="ctrl-lbl"><strong>Frame position from top</strong><span class="ctrl-val" id="valFrameFromTop">0.0 mm</span></div>
               <input type="range" id="sldFrameFromTop" min="0" max="80" step="0.5" value="0" oninput="onFrameFromTop(this.value)">
               <input class="dim-inp" id="inFrameFromTop" type="number" step="0.5" style="margin-top:4px" oninput="onFrameFromTopInput(this.value)">
-              <div class="hint" style="margin-top:4px" id="framePosHint">0 = flush with top of walls. Increase to lower the face down the sides.</div>
+              
             </div>
           </div>
         </div>
@@ -533,8 +528,8 @@
           </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Kerf (beam width)</strong><span class="ctrl-val" id="valKerf">0.10 mm</span></div>
-            <input type="range" id="sldKerf" min="0" max="0.1" step="0.01" oninput="onKerf(this.value)">
-            <div class="hint" style="margin-top:4px">Typical 0.08–0.10 mm. Tight joints → lower kerf. Loose → raise kerf.</div>
+            <input type="range" id="sldKerf" min="0" max="0.5" step="0.01" oninput="onKerf(this.value)">
+            <div class="hint" style="margin-top:4px">Typical 0.08–0.15 mm. Tight joints → lower kerf. Loose → raise kerf. Max 0.5 mm for wide-beam lasers.</div>
           </div>
         </div>
       </div>
@@ -553,7 +548,7 @@
             <button id="lidSlide" onclick="setLid('slide')">Slide-in</button>
             <button id="lidHinge" onclick="setLid('hinge')">Hinged</button>
           </div>
-          <div class="hint" id="lidHint">None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.</div>
+          
           <div id="lidSlideControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Slide direction</strong></div>
@@ -567,7 +562,7 @@
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Frame border</strong><span class="ctrl-val" id="valSlideBorder">15.0 mm</span></div>
               <input type="range" id="sldSlideBorder" min="4" max="80" step="0.5" value="15" oninput="onSlideBorder(this.value)">
-              <div class="hint" style="margin-top:4px">Border width of the two channel frames. Increase toward solid (small opening).</div>
+             
             </div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Slide lid out</strong><span class="ctrl-val" id="valSlidePull">0%</span></div>
@@ -575,7 +570,7 @@
               <div style="display:flex;justify-content:space-between" class="hint"><span>Closed</span><span>Slid out</span></div>
               <div class="hint" style="margin-top:2px">3D preview only — slides the lid panel out through the open side. Not part of the exported file.</div>
             </div>
-            <div class="hint" style="margin-top:6px">Two U-shaped frames at the top of the box (finger-jointed like a flat lid). Open on the slide side. Entry wall is shortened so the panel slides in. Gap between frames = material + 0.5 mm.</div>
+            
           </div>
           <div id="lidFlatControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
@@ -588,14 +583,14 @@
                 <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
                 <span><strong>Wall finger joints</strong> — joints between side walls</span>
               </label>
-              <div class="hint" style="margin-top:4px">Off = straight wall edges (glue only). Top &amp; bottom still join the walls.</div>
+              
             </div>
           </div>
           <div id="lidHingeControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Finger tab width</strong><span class="ctrl-val" id="valHingeTabW">20.0 mm</span></div>
               <input type="range" id="sldHingeTabW" min="8" max="60" step="0.5" value="20" oninput="onHingeTabW(this.value)">
-              <div class="hint" style="margin-top:4px">Width of the tab on the lid front. The front wall gets a matching notch.</div>
+              
             </div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Tab overhang</strong><span class="ctrl-val" id="valHingeTabOver">8.0 mm</span></div>
@@ -605,13 +600,13 @@
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid clearance</strong><span class="ctrl-val" id="valHingeClear">0.30 mm</span></div>
               <input type="range" id="sldHingeClear" min="0.1" max="1" step="0.05" value="0.3" oninput="onHingeClear(this.value)">
-              <div class="hint" style="margin-top:4px">Gap between the lid and the inside walls. The lid is sized to the box interior minus this gap on every side.</div>
+              
             </div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Open lid</strong><span class="ctrl-val" id="valHingeOpen">0°</span></div>
               <input type="range" id="sldHingeOpen" min="0" max="100" value="0" step="1" oninput="onHingeOpen(this.value)">
               <div style="display:flex;justify-content:space-between" class="hint"><span>Closed</span><span>Open</span></div>
-              <div class="hint" style="margin-top:2px">3D preview only — swings the lid about its back tabs. Not part of the exported file.</div>
+              
             </div>
             <div class="hint" style="margin-top:6px"><strong>Assembly:</strong> glue the box together but leave the front wall off. Slide the lid in from the front, push one back tab through its ring hole, then centre it so both tabs sit in their rings. Finally fit the front wall — the finger tab drops into the notch. Interior height is measured under the lid; dividers and drawers are kept below it.</div>
           </div>
@@ -619,13 +614,13 @@
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid skirt height</strong><span class="ctrl-val" id="valLidH">20.0 mm</span></div>
               <input type="range" id="sldLidH" min="8" max="80" step="0.5" value="20" oninput="onLidH(this.value)">
-              <div class="hint" style="margin-top:4px">How far the lid sides hang down over the box. Lid outer size = box outer + 2× thickness for a tight fit.</div>
+             
             </div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lift lid off</strong><span class="ctrl-val" id="valSlipLift">0%</span></div>
               <input type="range" id="sldSlipLift" min="0" max="100" value="0" step="1" oninput="onSlipLift(this.value)">
               <div style="display:flex;justify-content:space-between" class="hint"><span>On box</span><span>Lifted off</span></div>
-              <div class="hint" style="margin-top:2px">3D preview only — pulls the lid straight up off the box. Not part of the exported file.</div>
+             
             </div>
           </div>
         </div>
@@ -638,7 +633,7 @@
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="lb-panel-body">
-          <div class="hint">Internal grid with cross-lap slots. Dividers slot into the walls.</div>
+          
           <div class="dim-row" style="grid-template-columns:1fr 1fr;">
             <div class="dim-grp">
               <label for="inCols">Columns</label>
@@ -652,7 +647,7 @@
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Divider height</strong><span class="ctrl-val" id="valDivH">100%</span></div>
             <input type="range" id="sldDivH" min="20" max="100" step="5" value="100" oninput="onDivH(this.value)">
-            <div class="hint" style="margin-top:4px">Percent of interior height. 100% = full height.</div>
+           
           </div>
           <div id="colSpacing" style="display:none;margin-top:6px;"></div>
           <div id="rowSpacing" style="display:none;margin-top:6px;"></div>
@@ -691,7 +686,7 @@
                 <button type="button" id="drOpenL" onclick="onDrawerOpen('left')">Left</button>
                 <button type="button" id="drOpenR" onclick="onDrawerOpen('right')">Right</button>
               </div>
-              <div class="hint" style="margin-top:4px">No wall on that end so you can put things in. Finger hole on the top sits next to the open end.</div>
+              
             </div>
             <div class="hint" id="drawerInfo" style="margin-top:8px;"></div>
           </div>
