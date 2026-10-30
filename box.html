@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.2</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.3</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -465,6 +465,12 @@
             <input type="range" id="sldFootCut" min="0" max="60" step="0.5" value="0" oninput="onFootCutSlider(this.value)">
             <input class="dim-inp" id="inFootCut" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onFootCutInput(this.value)">
           </div>
+          <div class="ctrl" id="footWidthGrp">
+            <div class="ctrl-lbl"><strong>Foot width</strong><span class="ctrl-val" id="valFootWidth">15.0 mm</span></div>
+            <input type="range" id="sldFootWidth" min="4" max="80" step="0.5" value="15" oninput="onFootWidthSlider(this.value)">
+            <input class="dim-inp" id="inFootWidth" type="number" min="1" step="0.5" style="margin-top:4px" oninput="onFootWidthInput(this.value)">
+            <div class="hint" style="margin-top:4px">Width of each corner foot (solid material left at both ends of the cutout).</div>
+          </div>
           <div class="ctrl" id="footRoundGrp">
             <div class="ctrl-lbl"><strong>Cutout roundness</strong><span class="ctrl-val" id="valFootRound">0%</span></div>
             <input type="range" id="sldFootRound" min="0" max="100" step="1" value="0" oninput="onFootRound(this.value)">
@@ -545,8 +551,33 @@
             <button id="lidNone" class="active" onclick="setLid('none')">None</button>
             <button id="lidFlat" onclick="setLid('flat')">Flat top</button>
             <button id="lidSlip" onclick="setLid('slip')">Slip-on</button>
+            <button id="lidPull" onclick="setLid('pull')">Pull-off</button>
             <button id="lidSlide" onclick="setLid('slide')">Slide-in</button>
             <button id="lidHinge" onclick="setLid('hinge')">Hinged</button>
+          </div>
+
+          <div id="lidPullControls" style="display:none; margin-top:8px;">
+            <div class="hint">Two layers glued together: insert drops into the box; outer plate sits flush with the outside walls. Half-circle handle mounts through finger-tab slots in the outer plate (centered).</div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Insert clearance</strong><span class="ctrl-val" id="valPullClear">0.40 mm</span></div>
+              <input type="range" id="sldPullClear" min="0.1" max="1.5" step="0.05" value="0.4" oninput="onPullClear(this.value)">
+              <div class="hint" style="margin-top:4px">Gap per side so the plug lifts out freely.</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Handle size (radius)</strong><span class="ctrl-val" id="valPullHandleR">18.0 mm</span></div>
+              <input type="range" id="sldPullHandleR" min="8" max="50" step="0.5" value="18" oninput="onPullHandleR(this.value)">
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Handle bar width</strong><span class="ctrl-val" id="valPullHandleBar">6.0 mm</span></div>
+              <input type="range" id="sldPullHandleBar" min="3" max="15" step="0.5" value="6" oninput="onPullHandleBar(this.value)">
+              <div class="hint" style="margin-top:4px">Thickness of the curved half-ring. Each end has a finger tab (length = material thickness) that seats in a matching slot in the outer plate.</div>
+            </div>
+            <div class="ctrl">
+              <div class="ctrl-lbl"><strong>Lift lid off</strong><span class="ctrl-val" id="valPullLift">0%</span></div>
+              <input type="range" id="sldPullLift" min="0" max="100" value="0" step="1" oninput="onPullLift(this.value)">
+              <div style="display:flex;justify-content:space-between" class="hint"><span>On box</span><span>Lifted off</span></div>
+              <div class="hint" style="margin-top:2px">3D preview only — not part of the exported file.</div>
+            </div>
           </div>
           
           <div id="lidSlideControls" style="display:none; margin-top:8px;">
@@ -820,12 +851,17 @@ const DEFAULTS = {
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
   slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
   slipLift: 0, // slip-on lid: 0 = on the box, 1 = fully lifted off (view-only)
+  pullClear: 0.4, // pull-off lid: clearance per side on the insert plug (mm)
+  pullHandleR: 18, // pull-off lid: outer radius of half-circle handle (mm)
+  pullHandleBar: 6, // pull-off lid: radial width of the handle bar (mm)
+  pullLift: 0, // pull-off lid: 0 = on the box, 1 = fully lifted off (view-only)
   hingeTabW: 20, // hinged lid: finger tab width (mm)
   hingeTabOver: 8, // hinged lid: how far the finger tab sticks out past the front wall (mm)
   hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
   hingeOpen: 0, // hinged lid: 0 = closed, 1 = fully open (view-only)
   bottomRaise: 0, // mm the bottom panel (and its finger joints) sits above the lower edge of the walls
   footCutout: 0, // mm height of decorative cutout under the raised bottom (between corner feet)
+  footWidth: 15, // mm width of each corner foot (independent of finger size)
   footRound: 0, // 0–100, corner radius of the foot cutout as a percent of the largest arc that fits
   footBelly: 0, // 0–100, how far the middle of the cutout sags back down between the feet
 };
@@ -891,6 +927,7 @@ function undo() {
   $('lidNone').classList.toggle('active', state.lid === 'none');
   $('lidFlat').classList.toggle('active', state.lid === 'flat');
   if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
+  if ($('lidPull')) $('lidPull').classList.toggle('active', state.lid === 'pull');
   if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
   if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
   if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
@@ -1035,6 +1072,9 @@ function setGenerator(g) {
       $('lidNone').classList.add('active');
       $('lidFlat').classList.remove('active');
       if ($('lidSlip')) $('lidSlip').classList.remove('active');
+      if ($('lidPull')) $('lidPull').classList.remove('active');
+      if ($('lidSlide')) $('lidSlide').classList.remove('active');
+      if ($('lidHinge')) $('lidHinge').classList.remove('active');
     }
   }
   updateGeneratorUI();
@@ -1074,25 +1114,54 @@ function setLid(l) {
   $('lidNone').classList.toggle('active', l === 'none');
   $('lidFlat').classList.toggle('active', l === 'flat');
   $('lidSlip').classList.toggle('active', l === 'slip');
+  if ($('lidPull')) $('lidPull').classList.toggle('active', l === 'pull');
   if ($('lidSlide')) $('lidSlide').classList.toggle('active', l === 'slide');
   if ($('lidHinge')) $('lidHinge').classList.toggle('active', l === 'hinge');
   const hingeCtrls = $('lidHingeControls');
   if (hingeCtrls) hingeCtrls.style.display = l === 'hinge' ? 'block' : 'none';
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
+  const pullCtrls = $('lidPullControls');
+  if (pullCtrls) pullCtrls.style.display = l === 'pull' ? 'block' : 'none';
   const flatCtrls = $('lidFlatControls');
   if (flatCtrls) flatCtrls.style.display = l === 'flat' ? 'block' : 'none';
   const slideCtrls = $('lidSlideControls');
   if (slideCtrls) slideCtrls.style.display = l === 'slide' ? 'block' : 'none';
   const hints = {
-    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.',
+    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Pull-off = two-layer plug lid with handle. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.',
     flat: 'Flat top = closed box with finger-jointed or slotted top plate.',
     slip: 'Slip-on = lid that fits over the box.',
+    pull: 'Pull-off = insert plug + outer plate flush with walls, glued together. Half-circle handle has finger tabs that seat in centered slots in the outer plate.',
     slide: 'Slide-in = two frame layers form a channel; panel slides in from the chosen side.',
     hinge: 'Hinged = lid sits inside the box. Tabs at the back of the lid turn in rings on the side walls; the finger tab at the front rests in a notch in the front wall. Rectangular boxes only.',
   };
   if ($('lidHint')) $('lidHint').textContent = hints[l] || hints.none;
   rebuild();
+}
+
+function onPullClear(v) {
+  pushHistory();
+  state.pullClear = Math.max(0.05, parseFloat(v) || 0.4);
+  if ($('valPullClear')) $('valPullClear').textContent = fmtLen(state.pullClear, 2, 3);
+  rebuild();
+}
+function onPullHandleR(v) {
+  pushHistory();
+  state.pullHandleR = Math.max(6, parseFloat(v) || 18);
+  if ($('valPullHandleR')) $('valPullHandleR').textContent = fmtLen(state.pullHandleR, 1, 2);
+  rebuild();
+}
+function onPullHandleBar(v) {
+  pushHistory();
+  state.pullHandleBar = Math.max(2, parseFloat(v) || 6);
+  if ($('valPullHandleBar')) $('valPullHandleBar').textContent = fmtLen(state.pullHandleBar, 1, 2);
+  rebuild();
+}
+function onPullLift(v) {
+  // View-only — not recorded in undo history
+  state.pullLift = Math.max(0, Math.min(1, parseFloat(v) / 100));
+  if ($('valPullLift')) $('valPullLift').textContent = Math.round(state.pullLift * 100) + '%';
+  updateAssembly();
 }
 function onSlideDir(dir) {
   if ((dir || 'front') === state.slideDir) return;
@@ -1161,7 +1230,25 @@ function onFootBelly(v) {
   if ($('valFootBelly')) $('valFootBelly').textContent = Math.round(state.footBelly) + '%';
   rebuild();
 }
-/** Dim raise / cutout controls when they do not apply (hexagon, frame, lantern-style flat top). */
+function onFootWidthSlider(v) {
+  const n = parseFloat(v);
+  if (!(n > 0)) return;
+  pushHistory();
+  state.footWidth = n;
+  if ($('inFootWidth')) $('inFootWidth').value = numDisp(n);
+  if ($('valFootWidth')) $('valFootWidth').textContent = fmtLen(n, 1, 2);
+  rebuild();
+}
+function onFootWidthInput(v) {
+  const n = fromDisp(parseFloat(v));
+  if (!(n > 0)) return;
+  pushHistory();
+  state.footWidth = n;
+  if ($('sldFootWidth')) $('sldFootWidth').value = n;
+  if ($('valFootWidth')) $('valFootWidth').textContent = fmtLen(n, 1, 2);
+  rebuild();
+}
+/** Dim raise / cutout controls when they do not apply (hexagon, lantern-style flat top). */
 function syncRaiseUI() {
   const ok = raiseApplicable();
   const rz = bottomRaise();
@@ -1190,6 +1277,17 @@ function syncRaiseUI() {
   }
   if ($('footCutHint')) $('footCutHint').style.display = ok ? '' : 'none';
   if ($('valFootCut')) $('valFootCut').textContent = cutOk ? fmtLen(state.footCutout || 0, 1, 2) : (ok ? '0 (raise first)' : 'n/a');
+  // Foot width — active whenever cutouts can appear
+  if ($('footWidthGrp')) $('footWidthGrp').style.opacity = cutOk ? '1' : '0.35';
+  if ($('sldFootWidth')) {
+    $('sldFootWidth').disabled = !cutOk;
+    $('sldFootWidth').value = state.footWidth || 15;
+  }
+  if ($('inFootWidth')) {
+    $('inFootWidth').disabled = !cutOk;
+    $('inFootWidth').value = numDisp(state.footWidth || 15);
+  }
+  if ($('valFootWidth')) $('valFootWidth').textContent = cutOk ? fmtLen(state.footWidth || 15, 1, 2) : (ok ? '—' : 'n/a');
   const roundOk = cutOk && (state.footCutout || 0) > 0.05;
   if ($('footRoundGrp')) $('footRoundGrp').style.opacity = roundOk ? '1' : '0.35';
   if ($('sldFootRound')) {
@@ -1516,7 +1614,7 @@ function updateLabels() {
   if ($('infoKerf')) $('infoKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
   if ($('infoLid')) {
-    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', slide: 'Slide-in', hinge: 'Hinged (inside)' };
+    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', pull: 'Pull-off', slide: 'Slide-in', hinge: 'Hinged (inside)' };
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
@@ -1592,6 +1690,17 @@ function syncInputs() {
   $('lblD').textContent = `Depth (${state.unit})`;
   const slipCtrls = $('lidSlipControls');
   if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
+  const pullCtrls = $('lidPullControls');
+  if (pullCtrls) pullCtrls.style.display = state.lid === 'pull' ? 'block' : 'none';
+  if ($('lidPull')) $('lidPull').classList.toggle('active', state.lid === 'pull');
+  if ($('sldPullClear')) $('sldPullClear').value = state.pullClear || 0.4;
+  if ($('valPullClear')) $('valPullClear').textContent = fmtLen(state.pullClear || 0.4, 2, 3);
+  if ($('sldPullHandleR')) $('sldPullHandleR').value = state.pullHandleR || 18;
+  if ($('valPullHandleR')) $('valPullHandleR').textContent = fmtLen(state.pullHandleR || 18, 1, 2);
+  if ($('sldPullHandleBar')) $('sldPullHandleBar').value = state.pullHandleBar || 6;
+  if ($('valPullHandleBar')) $('valPullHandleBar').textContent = fmtLen(state.pullHandleBar || 6, 1, 2);
+  if ($('sldPullLift')) $('sldPullLift').value = Math.round((state.pullLift || 0) * 100);
+  if ($('valPullLift')) $('valPullLift').textContent = Math.round((state.pullLift || 0) * 100) + '%';
   const flatCtrls = $('lidFlatControls');
   if (flatCtrls) flatCtrls.style.display = state.lid === 'flat' ? 'block' : 'none';
   const slideCtrls = $('lidSlideControls');
@@ -1615,6 +1724,9 @@ function syncInputs() {
   if ($('inRaise')) $('inRaise').value = numDisp(state.bottomRaise || 0);
   if ($('sldFootCut')) $('sldFootCut').value = state.footCutout || 0;
   if ($('inFootCut')) $('inFootCut').value = numDisp(state.footCutout || 0);
+  if ($('sldFootWidth')) $('sldFootWidth').value = state.footWidth || 15;
+  if ($('inFootWidth')) $('inFootWidth').value = numDisp(state.footWidth || 15);
+  if ($('valFootWidth')) $('valFootWidth').textContent = fmtLen(state.footWidth || 15, 1, 2);
   if ($('sldFootRound')) $('sldFootRound').value = state.footRound || 0;
   if ($('valFootRound')) $('valFootRound').textContent = Math.round(state.footRound || 0) + '%';
   if ($('sldFootBelly')) $('sldFootBelly').value = state.footBelly || 0;
@@ -1732,7 +1844,9 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
-  if (state.generator === 'frame' || (state.sides || 4) !== 4) return false;
+  // Frames support raised bottoms + decorative feet on the edge walls.
+  // Hexagon boxes and lantern-style flat tops do not.
+  if ((state.sides || 4) !== 4) return false;
   if (state.lid === 'flat' && ((state.flatOverhang || 0) > 0 || state.wallJoints === false)) return false;
   return true;
 }
@@ -2464,6 +2578,7 @@ function solidPolygonPlateWithSlots(n, flatToFlat, T, O, wallSideLen) {
  */
 function generateFramePanels(d, J) {
   const { ow, oh, od, T, iw, ih, id } = d;
+  const rz = d.raise || 0;
   const B = Math.max(5, Math.min(state.frameBorder || 15, Math.min(ow, od) / 2 - T));
   const maxFromTop = Math.max(0, oh - 3 * T);
   const fromTop = Math.max(0, Math.min(state.frameFromTop || 0, maxFromTop));
@@ -2480,8 +2595,9 @@ function generateFramePanels(d, J) {
   const sideD = od;
   d.wallSpan = { frontW, sideD, joinWalls };
 
-  const fb = [J(true, true), J(true, true), null, J(true, true)];
-  const lr = [J(true, false), J(false, false), null, J(false, false)];
+  // Raised bottom: plain lower edge on walls (bottom plate fingers enter slots instead)
+  const fb = [rz > 0 ? null : J(true, true), J(true, true), null, J(true, true)];
+  const lr = [rz > 0 ? null : J(true, false), J(false, false), null, J(false, false)];
 
   const defs = [];
 
@@ -2692,9 +2808,25 @@ function generateFramePanels(d, J) {
   const slotsLeft  = slotsForWall(slotLenD, T, T, slotY);
   const slotsRight = slotsForWall(slotLenD, T, T, slotY);
 
+  // Raised bottom: slots in every wall where the bottom plate's fingers enter
+  if (rz > 0) {
+    const plateSlots = (L, arr) => {
+      for (const pc of edgePieces(L, J(false, false), true, true, T)) {
+        if (pc.inset !== 0) continue;
+        const a = Math.max(pc.a, T), b = Math.min(pc.b, L - T);
+        if (b - a > 1e-6) arr.push([a, rz, b - a, T]);
+      }
+    };
+    plateSlots(frontW, slotsFront);
+    plateSlots(frontW, slotsBack);
+    plateSlots(sideD, slotsLeft);
+    plateSlots(sideD, slotsRight);
+  }
+
   if (frameDividersOn()) {
     const underY = outsideFace ? (oh - T) : (oh - 2 * T - fromTop);
-    const gap = Math.max(0, underY - T);
+    const divBase = T + rz; // sit on the raised bottom plate
+    const gap = Math.max(0, underY - divBase);
     const divH = Math.max(0, Math.min(ih * ((state.divHpct || 100) / 100), gap));
     const xCenters = dividerCenters(state.colWeights, iw, T);
     const yCenters = dividerCenters(state.rowWeights, id, T);
@@ -2702,14 +2834,14 @@ function generateFramePanels(d, J) {
     if (divH > 0.4) {
       for (const cx of xCenters) {
         const sx = T + cx - T / 2;
-        slotsFront.push(...wallFingerSlots(sx, T, divH, T));
-        slotsBack.push(...wallFingerSlots(sx, T, divH, T));
+        slotsFront.push(...wallFingerSlots(sx, divBase, divH, T));
+        slotsBack.push(...wallFingerSlots(sx, divBase, divH, T));
       }
       for (const cy of yCenters) {
         const fromBack = id - cy;
         const sx = T + fromBack - T / 2;
-        slotsLeft.push(...wallFingerSlots(sx, T, divH, T));
-        slotsRight.push(...wallFingerSlots(sx, T, divH, T));
+        slotsLeft.push(...wallFingerSlots(sx, divBase, divH, T));
+        slotsRight.push(...wallFingerSlots(sx, divBase, divH, T));
       }
       xCenters.forEach((cx, i) => {
         const { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
@@ -2732,6 +2864,24 @@ function generateFramePanels(d, J) {
 
   const panels = defs.map(def => {
     let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
+
+    // Decorative feet on frame edge walls (same rules as box walls)
+    const cutH = footCutoutHeight();
+    if (cutH > 0.05 && ['front', 'back', 'left', 'right'].includes(def.role)) {
+      const L = def.w;
+      const footW = Math.max(T, Math.min(state.footWidth || 15, L * 0.45));
+      const cutX0 = footW;
+      const cutX1 = L - footW;
+      if (cutX1 - cutX0 > 2 * T) {
+        const span = cutX1 - cutX0;
+        const rMax = Math.min(cutH, span / 2);
+        const radius = rMax * Math.max(0, Math.min(100, state.footRound || 0)) / 100;
+        const belly = Math.max(0, Math.min(100, state.footBelly || 0));
+        const ft = insertOnBottomEdge(outline, 0, cutX0, cutX1, cutH, radius, belly);
+        if (ft.ok) outline = ft.outline;
+      }
+    }
+
     const cut = offsetPoly(outline, state.kerf / 2);
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const [x, y] of cut) {
@@ -2975,6 +3125,99 @@ function generatePanels() {
       { name: 'Lid Right', role: 'lid-right', w: lod, h: loh, specs: llr },
     );
     d.lid = { low, lod, loh, lidH: state.lidH };
+  }
+
+  // --- Pull-off lid: insert plug + outer plate flush with walls + half-circle handle ---
+  // Handle has two finger tabs that drop into slots in the outer plate (centered).
+  if (state.lid === 'pull' && nSides === 4) {
+    const clear = Math.max(0.05, state.pullClear || 0.4);
+    const insW = Math.max(T * 2, iw - 2 * clear);
+    const insD = Math.max(T * 2, id - 2 * clear);
+    // Outer plate = exterior size (flush with outside of walls)
+    const capW = ow;
+    const capD = od;
+    // Half-ring handle: outer radius R, bar width B → inner radius R-B
+    let R = Math.max(6, state.pullHandleR || 18);
+    let B = Math.max(2, Math.min(state.pullHandleBar || 6, R - 2));
+    // Keep handle smaller than the outer plate (leave margin for slots)
+    const maxR = Math.min(capW, capD) * 0.40;
+    if (R > maxR) { R = maxR; B = Math.min(B, R - 2); }
+    const rIn = Math.max(1, R - B);
+    // Tab width = bar width (fills the radial thickness at each end of the ring)
+    const tabW = B;
+    // Tab length = material thickness so it seats fully through the lid plate
+    const tabLen = T;
+    const steps = 32;
+
+    // Handle outline (local, all positive extents):
+    //   x ∈ [-R, R]  (centered on 0 — 3D origin uses o.x = 0)
+    //   y = 0        → tip of the finger tabs (bottom of piece)
+    //   y = tabLen   → lid top surface / base of the arch
+    //   y = tabLen+R → top of the arch
+    // Two rectangular fingers at the ends drop into the lid slots.
+    const y0 = 0;          // bottom of tabs
+    const yBase = tabLen;  // top of tabs = base of arch
+    const handlePts = [];
+    // Left tab outer up
+    handlePts.push([-R, y0]);
+    handlePts.push([-R, yBase]);
+    // Outer semicircle (left → right over the top), center at (0, yBase)
+    for (let i = 0; i <= steps; i++) {
+      const a = Math.PI - (i / steps) * Math.PI; // π → 0
+      handlePts.push([R * Math.cos(a), yBase + R * Math.sin(a)]);
+    }
+    // Right tab outer down to tip, across bottom, up inner side
+    handlePts.push([R, yBase]);
+    handlePts.push([R, y0]);
+    handlePts.push([rIn, y0]);
+    handlePts.push([rIn, yBase]);
+    // Inner semicircle (right → left)
+    for (let i = 0; i <= steps; i++) {
+      const a = (i / steps) * Math.PI; // 0 → π
+      handlePts.push([rIn * Math.cos(a), yBase + rIn * Math.sin(a)]);
+    }
+    // Left tab inner down to tip, close across bottom
+    handlePts.push([-rIn, yBase]);
+    handlePts.push([-rIn, y0]);
+    const handleOutline = cleanPoly(handlePts);
+
+    // Slots in the outer plate (cap local: x 0→capW, y 0→capD), centered.
+    // Handle thickness sits along world Z → cap local Y. Each slot is tabW × T.
+    const slotH = T; // matches handle material thickness
+    const cx = capW / 2;
+    const cy = capD / 2;
+    // Left tab occupies handle x ∈ [-R, -rIn]; right tab x ∈ [rIn, R]
+    const leftSlot = [
+      [cx - R,      cy - slotH / 2],
+      [cx - rIn,    cy - slotH / 2],
+      [cx - rIn,    cy + slotH / 2],
+      [cx - R,      cy + slotH / 2],
+    ];
+    const rightSlot = [
+      [cx + rIn,    cy - slotH / 2],
+      [cx + R,      cy - slotH / 2],
+      [cx + R,      cy + slotH / 2],
+      [cx + rIn,    cy + slotH / 2],
+    ];
+
+    defs.push({
+      name: 'Pull insert', role: 'pull-insert', w: insW, h: insD,
+      specs: null,
+      outlineOverride: [[0, 0], [insW, 0], [insW, insD], [0, insD]],
+    });
+    defs.push({
+      name: 'Pull cap', role: 'pull-cap', w: capW, h: capD,
+      specs: null,
+      outlineOverride: [[0, 0], [capW, 0], [capW, capD], [0, capD]],
+      holes: [leftSlot, rightSlot],
+    });
+    defs.push({
+      name: 'Pull handle', role: 'pull-handle',
+      w: 2 * R, h: R + tabLen,
+      specs: null,
+      outlineOverride: handleOutline,
+    });
+    d.pull = { insW, insD, capW, capD, clear, R, B, rIn, tabW, tabLen };
   }
 
   // --- Slide-in lid: two U-shaped frames at top + sliding panel ---
@@ -3436,10 +3679,11 @@ function generatePanels() {
 
     // Decorative feet: rectangular cutout on the bottom edge of each side wall,
     // leaving solid corner posts under a raised bottom plate.
+    // Foot width is independent of finger size (controlled by Feet → Foot width).
     const cutH = footCutoutHeight();
     if (cutH > 0.05 && ['front', 'back', 'left', 'right'].includes(def.role)) {
       const L = def.w;
-      const footW = Math.max(2 * T, Math.min(state.finger * 1.5, L * 0.22));
+      const footW = Math.max(T, Math.min(state.footWidth || 15, L * 0.45));
       const cutX0 = footW;
       const cutX1 = L - footW;
       if (cutX1 - cutX0 > 2 * T) {
@@ -3733,6 +3977,44 @@ function placement(role, d) {
         n: V(0, 1, 0),
       };
     }
+    // Pull-off lid: insert hangs into the opening; cap sits on wall tops; handle stands on the cap
+    case 'pull-insert': {
+      const pw = (d.pull && d.pull.insW) || iw;
+      const pd = (d.pull && d.pull.insD) || id;
+      // Top of insert flush with wall tops (glued under the cap)
+      return {
+        o: V(-pw / 2, oh - T, pd / 2),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
+    case 'pull-cap': {
+      const cw = (d.pull && d.pull.capW) || ow;
+      const cd = (d.pull && d.pull.capD) || od;
+      // Cap sits on the wall tops
+      return {
+        o: V(-cw / 2, oh, cd / 2),
+        u: V(1, 0, 0),
+        v: V(0, 0, -1),
+        n: V(0, 1, 0),
+      };
+    }
+    case 'pull-handle': {
+      // Half-ring stands upright, centered on the cap.
+      // Handle local: x ∈ [-R, R] (centered at 0), y ∈ [0, tabLen+R]
+      //   y = 0      → tip of finger tabs
+      //   y = tabLen → top face of the cap (tabs seat through the plate)
+      // Thickness extruded along Z, centered on box centerline (o.z = -T/2).
+      // o.x = 0 so local x maps 1:1 onto world X (handle centered on lid).
+      const tabLen = (d.pull && d.pull.tabLen != null) ? d.pull.tabLen : T;
+      return {
+        o: V(0, oh + T - tabLen, -T / 2),
+        u: V(1, 0, 0),
+        v: V(0, 1, 0),
+        n: V(0, 0, 1),
+      };
+    }
     // Frame face layer sits INSIDE the walls.
     // Outline local y=0 = tip of outward fingers (into wall slots),
     // local y = T + B = inner edge of the border.
@@ -3899,6 +4181,7 @@ const EXPLODE_DIR = {
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
   'hinge-lid': [0, 1.3, -0.3],
+  'pull-insert': [0, 1.1, 0], 'pull-cap': [0, 1.25, 0], 'pull-handle': [0, 1.45, 0],
   'slide-frame-lower': [0, 0.7, 0],
   'slide-frame-upper': [0, 1.0, 0],
   'slide-panel': [0, 0.5, 1.2],
@@ -3915,6 +4198,7 @@ const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
   'hinge-lid': 0xb8956a,
+  'pull-insert': 0xc4a574, 'pull-cap': 0xb8956a, 'pull-handle': 0x8b5a2b,
   'slide-frame-lower': 0xc4a574,
   'slide-frame-upper': 0xb8956a,
   'slide-panel': 0xd4b483,
@@ -4083,11 +4367,17 @@ function rebuild3D() {
       const skirt = (d.lid && d.lid.lidH != null) ? d.lid.lidH : state.lidH;
       slipLift = [0, skirt + Math.max(30, d.oh * 0.5), 0];
     }
+    // Pull-off lid (insert + cap + handle): lifts straight up off the box
+    let pullLidLift = [0, 0, 0];
+    if (state.lid === 'pull' && p.role && p.role.startsWith('pull-')) {
+      pullLidLift = [0, Math.max(40, (d.oh || 50) * 0.7 + 20), 0];
+    }
     mesh.userData = {
       exp: [dir[0] * amount, dir[1] * amount, dir[2] * amount],
       pull,
       slidePull,
       slipLift,
+      pullLidLift,
       hingePivot: (p.role === 'hinge-lid' && d.hinge) ? new THREE.Vector3(0, d.hinge.pivotY, d.hinge.pivotZ) : null,
     };
     boxGroup.add(mesh);
@@ -4102,14 +4392,16 @@ function updateAssembly() {
   const pullT = state.drawerPull || 0;
   const slideT = state.slidePull || 0;
   const liftT = state.slipLift || 0;
+  const pullLidT = state.pullLift || 0;
   for (const mesh of panels3D) {
     const e = mesh.userData.exp || [0, 0, 0];
     const p = mesh.userData.pull || [0, 0, 0];
     const sp = mesh.userData.slidePull || [0, 0, 0];
     const sl = mesh.userData.slipLift || [0, 0, 0];
-    let px = e[0] * t + p[0] * pullT + sp[0] * slideT + sl[0] * liftT;
-    let py = e[1] * t + p[1] * pullT + sp[1] * slideT + sl[1] * liftT;
-    let pz = e[2] * t + p[2] * pullT + sp[2] * slideT + sl[2] * liftT;
+    const pl = mesh.userData.pullLidLift || [0, 0, 0];
+    let px = e[0] * t + p[0] * pullT + sp[0] * slideT + sl[0] * liftT + pl[0] * pullLidT;
+    let py = e[1] * t + p[1] * pullT + sp[1] * slideT + sl[1] * liftT + pl[1] * pullLidT;
+    let pz = e[2] * t + p[2] * pullT + sp[2] * slideT + sl[2] * liftT + pl[2] * pullLidT;
     // Hinged lid: rotate about the pivot axis (X axis through the back tabs); front edge swings UP
     const hp = mesh.userData.hingePivot;
     if (hp) {
@@ -4248,6 +4540,7 @@ function resetAll() {
   $('lidNone').classList.add('active');
   $('lidFlat').classList.remove('active');
   if ($('lidSlip')) $('lidSlip').classList.remove('active');
+  if ($('lidPull')) $('lidPull').classList.remove('active');
   if ($('lidSlide')) $('lidSlide').classList.remove('active');
   if ($('lidHinge')) $('lidHinge').classList.remove('active');
   if ($('genBox')) $('genBox').classList.add('active');
