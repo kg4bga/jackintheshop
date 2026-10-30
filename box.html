@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.5</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.6</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -364,7 +364,7 @@
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name"><center>Jack's Boxes<p>Ver 0.5</center></span>
+      <span class="brand-name"><center>Jack's Boxes<p>Ver 0.6</center></span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -557,7 +557,7 @@
           </div>
 
           <div id="lidPullControls" style="display:none; margin-top:8px;">
-            <div class="hint">Two layers glued together: insert drops into the box; outer plate sits flush with the outside walls. Half-circle handle mounts through finger-tab slots in the outer plate (centered).</div>
+            <div class="hint">Two layers glued together: insert drops into the box; outer plate sits flush with the outside walls. Half-circle handle mounts through finger-tab slots in the outer plate (centered). Blue engrave marks on the SVG: insert outline on the cap + center crosses — line these up when gluing.</div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Insert clearance</strong><span class="ctrl-val" id="valPullClear">0.40 mm</span></div>
               <input type="range" id="sldPullClear" min="0.1" max="1.5" step="0.05" value="0.4" oninput="onPullClear(this.value)">
@@ -787,7 +787,7 @@
             <div>Kerf: <span id="infoKerf" style="color:var(--text)">0.10 mm</span></div>
             <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">
               Cut layer: <span style="color:#ff4444">● Red</span><br>
-              Labels: <span style="color:#4488ff">● Blue</span>
+              Engrave / labels: <span style="color:#4488ff">● Blue</span>
             </div>
           </div>
         </div>
@@ -3030,6 +3030,14 @@ function buildPullOffLidDefs(d) {
   const slotH = T;
   const defs = [];
 
+  /** Small center cross for glue alignment (open polylines, engrave layer). */
+  function centerCross(cx, cy, arm) {
+    return [
+      [[cx - arm, cy], [cx + arm, cy]],
+      [[cx, cy - arm], [cx, cy + arm]],
+    ];
+  }
+
   if (nSides === 4) {
     const insW = Math.max(T * 2, iw - 2 * clear);
     const insD = Math.max(T * 2, id - 2 * clear);
@@ -3045,16 +3053,26 @@ function buildPullOffLidDefs(d) {
       [cx + rIn, cy - slotH / 2], [cx + R, cy - slotH / 2],
       [cx + R, cy + slotH / 2], [cx + rIn, cy + slotH / 2],
     ];
+    // Engrave: insert outline centered on the cap + matching center crosses.
+    // Align the insert edge to the blue rectangle when gluing under the cap.
+    const ox = (capW - insW) / 2;
+    const oy = (capD - insD) / 2;
+    const alignRect = [[ox, oy], [ox + insW, oy], [ox + insW, oy + insD], [ox, oy + insD]];
+    const arm = Math.min(10, Math.min(insW, insD) * 0.18);
+    const crossCap = centerCross(cx, cy, arm);
+    const crossIns = centerCross(insW / 2, insD / 2, arm);
     defs.push({
       name: 'Pull insert', role: 'pull-insert', w: insW, h: insD,
       specs: null,
       outlineOverride: [[0, 0], [insW, 0], [insW, insD], [0, insD]],
+      engrave: crossIns,
     });
     defs.push({
       name: 'Pull cap', role: 'pull-cap', w: capW, h: capD,
       specs: null,
       outlineOverride: [[0, 0], [capW, 0], [capW, capD], [0, capD]],
       holes: [leftSlot, rightSlot],
+      engrave: [alignRect, ...crossCap],
     });
     d.pull = { insW, insD, capW, capD, clear, R, B, rIn, tabW: B, tabLen, poly: false };
   } else {
@@ -3073,12 +3091,17 @@ function buildPullOffLidDefs(d) {
       [rIn, -slotH / 2], [R, -slotH / 2],
       [R, slotH / 2], [rIn, slotH / 2],
     ];
+    // Engrave insert outline on the cap (same verts as insert) + center crosses
+    const alignPoly = cleanPoly(insPoly.verts.map(v => [v[0], v[1]]));
+    const arm = Math.min(10, insFTF * 0.12);
+    const cross = centerCross(0, 0, arm);
     defs.push({
       name: 'Pull insert', role: 'pull-insert',
       w: insFTF, h: insFTF,
       specs: null,
       outlineOverride: cleanPoly(insPoly.verts.map(v => [v[0], v[1]])),
       poly: true,
+      engrave: cross,
     });
     defs.push({
       name: 'Pull cap', role: 'pull-cap',
@@ -3087,6 +3110,7 @@ function buildPullOffLidDefs(d) {
       outlineOverride: cleanPoly(capPoly.verts.map(v => [v[0], v[1]])),
       holes: [leftSlot, rightSlot],
       poly: true,
+      engrave: [alignPoly, ...cross],
     });
     d.pull = {
       insFTF, outerFTF, clear, R, B, rIn, tabW: B, tabLen, poly: true, nSides,
@@ -3949,16 +3973,17 @@ function layoutPanels(panels, gap = 4, compact = true) {
   return { placed, totalW: maxX, totalH: y + rowH + gap };
 }
 
-function ptsToPath(pts) {
-  if (!pts.length) return '';
-  return 'M' + pts.map(p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`).join(' L') + ' Z';
+function ptsToPath(pts, close = true) {
+  if (!pts || !pts.length) return '';
+  const d = 'M' + pts.map(p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`).join(' L');
+  return close ? d + ' Z' : d;
 }
 
 function buildSVG(showLabels = true, compact = true) {
   const { panels } = generatePanels();
   const { placed, totalW, totalH } = layoutPanels(panels, 4, compact);
 
-  let paths = '', labels = '';
+  let paths = '', labels = '', engraves = '';
   for (const p of placed) {
     // SVG is Y-down: flip each panel so it matches the 3D model orientation
     const shifted = p.cut.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
@@ -3975,6 +4000,14 @@ function buildSVG(showLabels = true, compact = true) {
       ].map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
       paths += `    <path d="${ptsToPath(rect)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
     }
+    // Engrave layer (blue): alignment marks, e.g. pull-off insert outline on the cap
+    for (const e of (p.engrave || [])) {
+      if (!e || e.length < 2) continue;
+      const es = e.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      // 2-point paths (center cross arms) stay open; 3+ points close as outlines
+      const isOpen = e.length === 2;
+      engraves += `    <path d="${ptsToPath(es, !isOpen)}" fill="none" stroke="#0000ff" stroke-width="0.1"/>\n`;
+    }
     if (showLabels) {
       const fs = Math.max(3, Math.min(8, Math.min(p.bboxW, p.bboxH) / 6));
       labels += `    <text x="${(p.ox + p.bboxW / 2).toFixed(2)}" y="${(p.oy + p.bboxH / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
@@ -3983,9 +4016,11 @@ function buildSVG(showLabels = true, compact = true) {
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${totalW.toFixed(3)}mm" height="${totalH.toFixed(3)}mm" viewBox="0 0 ${totalW.toFixed(3)} ${totalH.toFixed(3)}">
-  <!-- Jack In The Shop finger-joint box · red = cut, blue = labels (engrave or hide). Units: mm. Kerf ${state.kerf} mm applied. -->
+  <!-- Jack In The Shop finger-joint box · red = cut, blue = labels/engrave. Units: mm. Kerf ${state.kerf} mm applied. -->
   <g id="cut">
 ${paths}  </g>
+  <g id="engrave">
+${engraves}  </g>
   <g id="labels">
 ${labels}  </g>
 </svg>`;
@@ -3997,10 +4032,13 @@ function buildDXF() {
   const { panels } = generatePanels();
   const { placed } = layoutPanels(panels, 5, true);
   let entities = '';
-  const addPoly = (pts) => {
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[i], b = pts[(i + 1) % pts.length];
-      entities += `0\nLINE\n8\nCUT\n10\n${a[0].toFixed(4)}\n20\n${a[1].toFixed(4)}\n30\n0\n11\n${b[0].toFixed(4)}\n21\n${b[1].toFixed(4)}\n31\n0\n`;
+  const addPoly = (pts, layer = 'CUT', closed = true) => {
+    const n = pts.length;
+    if (n < 2) return;
+    const count = closed ? n : n - 1;
+    for (let i = 0; i < count; i++) {
+      const a = pts[i], b = pts[(i + 1) % n];
+      entities += `0\nLINE\n8\n${layer}\n10\n${a[0].toFixed(4)}\n20\n${a[1].toFixed(4)}\n30\n0\n11\n${b[0].toFixed(4)}\n21\n${b[1].toFixed(4)}\n31\n0\n`;
     }
   };
   for (const p of placed) {
@@ -4015,6 +4053,11 @@ function buildDXF() {
         [sx + sw - p.minX + p.ox, sy + sh - p.minY + p.oy],
         [sx - p.minX + p.ox, sy + sh - p.minY + p.oy],
       ]);
+    }
+    for (const e of (p.engrave || [])) {
+      if (!e || e.length < 2) continue;
+      const es = e.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]);
+      addPoly(es, 'ENGRAVE', e.length > 2);
     }
   }
   return `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${entities}0\nENDSEC\n0\nEOF\n`;
