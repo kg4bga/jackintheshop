@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.4</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.5</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -364,7 +364,7 @@
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name"><center>Jack's Boxes<p> Ver 0.04</center></span>
+      <span class="brand-name"><center>Jack's Boxes<p>Ver 0.5</center></span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -607,7 +607,7 @@
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Lid overhang</strong><span class="ctrl-val" id="valFlatOH">0.0 mm</span></div>
               <input type="range" id="sldFlatOH" min="0" max="30" step="0.5" value="0" oninput="onFlatOverhang(this.value)">
-              <div class="hint" style="margin-top:4px">0 = flush lid with finger joints. Increase to get lantern-style solid top &amp; bottom plates that extend past the walls, with slots for the wall fingers.</div>
+              <div class="hint" style="margin-top:4px">0 = flush lid with finger joints. Increase for a solid overhanging top plate with slots for the wall tabs. When feet/raise are on, only the top plate scales — the bottom stays flush so the feet still work.</div>
             </div>
             <div class="ctrl" style="margin-top:10px;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
@@ -1845,10 +1845,11 @@ function enforceFrameHeight() {
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
   // Raised bottoms + decorative feet work on rectangles, frames, and hexagons.
-  // Lantern-style flat tops (overhang / no wall joints) do not.
+  // Flat-top with wall joints off (true lantern / V-groove walls) is excluded.
+  // Flat-top overhang is allowed: when raise is active, overhang scales only the top plate.
   const s = state.sides || 4;
   if (s !== 4 && s !== 6) return false;
-  if (state.lid === 'flat' && ((state.flatOverhang || 0) > 0 || state.wallJoints === false)) return false;
+  if (state.lid === 'flat' && state.wallJoints === false) return false;
   return true;
 }
 function bottomRaise() {
@@ -2038,19 +2039,24 @@ function solidPlateWithSlots(ow, od, T, O, wallW, wallD) {
 }
 
 /**
- * Wall with a few large tabs on top/bottom (fit plate slots) and
+ * Wall with large tabs on top and/or bottom (fit plate slots) and
  * finger joints on left/right. Ph = full exterior wall height (oh).
- * Bottom tabs occupy y=0..T, body T..Ph-T, top tabs Ph-T..Ph.
+ * topTabs / botTabs: [{a,b}, ...] along the edge; empty = plain edge.
+ * If botTabs is omitted, it defaults to topTabs (classic lantern both ends).
+ * Bottom tabs occupy y=0..T when present; top tabs Ph-T..Ph when present.
  */
-function tabbedWallOutline(Pw, Ph, T, leftSpec, rightSpec, tabs) {
-  const bodyBot = T;
-  const bodyTop = Ph - T;
-  const bodyH = bodyTop - bodyBot;
+function tabbedWallOutline(Pw, Ph, T, leftSpec, rightSpec, topTabs, botTabs) {
+  if (!topTabs) topTabs = [];
+  if (botTabs === undefined) botTabs = topTabs;
+  if (!botTabs) botTabs = [];
+  const bodyBot = botTabs.length ? T : 0;
+  const bodyTop = topTabs.length ? Ph - T : Ph;
+  const bodyH = Math.max(0, bodyTop - bodyBot);
   const pts = [];
 
   // Bottom edge L→R
   pts.push([0, bodyBot]);
-  for (const t of tabs) {
+  for (const t of botTabs) {
     pts.push([t.a, bodyBot], [t.a, 0], [t.b, 0], [t.b, bodyBot]);
   }
   pts.push([Pw, bodyBot]);
@@ -2065,8 +2071,8 @@ function tabbedWallOutline(Pw, Ph, T, leftSpec, rightSpec, tabs) {
 
   // Top edge R→L
   pts.push([Pw, bodyTop]);
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    const t = tabs[i];
+  for (let i = topTabs.length - 1; i >= 0; i--) {
+    const t = topTabs[i];
     pts.push([t.b, bodyTop], [t.b, Ph], [t.a, Ph], [t.a, bodyTop]);
   }
   pts.push([0, bodyTop]);
@@ -2931,6 +2937,171 @@ function clipOutlineBelow(pts, yMax) {
   return cleanPoly(out);
 }
 
+/**
+ * Slip-on lid for regular polygon boxes: larger top plate + N skirt walls that fit over the box.
+ * Outer flat-to-flat = box outer + 2T so the skirt clears the outside of the walls.
+ */
+function buildPolySlipOnLidDefs(d, J) {
+  const { ow, T } = d;
+  const nSides = d.sides || 6;
+  if (state.lid !== 'slip' || nSides < 5) return [];
+
+  const lidFTF = ow + 2 * T;
+  const lidPoly = regularPolygonVerts(nSides, lidFTF);
+  const sideLen = lidPoly.sideLen;
+  const loh = state.lidH + T; // wall height includes top finger joint depth
+
+  // Skirt walls: plain bottom (slides over box), finger joints on top + vertical edges
+  const wallSpecs = [
+    null,                       // bottom plain
+    J(true, true),              // right
+    J(true, false),             // top — mates with lid plate
+    J(false, false),            // left
+  ];
+  const defs = [];
+  defs.push({
+    name: 'Lid Top', role: 'lid-top',
+    w: lidFTF, h: lidFTF,
+    specs: null,
+    outlineOverride: polygonPlateOutline(nSides, lidFTF, T, false),
+    poly: true, lidPoly: true,
+  });
+  for (let i = 0; i < nSides; i++) {
+    defs.push({
+      name: `Lid Side ${i + 1}`, role: 'lid-poly-side',
+      w: sideLen, h: loh,
+      specs: wallSpecs,
+      sideIndex: i, nSides,
+      lidPoly: true,
+    });
+  }
+  d.lid = {
+    lidFTF, sideLen, loh, lidH: state.lidH,
+    poly: true, nSides,
+    polyVerts: lidPoly.verts,
+  };
+  return defs;
+}
+
+/**
+ * Pull-off lid pieces: insert plug + outer cap + half-ring handle with finger tabs.
+ * Works for rectangle (4) and regular polygon (6). Returns defs to push onto the panel list.
+ */
+function buildPullOffLidDefs(d) {
+  const { ow, od, T, iw, id } = d;
+  const nSides = d.sides || 4;
+  if (state.lid !== 'pull' || (nSides !== 4 && nSides !== 6)) return [];
+
+  const clear = Math.max(0.05, state.pullClear || 0.4);
+  let R = Math.max(6, state.pullHandleR || 18);
+  let B = Math.max(2, Math.min(state.pullHandleBar || 6, R - 2));
+  const tabLen = T;
+  const steps = 32;
+
+  // Limit handle size to the smaller plan dimension of the outer plate
+  const maxR = (nSides === 4
+    ? Math.min(ow, od)
+    : ow) * 0.40;
+  if (R > maxR) { R = maxR; B = Math.min(B, R - 2); }
+  const rIn = Math.max(1, R - B);
+
+  // Half-ring handle with two finger tabs (length = T) at the base
+  const y0 = 0;
+  const yBase = tabLen;
+  const handlePts = [];
+  handlePts.push([-R, y0]);
+  handlePts.push([-R, yBase]);
+  for (let i = 0; i <= steps; i++) {
+    const a = Math.PI - (i / steps) * Math.PI;
+    handlePts.push([R * Math.cos(a), yBase + R * Math.sin(a)]);
+  }
+  handlePts.push([R, yBase]);
+  handlePts.push([R, y0]);
+  handlePts.push([rIn, y0]);
+  handlePts.push([rIn, yBase]);
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI;
+    handlePts.push([rIn * Math.cos(a), yBase + rIn * Math.sin(a)]);
+  }
+  handlePts.push([-rIn, yBase]);
+  handlePts.push([-rIn, y0]);
+  const handleOutline = cleanPoly(handlePts);
+
+  const slotH = T;
+  const defs = [];
+
+  if (nSides === 4) {
+    const insW = Math.max(T * 2, iw - 2 * clear);
+    const insD = Math.max(T * 2, id - 2 * clear);
+    const capW = ow;
+    const capD = od;
+    const cx = capW / 2;
+    const cy = capD / 2;
+    const leftSlot = [
+      [cx - R, cy - slotH / 2], [cx - rIn, cy - slotH / 2],
+      [cx - rIn, cy + slotH / 2], [cx - R, cy + slotH / 2],
+    ];
+    const rightSlot = [
+      [cx + rIn, cy - slotH / 2], [cx + R, cy - slotH / 2],
+      [cx + R, cy + slotH / 2], [cx + rIn, cy + slotH / 2],
+    ];
+    defs.push({
+      name: 'Pull insert', role: 'pull-insert', w: insW, h: insD,
+      specs: null,
+      outlineOverride: [[0, 0], [insW, 0], [insW, insD], [0, insD]],
+    });
+    defs.push({
+      name: 'Pull cap', role: 'pull-cap', w: capW, h: capD,
+      specs: null,
+      outlineOverride: [[0, 0], [capW, 0], [capW, capD], [0, capD]],
+      holes: [leftSlot, rightSlot],
+    });
+    d.pull = { insW, insD, capW, capD, clear, R, B, rIn, tabW: B, tabLen, poly: false };
+  } else {
+    // Regular polygon (hex): insert fits inside, cap flush with outside
+    const outerFTF = ow;
+    const innerFTF = Math.max(2 * T, ow - 2 * T);
+    const insFTF = Math.max(2 * T, innerFTF - 2 * clear);
+    const insPoly = regularPolygonVerts(nSides, insFTF);
+    const capPoly = regularPolygonVerts(nSides, outerFTF);
+    // Slots centered on origin (polygon verts are centered)
+    const leftSlot = [
+      [-R, -slotH / 2], [-rIn, -slotH / 2],
+      [-rIn, slotH / 2], [-R, slotH / 2],
+    ];
+    const rightSlot = [
+      [rIn, -slotH / 2], [R, -slotH / 2],
+      [R, slotH / 2], [rIn, slotH / 2],
+    ];
+    defs.push({
+      name: 'Pull insert', role: 'pull-insert',
+      w: insFTF, h: insFTF,
+      specs: null,
+      outlineOverride: cleanPoly(insPoly.verts.map(v => [v[0], v[1]])),
+      poly: true,
+    });
+    defs.push({
+      name: 'Pull cap', role: 'pull-cap',
+      w: outerFTF, h: outerFTF,
+      specs: null,
+      outlineOverride: cleanPoly(capPoly.verts.map(v => [v[0], v[1]])),
+      holes: [leftSlot, rightSlot],
+      poly: true,
+    });
+    d.pull = {
+      insFTF, outerFTF, clear, R, B, rIn, tabW: B, tabLen, poly: true, nSides,
+    };
+  }
+
+  defs.push({
+    name: 'Pull handle', role: 'pull-handle',
+    w: 2 * R, h: R + tabLen,
+    specs: null,
+    outlineOverride: handleOutline,
+  });
+  return defs;
+}
+
 function generatePanels() {
   const d = dims();
   const { ow, oh, od, T, iw, ih, id } = d;
@@ -2966,30 +3137,63 @@ function generatePanels() {
     d.wallSpan = { wallLen, joinWalls };
 
     if (flat && O > 0) {
-      // Lantern-style solid plates with slots (no raised bottom / feet)
+      // When raised bottom / feet are active, overhang applies to the TOP plate only.
+      const topOnlyOverhang = rz > 0;
       const plate = solidPolygonPlateWithSlots(nSides, ow, T, O, wallLen);
-      defs.push({
-        name: 'Bottom', role: 'bottom', w: plate.plSize, h: plate.plSize,
-        specs: null, outlineOverride: plate.outline, holes: plate.holes,
-        poly: true, plate: true, overhang: O,
-      });
-      defs.push({
-        name: 'Top', role: 'top', w: plate.plSize, h: plate.plSize,
-        specs: null, outlineOverride: plate.outline, holes: plate.holes,
-        poly: true, plate: true, overhang: O,
-      });
       const vRight = joinWalls ? J(true, true) : null;
       const vLeft = joinWalls ? J(false, false) : null;
-      for (let i = 0; i < nSides; i++) {
-        polyWallSlots.push([]);
+      if (topOnlyOverhang) {
+        // Flush finger-jointed bottom + overhang top + walls with top tabs only
         defs.push({
-          name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
+          name: 'Bottom', role: 'bottom', w: ow, h: ow,
           specs: null,
-          outlineOverride: tabbedWallOutline(wallLen, oh, T, vLeft, vRight, plate.tabs),
-          sideIndex: i, nSides, tabbed: true,
+          outlineOverride: polygonPlateOutline(nSides, ow, T, false),
+          poly: true,
         });
+        defs.push({
+          name: 'Top', role: 'top', w: plate.plSize, h: plate.plSize,
+          specs: null, outlineOverride: plate.outline, holes: plate.holes,
+          poly: true, plate: true, overhang: O,
+        });
+        const sideSlots = [];
+        for (const pc of edgePieces(wallLen, J(false, false), true, true, T)) {
+          if (pc.inset !== 0) continue;
+          const a = Math.max(pc.a, T), b = Math.min(pc.b, wallLen - T);
+          if (b - a > 1e-6) sideSlots.push([a, rz, b - a, T]);
+        }
+        for (let i = 0; i < nSides; i++) {
+          polyWallSlots.push(sideSlots.map(s => s.slice()));
+          defs.push({
+            name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
+            specs: null,
+            outlineOverride: tabbedWallOutline(wallLen, oh, T, vLeft, vRight, plate.tabs, []),
+            sideIndex: i, nSides, tabbed: true,
+          });
+        }
+        d.plate = { O, botO: 0, plSize: plate.plSize, topOnly: true };
+      } else {
+        // Classic lantern: solid plates with slots on top and bottom
+        defs.push({
+          name: 'Bottom', role: 'bottom', w: plate.plSize, h: plate.plSize,
+          specs: null, outlineOverride: plate.outline, holes: plate.holes,
+          poly: true, plate: true, overhang: O,
+        });
+        defs.push({
+          name: 'Top', role: 'top', w: plate.plSize, h: plate.plSize,
+          specs: null, outlineOverride: plate.outline, holes: plate.holes,
+          poly: true, plate: true, overhang: O,
+        });
+        for (let i = 0; i < nSides; i++) {
+          polyWallSlots.push([]);
+          defs.push({
+            name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
+            specs: null,
+            outlineOverride: tabbedWallOutline(wallLen, oh, T, vLeft, vRight, plate.tabs),
+            sideIndex: i, nSides, tabbed: true,
+          });
+        }
+        d.plate = { O, botO: O, plSize: plate.plSize };
       }
-      d.plate = { O, plSize: plate.plSize };
     } else {
       // Flush finger-jointed plates
       // Raised bottom: plain lower edge on walls; plate fingers enter mid-wall slots
@@ -3032,7 +3236,15 @@ function generatePanels() {
       }
     }
 
-    // Skip slip/hinge/dividers for non-rectangular
+    // Slip-on / pull-off lids for hex (and other regular polygons)
+    if (state.lid === 'slip') {
+      defs.push(...buildPolySlipOnLidDefs(d, J));
+    }
+    if (state.lid === 'pull') {
+      defs.push(...buildPullOffLidDefs(d));
+    }
+
+    // Skip hinge/slide/dividers for non-rectangular
     const panels = defs.map(def => {
       let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
 
@@ -3099,34 +3311,63 @@ function generatePanels() {
   d.wallSpan = { frontW, sideD, joinWalls };
 
   if (flat && (O > 0 || !joinWalls)) {
-    // Solid plates with slots + tabbed walls.
-    const plateBot = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
+    // When raised bottom / feet are active, overhang applies to the TOP plate only.
+    // Bottom stays flush (finger-jointed) so feet and raise still work.
+    const topOnlyOverhang = rz > 0 && O > 0;
     const plateTop = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
-    defs.push({
-      name: 'Bottom', role: 'bottom', w: plateBot.plW, h: plateBot.plH,
-      specs: null, outlineOverride: plateBot.outline, holes: plateBot.holes,
-      overhang: O, plate: true,
-    });
-    defs.push({
-      name: 'Top', role: 'top', w: plateTop.plW, h: plateTop.plH,
-      specs: null, outlineOverride: plateTop.outline, holes: plateTop.holes,
-      overhang: O, plate: true,
-    });
-    const wallDefs = [
-      { name: 'Front', role: 'front', w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
-      { name: 'Back',  role: 'back',  w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
-      { name: 'Left',  role: 'left',  w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
-      { name: 'Right', role: 'right', w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
-    ];
-    for (const wd of wallDefs) {
+    if (topOnlyOverhang) {
+      // Flush finger-jointed bottom + overhang top + walls with top tabs only
+      defs.push({ name: 'Bottom', role: 'bottom', w: ow, h: od, specs: bt });
       defs.push({
-        name: wd.name, role: wd.role, w: wd.w, h: oh,
-        specs: null,
-        outlineOverride: tabbedWallOutline(wd.w, oh, T, wd.vL, wd.vR, wd.tabs),
-        tabbed: true,
+        name: 'Top', role: 'top', w: plateTop.plW, h: plateTop.plH,
+        specs: null, outlineOverride: plateTop.outline, holes: plateTop.holes,
+        overhang: O, plate: true,
       });
+      const wallDefs = [
+        { name: 'Front', role: 'front', w: frontW, tabs: plateTop.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
+        { name: 'Back',  role: 'back',  w: frontW, tabs: plateTop.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
+        { name: 'Left',  role: 'left',  w: sideD, tabs: plateTop.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
+        { name: 'Right', role: 'right', w: sideD, tabs: plateTop.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
+      ];
+      for (const wd of wallDefs) {
+        defs.push({
+          name: wd.name, role: wd.role, w: wd.w, h: oh,
+          specs: null,
+          // top tabs only — bottom is plain so raised-bottom slots + feet apply
+          outlineOverride: tabbedWallOutline(wd.w, oh, T, wd.vL, wd.vR, wd.tabs, []),
+          tabbed: true,
+        });
+      }
+      d.plate = { O, botO: 0, plW: plateTop.plW, plH: plateTop.plH, topOnly: true };
+    } else {
+      // Classic lantern: solid plates with slots + tabbed walls (top and bottom)
+      const plateBot = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
+      defs.push({
+        name: 'Bottom', role: 'bottom', w: plateBot.plW, h: plateBot.plH,
+        specs: null, outlineOverride: plateBot.outline, holes: plateBot.holes,
+        overhang: O, plate: true,
+      });
+      defs.push({
+        name: 'Top', role: 'top', w: plateTop.plW, h: plateTop.plH,
+        specs: null, outlineOverride: plateTop.outline, holes: plateTop.holes,
+        overhang: O, plate: true,
+      });
+      const wallDefs = [
+        { name: 'Front', role: 'front', w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
+        { name: 'Back',  role: 'back',  w: frontW, tabs: plateBot.tabsW, vL: joinWalls ? J(true, true) : null, vR: joinWalls ? J(true, true) : null },
+        { name: 'Left',  role: 'left',  w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
+        { name: 'Right', role: 'right', w: sideD, tabs: plateBot.tabsD, vL: joinWalls ? J(false, false) : null, vR: joinWalls ? J(false, false) : null },
+      ];
+      for (const wd of wallDefs) {
+        defs.push({
+          name: wd.name, role: wd.role, w: wd.w, h: oh,
+          specs: null,
+          outlineOverride: tabbedWallOutline(wd.w, oh, T, wd.vL, wd.vR, wd.tabs),
+          tabbed: true,
+        });
+      }
+      d.plate = { O, botO: O, plW: plateBot.plW, plH: plateBot.plH };
     }
-    d.plate = { O, plW: plateBot.plW, plH: plateBot.plH };
   } else if (flat) {
     // Flush flat top with wall joints
     defs.push(
@@ -3166,97 +3407,9 @@ function generatePanels() {
     d.lid = { low, lod, loh, lidH: state.lidH };
   }
 
-  // --- Pull-off lid: insert plug + outer plate flush with walls + half-circle handle ---
-  // Handle has two finger tabs that drop into slots in the outer plate (centered).
-  if (state.lid === 'pull' && nSides === 4) {
-    const clear = Math.max(0.05, state.pullClear || 0.4);
-    const insW = Math.max(T * 2, iw - 2 * clear);
-    const insD = Math.max(T * 2, id - 2 * clear);
-    // Outer plate = exterior size (flush with outside of walls)
-    const capW = ow;
-    const capD = od;
-    // Half-ring handle: outer radius R, bar width B → inner radius R-B
-    let R = Math.max(6, state.pullHandleR || 18);
-    let B = Math.max(2, Math.min(state.pullHandleBar || 6, R - 2));
-    // Keep handle smaller than the outer plate (leave margin for slots)
-    const maxR = Math.min(capW, capD) * 0.40;
-    if (R > maxR) { R = maxR; B = Math.min(B, R - 2); }
-    const rIn = Math.max(1, R - B);
-    // Tab width = bar width (fills the radial thickness at each end of the ring)
-    const tabW = B;
-    // Tab length = material thickness so it seats fully through the lid plate
-    const tabLen = T;
-    const steps = 32;
-
-    // Handle outline (local, all positive extents):
-    //   x ∈ [-R, R]  (centered on 0 — 3D origin uses o.x = 0)
-    //   y = 0        → tip of the finger tabs (bottom of piece)
-    //   y = tabLen   → lid top surface / base of the arch
-    //   y = tabLen+R → top of the arch
-    // Two rectangular fingers at the ends drop into the lid slots.
-    const y0 = 0;          // bottom of tabs
-    const yBase = tabLen;  // top of tabs = base of arch
-    const handlePts = [];
-    // Left tab outer up
-    handlePts.push([-R, y0]);
-    handlePts.push([-R, yBase]);
-    // Outer semicircle (left → right over the top), center at (0, yBase)
-    for (let i = 0; i <= steps; i++) {
-      const a = Math.PI - (i / steps) * Math.PI; // π → 0
-      handlePts.push([R * Math.cos(a), yBase + R * Math.sin(a)]);
-    }
-    // Right tab outer down to tip, across bottom, up inner side
-    handlePts.push([R, yBase]);
-    handlePts.push([R, y0]);
-    handlePts.push([rIn, y0]);
-    handlePts.push([rIn, yBase]);
-    // Inner semicircle (right → left)
-    for (let i = 0; i <= steps; i++) {
-      const a = (i / steps) * Math.PI; // 0 → π
-      handlePts.push([rIn * Math.cos(a), yBase + rIn * Math.sin(a)]);
-    }
-    // Left tab inner down to tip, close across bottom
-    handlePts.push([-rIn, yBase]);
-    handlePts.push([-rIn, y0]);
-    const handleOutline = cleanPoly(handlePts);
-
-    // Slots in the outer plate (cap local: x 0→capW, y 0→capD), centered.
-    // Handle thickness sits along world Z → cap local Y. Each slot is tabW × T.
-    const slotH = T; // matches handle material thickness
-    const cx = capW / 2;
-    const cy = capD / 2;
-    // Left tab occupies handle x ∈ [-R, -rIn]; right tab x ∈ [rIn, R]
-    const leftSlot = [
-      [cx - R,      cy - slotH / 2],
-      [cx - rIn,    cy - slotH / 2],
-      [cx - rIn,    cy + slotH / 2],
-      [cx - R,      cy + slotH / 2],
-    ];
-    const rightSlot = [
-      [cx + rIn,    cy - slotH / 2],
-      [cx + R,      cy - slotH / 2],
-      [cx + R,      cy + slotH / 2],
-      [cx + rIn,    cy + slotH / 2],
-    ];
-
-    defs.push({
-      name: 'Pull insert', role: 'pull-insert', w: insW, h: insD,
-      specs: null,
-      outlineOverride: [[0, 0], [insW, 0], [insW, insD], [0, insD]],
-    });
-    defs.push({
-      name: 'Pull cap', role: 'pull-cap', w: capW, h: capD,
-      specs: null,
-      outlineOverride: [[0, 0], [capW, 0], [capW, capD], [0, capD]],
-      holes: [leftSlot, rightSlot],
-    });
-    defs.push({
-      name: 'Pull handle', role: 'pull-handle',
-      w: 2 * R, h: R + tabLen,
-      specs: null,
-      outlineOverride: handleOutline,
-    });
-    d.pull = { insW, insD, capW, capD, clear, R, B, rIn, tabW, tabLen };
+  // --- Pull-off lid (rectangle; hex is added in the polygon branch) ---
+  if (state.lid === 'pull') {
+    defs.push(...buildPullOffLidDefs(d));
   }
 
   // --- Slide-in lid: two U-shaped frames at top + sliding panel ---
@@ -3953,7 +4106,8 @@ function placement(role, d) {
   const lidBaseY = oh; // bottom of lid top panel rests on box rim
   switch (role) {
     case 'bottom': {
-      const O = (d.plate && d.plate.O) || 0;
+      // botO may differ from O when feet/raise are on (overhang top-only)
+      const O = (d.plate && (d.plate.botO != null ? d.plate.botO : d.plate.O)) || 0;
       return { o: V(-hw - O, d.raise || 0, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     }
     case 'top': {
@@ -4018,6 +4172,8 @@ function placement(role, d) {
     }
     // Pull-off lid: insert hangs into the opening; cap sits on wall tops; handle stands on the cap
     case 'pull-insert': {
+      // Polygon pull plates are placed via placementPoly
+      if (d.pull && d.pull.poly) return null;
       const pw = (d.pull && d.pull.insW) || iw;
       const pd = (d.pull && d.pull.insD) || id;
       // Top of insert flush with wall tops (glued under the cap)
@@ -4029,6 +4185,7 @@ function placement(role, d) {
       };
     }
     case 'pull-cap': {
+      if (d.pull && d.pull.poly) return null;
       const cw = (d.pull && d.pull.capW) || ow;
       const cd = (d.pull && d.pull.capD) || od;
       // Cap sits on the wall tops
@@ -4192,6 +4349,43 @@ function placementPoly(p, d) {
   if (p.role === 'top') {
     return { o: V(0, oh - T, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
   }
+  // Hex pull-off lid plates (centered polygon outlines)
+  if (p.role === 'pull-insert') {
+    return { o: V(0, oh - T, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+  }
+  if (p.role === 'pull-cap') {
+    return { o: V(0, oh, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+  }
+  // Hex slip-on lid top — sits on the box rim
+  if (p.role === 'lid-top' && (p.lidPoly || (d.lid && d.lid.poly))) {
+    return { o: V(0, oh, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+  }
+  // Hex slip-on skirt walls — outside the box, hanging down from the lid top
+  if (p.role === 'lid-poly-side') {
+    const lidFTF = (d.lid && d.lid.lidFTF) || (d.ow + 2 * T);
+    const lidPoly = regularPolygonVerts(n, lidFTF);
+    const lverts = lidPoly.verts;
+    const i = p.sideIndex || 0;
+    const a = lverts[i];
+    const b = lverts[(i + 1) % n];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;
+    const nx = uy, ny = -ux; // outward normal
+    const wallLen = (d.lid && d.lid.sideLen) || len;
+    const along0 = (len - wallLen) / 2;
+    const lidH = (d.lid && d.lid.lidH != null) ? d.lid.lidH : state.lidH;
+    // Skirt top is at y = oh (under the lid top plate); panel local y=0 is the bottom tip
+    const baseY = oh - lidH;
+    const ox = a[0] + ux * along0 - nx * T;
+    const oz = a[1] + uy * along0 - ny * T;
+    return {
+      o: V(ox, baseY, oz),
+      u: V(ux, 0, uy),
+      v: V(0, 1, 0),
+      n: V(nx, 0, ny),
+    };
+  }
   if (p.role === 'poly-side') {
     const i = p.sideIndex || 0;
     const a = verts[i];
@@ -4220,6 +4414,7 @@ const EXPLODE_DIR = {
   back: [0, 0, -1], left: [-1, 0, 0], right: [1, 0, 0],
   'lid-top': [0, 1.4, 0], 'lid-front': [0, 1.2, 0.6], 'lid-back': [0, 1.2, -0.6],
   'lid-left': [-0.6, 1.2, 0], 'lid-right': [0.6, 1.2, 0],
+  'lid-poly-side': [0, 1.25, 0],
   'hinge-lid': [0, 1.3, -0.3],
   'pull-insert': [0, 1.1, 0], 'pull-cap': [0, 1.25, 0], 'pull-handle': [0, 1.45, 0],
   'slide-frame-lower': [0, 0.7, 0],
@@ -4237,6 +4432,7 @@ const EXPLODE_DIR = {
 const PANEL_COLOR = {
   bottom: 0xd4b483, top: 0xd4b483, front: 0xc9a66b, back: 0xc9a66b, left: 0xb8925a, right: 0xb8925a,
   'lid-top': 0xa67c52, 'lid-front': 0x9a7048, 'lid-back': 0x9a7048, 'lid-left': 0x8c6440, 'lid-right': 0x8c6440,
+  'lid-poly-side': 0x9a7048,
   'hinge-lid': 0xb8956a,
   'pull-insert': 0xc4a574, 'pull-cap': 0xb8956a, 'pull-handle': 0x8b5a2b,
   'slide-frame-lower': 0xc4a574,
@@ -4344,7 +4540,10 @@ function rebuild3D() {
     let pl;
     if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, d);
     else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, d);
-    else if (p.role === 'poly-side' || (p.poly && (p.role === 'bottom' || p.role === 'top'))) pl = placementPoly(p, d);
+    else if (
+      p.role === 'poly-side' || p.role === 'lid-poly-side' ||
+      (p.poly && (p.role === 'bottom' || p.role === 'top' || p.role === 'lid-top' || p.role === 'pull-insert' || p.role === 'pull-cap'))
+    ) pl = placementPoly(p, d);
     else pl = placement(p.role, d);
     if (!pl) continue;
 
@@ -4370,12 +4569,13 @@ function rebuild3D() {
 
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
     // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
-    if (p.role === 'poly-side' && d.poly) {
+    if ((p.role === 'poly-side' || p.role === 'lid-poly-side') && (d.poly || p.nSides)) {
       // Explode each side outward from center
       const i = p.sideIndex || 0;
       const n = p.nSides || d.sides;
       const ang = -Math.PI / 2 - Math.PI / n + (i + 0.5) * (2 * Math.PI / n);
-      dir = [Math.cos(ang), 0.35, Math.sin(ang)];
+      const up = p.role === 'lid-poly-side' ? 0.9 : 0.35;
+      dir = [Math.cos(ang), up, Math.sin(ang)];
     }
     // Drawer lift — trays rise straight up out of the box
     let pull = [0, 0, 0];
