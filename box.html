@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.3</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.4</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1248,7 +1248,7 @@ function onFootWidthInput(v) {
   if ($('valFootWidth')) $('valFootWidth').textContent = fmtLen(n, 1, 2);
   rebuild();
 }
-/** Dim raise / cutout controls when they do not apply (hexagon, lantern-style flat top). */
+/** Dim raise / cutout controls when they do not apply (lantern-style flat top). */
 function syncRaiseUI() {
   const ok = raiseApplicable();
   const rz = bottomRaise();
@@ -1844,9 +1844,10 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
-  // Frames support raised bottoms + decorative feet on the edge walls.
-  // Hexagon boxes and lantern-style flat tops do not.
-  if ((state.sides || 4) !== 4) return false;
+  // Raised bottoms + decorative feet work on rectangles, frames, and hexagons.
+  // Lantern-style flat tops (overhang / no wall joints) do not.
+  const s = state.sides || 4;
+  if (s !== 4 && s !== 6) return false;
   if (state.lid === 'flat' && ((state.flatOverhang || 0) > 0 || state.wallJoints === false)) return false;
   return true;
 }
@@ -2955,6 +2956,8 @@ function generatePanels() {
     const sideW = poly.sideLen;
     const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
     const defs = [];
+    // Per-wall slots (raised-bottom plate fingers, etc.)
+    const polyWallSlots = [];
 
     const joinWalls = !flat || state.wallJoints !== false;
     // Inner side length so wall inner edges meet when joints are off
@@ -2963,7 +2966,7 @@ function generatePanels() {
     d.wallSpan = { wallLen, joinWalls };
 
     if (flat && O > 0) {
-      // Lantern-style solid plates with slots
+      // Lantern-style solid plates with slots (no raised bottom / feet)
       const plate = solidPolygonPlateWithSlots(nSides, ow, T, O, wallLen);
       defs.push({
         name: 'Bottom', role: 'bottom', w: plate.plSize, h: plate.plSize,
@@ -2978,6 +2981,7 @@ function generatePanels() {
       const vRight = joinWalls ? J(true, true) : null;
       const vLeft = joinWalls ? J(false, false) : null;
       for (let i = 0; i < nSides; i++) {
+        polyWallSlots.push([]);
         defs.push({
           name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
           specs: null,
@@ -2988,8 +2992,9 @@ function generatePanels() {
       d.plate = { O, plSize: plate.plSize };
     } else {
       // Flush finger-jointed plates
+      // Raised bottom: plain lower edge on walls; plate fingers enter mid-wall slots
       const wallSpecs = [
-        J(true, false),
+        rz > 0 ? null : J(true, false),
         joinWalls ? J(true, true) : null,
         flat ? J(true, false) : null,
         joinWalls ? J(false, false) : null,
@@ -3008,7 +3013,17 @@ function generatePanels() {
           poly: true,
         });
       }
+      // Raised-bottom slots: same finger pattern the plate uses (ownEven=false)
+      const sideSlots = [];
+      if (rz > 0) {
+        for (const pc of edgePieces(wallLen, J(false, false), true, true, T)) {
+          if (pc.inset !== 0) continue;
+          const a = Math.max(pc.a, T), b = Math.min(pc.b, wallLen - T);
+          if (b - a > 1e-6) sideSlots.push([a, rz, b - a, T]);
+        }
+      }
       for (let i = 0; i < nSides; i++) {
+        polyWallSlots.push(sideSlots.map(s => s.slice()));
         defs.push({
           name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
           specs: wallSpecs,
@@ -3020,6 +3035,24 @@ function generatePanels() {
     // Skip slip/hinge/dividers for non-rectangular
     const panels = defs.map(def => {
       let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
+
+      // Decorative feet on polygon side walls
+      const cutH = footCutoutHeight();
+      if (cutH > 0.05 && def.role === 'poly-side') {
+        const L = def.w;
+        const footW = Math.max(T, Math.min(state.footWidth || 15, L * 0.45));
+        const cutX0 = footW;
+        const cutX1 = L - footW;
+        if (cutX1 - cutX0 > 2 * T) {
+          const span = cutX1 - cutX0;
+          const rMax = Math.min(cutH, span / 2);
+          const radius = rMax * Math.max(0, Math.min(100, state.footRound || 0)) / 100;
+          const belly = Math.max(0, Math.min(100, state.footBelly || 0));
+          const ft = insertOnBottomEdge(outline, 0, cutX0, cutX1, cutH, radius, belly);
+          if (ft.ok) outline = ft.outline;
+        }
+      }
+
       const cut = offsetPoly(outline, state.kerf / 2);
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       for (const [x, y] of cut) {
@@ -3032,8 +3065,14 @@ function generatePanels() {
         const ccw = polyArea(h) > 0 ? h : h.slice().reverse();
         return offsetPoly(ccw, state.kerf / 2);
       });
+      let slots = [];
+      if (def.role === 'poly-side' && def.sideIndex != null && polyWallSlots[def.sideIndex]) {
+        slots = polyWallSlots[def.sideIndex].map(([x, y, w, h]) => [
+          x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf,
+        ]);
+      }
       return {
-        ...def, outline, cut, holes, slots: [],
+        ...def, outline, cut, holes, slots,
         minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
         area: polyArea(outline),
       };
@@ -4146,8 +4185,9 @@ function placementPoly(p, d) {
   const oh = d.oh;
 
   if (p.role === 'bottom') {
-    // Plate lies in XZ plane (y up). Polygon verts are in XY → map to XZ
-    return { o: V(0, 0, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
+    // Plate lies in XZ plane (y up). Polygon verts are in XY → map to XZ.
+    // Raised bottom sits at y = raise.
+    return { o: V(0, d.raise || 0, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
   }
   if (p.role === 'top') {
     return { o: V(0, oh - T, 0), u: V(1, 0, 0), v: V(0, 0, 1), n: V(0, 1, 0), polyFlat: true };
