@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.1</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.2</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -432,12 +432,6 @@
             <input type="range" id="sldD" min="20" max="400" step="0.5" value="100" oninput="onDimSlider('D', this.value)">
             <input class="dim-inp" id="inD" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('D', this.value)">
           </div>
-          <div class="ctrl" id="raiseGrp">
-            <div class="ctrl-lbl"><strong>Bottom height (raise)</strong><span class="ctrl-val" id="valRaise">0.0 mm</span></div>
-            <input type="range" id="sldRaise" min="0" max="60" step="0.5" value="0" oninput="onRaiseSlider(this.value)">
-            <input class="dim-inp" id="inRaise" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onRaiseInput(this.value)">
-            <div class="hint" style="margin-top:4px" id="raiseHint">0 = bottom flush with the lower edge of the walls. Raise it to lift the bottom and its finger joints up the walls; the walls extend below it and the joints become slots. Interior mode keeps the interior height (walls get taller); Exterior mode keeps the overall height.</div>
-          </div>
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Material thickness</strong><span class="ctrl-val" id="valT">3.0 mm</span></div>
             <input type="range" id="sldT" min="1" max="12" step="0.1" oninput="onThicknessSlider(this.value)">
@@ -451,6 +445,39 @@
             <div class="info-item"><div class="info-lbl">Volume</div><div class="info-val" id="iVol">—</div></div>
           </div>
           <div class="warn-box" id="warnBox"></div>
+        </div>
+      </div>
+
+      <!-- Feet panel -->
+      <div class="lb-panel" id="s-feet">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-feet')">
+          <span class="title">Feet</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <div class="hint">Raise the bottom plate above the lower edge of the walls, then cut notches under it to leave decorative corner feet. Rectangular boxes only (not hexagon, frame, or lantern-style flat tops).</div>
+          <div class="ctrl" id="raiseGrp">
+            <div class="ctrl-lbl"><strong>Bottom height (raise)</strong><span class="ctrl-val" id="valRaise">0.0 mm</span></div>
+            <input type="range" id="sldRaise" min="0" max="60" step="0.5" value="0" oninput="onRaiseSlider(this.value)">
+            <input class="dim-inp" id="inRaise" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onRaiseInput(this.value)">
+            <div class="hint" style="margin-top:4px" id="raiseHint">0 = bottom flush with the lower edge of the walls. Raise it to lift the bottom and its finger joints up the walls; the walls extend below it and the joints become slots. Interior mode keeps the interior height (walls get taller); Exterior mode keeps the overall height.</div>
+          </div>
+          <div class="ctrl" id="footCutoutGrp">
+            <div class="ctrl-lbl"><strong>Cutout height</strong><span class="ctrl-val" id="valFootCut">0.0 mm</span></div>
+            <input type="range" id="sldFootCut" min="0" max="60" step="0.5" value="0" oninput="onFootCutSlider(this.value)">
+            <input class="dim-inp" id="inFootCut" type="number" min="0" step="0.5" style="margin-top:4px" oninput="onFootCutInput(this.value)">
+            <div class="hint" style="margin-top:4px" id="footCutHint">Height of the notch cut from the bottom of each wall between the corners. Only active when the bottom is raised; limited so the cutout stays under the bottom plate.</div>
+          </div>
+          <div class="ctrl" id="footRoundGrp">
+            <div class="ctrl-lbl"><strong>Cutout roundness</strong><span class="ctrl-val" id="valFootRound">0%</span></div>
+            <input type="range" id="sldFootRound" min="0" max="100" step="1" value="0" oninput="onFootRound(this.value)">
+            <div class="hint" style="margin-top:4px" id="footRoundHint">0 = square notch. Increase to round the inside corners. 100% is a full arch between the feet.</div>
+          </div>
+          <div class="ctrl" id="footBellyGrp">
+            <div class="ctrl-lbl"><strong>Belly</strong><span class="ctrl-val" id="valFootBelly">0%</span></div>
+            <input type="range" id="sldFootBelly" min="0" max="100" step="1" value="0" oninput="onFootBelly(this.value)">
+            <div class="hint" style="margin-top:4px" id="footBellyHint">0 = flat across the top of the cutout. Increase to drop a curve in the middle, between the feet.</div>
+          </div>
         </div>
       </div>
 
@@ -803,6 +830,9 @@ const DEFAULTS = {
   hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
   hingeOpen: 0, // hinged lid: 0 = closed, 1 = fully open (view-only)
   bottomRaise: 0, // mm the bottom panel (and its finger joints) sits above the lower edge of the walls
+  footCutout: 0, // mm height of decorative cutout under the raised bottom (between corner feet)
+  footRound: 0, // 0–100, corner radius of the foot cutout as a percent of the largest arc that fits
+  footBelly: 0, // 0–100, how far the middle of the cutout sags back down between the feet
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
 
@@ -1090,6 +1120,7 @@ function onRaiseSlider(v) {
   if (!(n >= 0)) return;
   pushHistory();
   state.bottomRaise = n;
+  if ((state.footCutout || 0) > n) state.footCutout = n;
   if ($('inRaise')) $('inRaise').value = numDisp(n);
   updateLabels(); rebuild();
 }
@@ -1098,24 +1129,87 @@ function onRaiseInput(v) {
   if (!(n >= 0)) return;
   pushHistory();
   state.bottomRaise = n;
+  if ((state.footCutout || 0) > n) state.footCutout = n;
   if ($('sldRaise')) $('sldRaise').value = n;
   updateLabels(); rebuild();
 }
-/** Dim the raise control when it does not apply (hexagon, frame, lantern-style flat top). */
+function onFootCutSlider(v) {
+  const n = parseFloat(v);
+  if (!(n >= 0)) return;
+  pushHistory();
+  const maxC = bottomRaise();
+  state.footCutout = Math.min(n, maxC);
+  if ($('inFootCut')) $('inFootCut').value = numDisp(state.footCutout);
+  if ($('sldFootCut') && Math.abs(parseFloat($('sldFootCut').value) - state.footCutout) > 0.01) {
+    $('sldFootCut').value = state.footCutout;
+  }
+  updateLabels(); rebuild();
+}
+function onFootCutInput(v) {
+  const n = fromDisp(parseFloat(v));
+  if (!(n >= 0)) return;
+  pushHistory();
+  const maxC = bottomRaise();
+  state.footCutout = Math.min(n, maxC);
+  if ($('sldFootCut')) $('sldFootCut').value = state.footCutout;
+  updateLabels(); rebuild();
+}
+function onFootRound(v) {
+  pushHistory();
+  state.footRound = Math.max(0, Math.min(100, parseFloat(v) || 0));
+  if ($('valFootRound')) $('valFootRound').textContent = Math.round(state.footRound) + '%';
+  rebuild();
+}
+function onFootBelly(v) {
+  pushHistory();
+  state.footBelly = Math.max(0, Math.min(100, parseFloat(v) || 0));
+  if ($('valFootBelly')) $('valFootBelly').textContent = Math.round(state.footBelly) + '%';
+  rebuild();
+}
+/** Dim raise / cutout controls when they do not apply (hexagon, frame, lantern-style flat top). */
 function syncRaiseUI() {
   const ok = raiseApplicable();
+  const rz = bottomRaise();
   if ($('raiseGrp')) $('raiseGrp').style.opacity = ok ? '1' : '0.35';
   if ($('sldRaise')) $('sldRaise').disabled = !ok;
   if ($('inRaise')) $('inRaise').disabled = !ok;
   if ($('raiseHint')) $('raiseHint').style.display = ok ? '' : 'none';
-  if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(bottomRaise(), 1, 2) : 'n/a';
+  if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(rz, 1, 2) : 'n/a';
   if (ok && $('sldRaise')) {
-    // Exterior mode: cannot lift the bottom past the point where the interior would vanish
     const T = state.T;
     const lidT = (state.lid === 'flat' || hingeActive()) ? 2 * T : T;
     const maxR = state.mode === 'inside' ? 60 : Math.max(0, Math.min(60, state.H - lidT - Math.max(2, 2 * T)));
     $('sldRaise').max = maxR;
   }
+  const cutOk = ok && rz > 0.01;
+  if ($('footCutoutGrp')) $('footCutoutGrp').style.opacity = cutOk ? '1' : '0.35';
+  if ($('sldFootCut')) {
+    $('sldFootCut').disabled = !cutOk;
+    $('sldFootCut').max = Math.max(0.5, rz);
+    if ((state.footCutout || 0) > rz) state.footCutout = rz;
+    $('sldFootCut').value = state.footCutout || 0;
+  }
+  if ($('inFootCut')) {
+    $('inFootCut').disabled = !cutOk;
+    $('inFootCut').value = numDisp(state.footCutout || 0);
+  }
+  if ($('footCutHint')) $('footCutHint').style.display = ok ? '' : 'none';
+  if ($('valFootCut')) $('valFootCut').textContent = cutOk ? fmtLen(state.footCutout || 0, 1, 2) : (ok ? '0 (raise first)' : 'n/a');
+  const roundOk = cutOk && (state.footCutout || 0) > 0.05;
+  if ($('footRoundGrp')) $('footRoundGrp').style.opacity = roundOk ? '1' : '0.35';
+  if ($('sldFootRound')) {
+    $('sldFootRound').disabled = !roundOk;
+    $('sldFootRound').value = state.footRound || 0;
+  }
+  if ($('footRoundHint')) $('footRoundHint').style.display = ok ? '' : 'none';
+  if ($('valFootRound')) $('valFootRound').textContent = roundOk ? Math.round(state.footRound || 0) + '%' : (cutOk ? '0%' : 'n/a');
+  if ($('footBellyGrp')) $('footBellyGrp').style.opacity = roundOk ? '1' : '0.35';
+  if ($('sldFootBelly')) {
+    $('sldFootBelly').disabled = !roundOk;
+    $('sldFootBelly').value = state.footBelly || 0;
+  }
+  if ($('footBellyHint')) $('footBellyHint').style.display = ok ? '' : 'none';
+  if ($('valFootBelly')) $('valFootBelly').textContent = roundOk ? Math.round(state.footBelly || 0) + '%' : (cutOk ? '0%' : 'n/a');
 }
 const HINGE_MAX_DEG = 110;
 function onHingeTabW(v)    { pushHistory(); state.hingeTabW = parseFloat(v);    updateLabels(); rebuild(); }
@@ -1524,6 +1618,12 @@ function syncInputs() {
   if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
   if ($('sldRaise')) $('sldRaise').value = state.bottomRaise || 0;
   if ($('inRaise')) $('inRaise').value = numDisp(state.bottomRaise || 0);
+  if ($('sldFootCut')) $('sldFootCut').value = state.footCutout || 0;
+  if ($('inFootCut')) $('inFootCut').value = numDisp(state.footCutout || 0);
+  if ($('sldFootRound')) $('sldFootRound').value = state.footRound || 0;
+  if ($('valFootRound')) $('valFootRound').textContent = Math.round(state.footRound || 0) + '%';
+  if ($('sldFootBelly')) $('sldFootBelly').value = state.footBelly || 0;
+  if ($('valFootBelly')) $('valFootBelly').textContent = Math.round(state.footBelly || 0) + '%';
   if ($('sldHingeTabW')) $('sldHingeTabW').value = state.hingeTabW;
   if ($('sldHingeTabOver')) $('sldHingeTabOver').value = state.hingeTabOver;
   if ($('sldHingeClear')) $('sldHingeClear').value = state.hingeClear;
@@ -1544,7 +1644,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -2156,6 +2256,71 @@ function addHingeRing(outline, topY, T, xc, R) {
 function addTopNotch(outline, topY, xc, nw, depth) {
   const x0 = xc - nw / 2, x1 = xc + nw / 2;
   return insertOnTopEdge(outline, topY, x0, x1, () => [[x0, topY], [x0, topY - depth], [x1, topY - depth], [x1, topY]]);
+}
+
+/**
+ * Notch profile along the bottom edge, left to right.
+ * radius rounds both inside corners. bellyPct (0–100) sags the middle back down.
+ */
+function footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct) {
+  const w = cutX1 - cutX0;
+  const rMax = Math.min(height, w / 2);
+  const r = Math.max(0, Math.min(radius || 0, rMax));
+  const top = bottomY + height;
+  const drop = height * Math.max(0, Math.min(100, bellyPct || 0)) / 100;
+  const yFloor = bottomY + 0.4;
+  const n = Math.max(20, Math.round(w / 1.25));
+  const pts = [[cutX0, bottomY]];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const x = cutX0 + w * t;
+    let y = top;
+    if (r >= 0.2) {
+      const leftC = cutX0 + r;
+      const rightC = cutX1 - r;
+      let dx = 0;
+      if (x < leftC) dx = x - leftC;
+      else if (x > rightC) dx = x - rightC;
+      if (dx !== 0) y = (top - r) + Math.sqrt(Math.max(0, r * r - dx * dx));
+    }
+    const sag = (1 - Math.cos(t * Math.PI * 2)) / 2;
+    y = Math.max(yFloor, y - drop * sag);
+    pts.push([x, y]);
+  }
+  pts.push([cutX1, bottomY]);
+  return pts;
+}
+
+/**
+ * Insert a cutout on the bottom edge (y ≈ bottomY) of a wall outline,
+ * leaving solid feet at both ends.
+ * Returns { outline, ok }.
+ */
+function insertOnBottomEdge(outline, bottomY, cutX0, cutX1, height, radius, bellyPct) {
+  if (height < 0.05 || cutX1 - cutX0 < 0.5) return { outline, ok: false };
+  const out = [];
+  let done = false;
+  for (let i = 0; i < outline.length; i++) {
+    const p = outline[i], n = outline[(i + 1) % outline.length];
+    out.push(p);
+    if (done) continue;
+    if (Math.abs(p[1] - bottomY) < 1e-6 && Math.abs(n[1] - bottomY) < 1e-6 &&
+        Math.min(p[0], n[0]) <= cutX0 + 1e-6 && Math.max(p[0], n[0]) >= cutX1 - 1e-6) {
+      const goingRight = n[0] > p[0];
+      const mid = footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct);
+      if (!goingRight) mid.reverse();
+      out.push(...mid);
+      done = true;
+    }
+  }
+  return { outline: done ? cleanPoly(out) : outline, ok: done };
+}
+
+/** Decorative feet cutout height (clamped to raise). */
+function footCutoutHeight() {
+  const rz = bottomRaise();
+  if (rz < 0.05) return 0;
+  return Math.max(0, Math.min(state.footCutout || 0, rz));
 }
 
 /**
@@ -3271,6 +3436,24 @@ function generatePanels() {
       } else if (def.role === 'front') {
         const nt = addTopNotch(outline, def.h, def.w / 2, g.notchW, T);
         if (nt.ok) outline = nt.outline;
+      }
+    }
+
+    // Decorative feet: rectangular cutout on the bottom edge of each side wall,
+    // leaving solid corner posts under a raised bottom plate.
+    const cutH = footCutoutHeight();
+    if (cutH > 0.05 && ['front', 'back', 'left', 'right'].includes(def.role)) {
+      const L = def.w;
+      const footW = Math.max(2 * T, Math.min(state.finger * 1.5, L * 0.22));
+      const cutX0 = footW;
+      const cutX1 = L - footW;
+      if (cutX1 - cutX0 > 2 * T) {
+        const span = cutX1 - cutX0;
+        const rMax = Math.min(cutH, span / 2);
+        const radius = rMax * Math.max(0, Math.min(100, state.footRound || 0)) / 100;
+        const belly = Math.max(0, Math.min(100, state.footBelly || 0));
+        const ft = insertOnBottomEdge(outline, 0, cutX0, cutX1, cutH, radius, belly);
+        if (ft.ok) outline = ft.outline;
       }
     }
 
