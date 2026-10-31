@@ -646,6 +646,12 @@
           </div>
           <div id="lidHingeControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
+              <label class="ctrl-lbl" for="hingeSide">Hinge side</label>
+              <select class="dim-inp" id="hingeSide" onchange="setHingeSide(this.value)">
+                <option value="back">Back</option><option value="front">Front</option><option value="left">Left</option><option value="right">Right</option>
+              </select>
+            </div>
+            <div class="ctrl">
               <div class="ctrl-lbl"><strong>Finger tab width</strong><span class="ctrl-val" id="valHingeTabW">20.0 mm</span></div>
               <input type="range" id="sldHingeTabW" min="8" max="60" step="0.5" value="20" oninput="onHingeTabW(this.value)">
               
@@ -883,6 +889,7 @@ const DEFAULTS = {
   pullHandleR: 18, // pull-off lid: outer radius of half-circle handle (mm)
   pullHandleBar: 6, // pull-off lid: radial width of the handle bar (mm)
   pullLift: 0, // pull-off lid: 0 = on the box, 1 = fully lifted off (view-only)
+  hingeSide: 'back',
   hingeTabW: 20, // hinged lid: finger tab width (mm)
   hingeTabOver: 8, // hinged lid: how far the finger tab sticks out past the front wall (mm)
   hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
@@ -1219,7 +1226,7 @@ function setLid(l) {
     slip: 'Slip-on = lid that fits over the box.',
     pull: 'Pull-off = insert plug + outer plate flush with walls, glued together. Half-circle handle has finger tabs that seat in centered slots in the outer plate.',
     slide: 'Slide-in = two frame layers form a channel; panel slides in from the chosen side.',
-    hinge: 'Hinged = lid sits inside the box. Tabs at the back of the lid turn in rings on the side walls; the finger tab at the front rests in a notch in the front wall. Rectangular boxes only.',
+    hinge: 'Hinged = lid sits inside the box. Choose the hinge side. Lid tabs turn in rings on the neighboring walls; the finger tab rests in a notch on the opposite wall. Rectangular boxes only.',
   };
   if ($('lidHint')) $('lidHint').textContent = hints[l] || hints.none;
   rebuild();
@@ -1391,6 +1398,11 @@ function syncRaiseUI() {
   if ($('valFootBelly')) $('valFootBelly').textContent = roundOk ? Math.round(state.footBelly || 0) + '%' : (cutOk ? '0%' : 'n/a');
 }
 const HINGE_MAX_DEG = 110;
+function setHingeSide(side) {
+  if (!['back','front','left','right'].includes(side) || side === state.hingeSide) return;
+  pushHistoryNow(); state.hingeSide=side;
+  syncInputs(); rebuild();
+}
 function onHingeTabW(v)    { pushHistory(); state.hingeTabW = parseFloat(v);    updateLabels(); rebuild(); }
 function onHingeTabOver(v) { pushHistory(); state.hingeTabOver = parseFloat(v); updateLabels(); rebuild(); }
 function onHingeClear(v)   { pushHistory(); state.hingeClear = parseFloat(v);   updateLabels(); rebuild(); }
@@ -1720,7 +1732,7 @@ function updateLabels() {
   if ($('infoKerf')) $('infoKerf').textContent = fmtLen(state.kerf, 2, 4);
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
   if ($('infoLid')) {
-    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', pull: 'Pull-off', slide: 'Slide-in', hinge: 'Hinged (inside)' };
+    const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', pull: 'Pull-off', slide: 'Slide-in', hinge: 'Hinged (' + (state.hingeSide || 'back') + ')'  };
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
@@ -1840,6 +1852,7 @@ function syncInputs() {
   if ($('valFootRound')) $('valFootRound').textContent = Math.round(state.footRound || 0) + '%';
   if ($('sldFootBelly')) $('sldFootBelly').value = state.footBelly || 0;
   if ($('valFootBelly')) $('valFootBelly').textContent = Math.round(state.footBelly || 0) + '%';
+  $('hingeSide').value = state.hingeSide || 'back';
   if ($('sldHingeTabW')) $('sldHingeTabW').value = state.hingeTabW;
   if ($('sldHingeTabOver')) $('sldHingeTabOver').value = state.hingeTabOver;
   if ($('sldHingeClear')) $('sldHingeClear').value = state.hingeClear;
@@ -3417,8 +3430,27 @@ function generateHeartPanels(d) {
   return {panels,dims:d};
 }
 
+// Generate in the existing back-hinge orientation, then rotate the full assembly.
+// Swapping plan dimensions first preserves the user's width and depth on side hinges.
 function generatePanels() {
-  const d = dims();
+  if (!hingeActive() || !state.hingeSide || state.hingeSide === 'back') return generatePanelsBase();
+  const side=state.hingeSide, actual=dims(), quarter=side==='left'||side==='right';
+  const canonical=quarter ? {...actual,ow:actual.od,od:actual.ow,iw:actual.id,id:actual.iw} : {...actual};
+  const saved={divCols:state.divCols,divRows:state.divRows,colWeights:state.colWeights,rowWeights:state.rowWeights};
+  let result;
+  try {
+    if(quarter) Object.assign(state,{divCols:saved.divRows,divRows:saved.divCols,colWeights:saved.rowWeights,rowWeights:saved.colWeights});
+    result=generatePanelsBase(canonical);
+  } finally { Object.assign(state,saved); }
+  const angle={front:Math.PI,left:Math.PI/2,right:-Math.PI/2}[side];
+  const roleNames=side==='front' ? {front:'Back',back:'Front',left:'Right',right:'Left'} : side==='left' ? {front:'Right',back:'Left',left:'Front',right:'Back'} : {front:'Left',back:'Right',left:'Back',right:'Front'};
+  for(const p of result.panels) {
+    if(roleNames[p.role]) p.name=roleNames[p.role];
+    if(quarter && (p.role==='div-x'||p.role==='div-y')) p.name=p.name.replace(/Column|Row/g,m=>m==='Column'?'Row':'Column');
+  }
+  return {panels:result.panels,dims:{...result.dims,...actual,hingeLayoutDims:result.dims,hingeRotation:angle}};
+}
+function generatePanelsBase(d = dims()) {
   const { ow, oh, od, T, iw, ih, id } = d;
   const rz = d.raise || 0;
   const flat = state.lid === 'flat';
@@ -4827,6 +4859,8 @@ function rebuild3D() {
   panels3D = [];
 
   const amount = Math.max(d.ow, d.oh, d.od) * 0.4;
+  const layoutD=d.hingeLayoutDims || d;
+  const hingeRotation=new THREE.Matrix4().makeRotationY(d.hingeRotation || 0);
 
   for (const p of panels) {
     // 3D uses the nominal (un-kerfed) outline so parts meet exactly
@@ -4878,17 +4912,18 @@ function rebuild3D() {
     const geo = new THREE.ExtrudeGeometry(shape, { depth: d.T, bevelEnabled: false });
 
     let pl;
-    if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, d);
-    else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, d);
+    if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
+    else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, layoutD);
     else if (
       p.role === 'poly-side' || p.role === 'lid-poly-side' ||
       (p.poly && (p.role === 'bottom' || p.role === 'top' || p.role === 'lid-top' || p.role === 'pull-insert' || p.role === 'pull-cap'))
-    ) pl = placementPoly(p, d);
-    else pl = placement(p.role, d);
+    ) pl = placementPoly(p, layoutD);
+    else pl = placement(p.role, layoutD);
     if (!pl) continue;
 
     const m = new THREE.Matrix4().makeBasis(pl.u, pl.v, pl.n);
     m.setPosition(pl.o);
+    m.premultiply(hingeRotation);
     geo.applyMatrix4(m);
     geo.computeVertexNormals();
 
@@ -4958,8 +4993,13 @@ function rebuild3D() {
       slidePull,
       slipLift,
       pullLidLift,
-      hingePivot: (p.role === 'hinge-lid' && d.hinge) ? new THREE.Vector3(0, d.hinge.pivotY, d.hinge.pivotZ) : null,
+      hingePivot: (p.role === 'hinge-lid' && d.hinge) ? new THREE.Vector3(0, d.hinge.pivotY, d.hinge.pivotZ).applyMatrix4(hingeRotation) : null,
+      hingeAxis: new THREE.Vector3(1,0,0).transformDirection(hingeRotation),
     };
+    if(d.hingeRotation) for(const key of ['exp','pull','slidePull','slipLift','pullLidLift']) {
+      const v=new THREE.Vector3(...mesh.userData[key]).applyMatrix4(hingeRotation);
+      mesh.userData[key]=[v.x,v.y,v.z];
+    }
     boxGroup.add(mesh);
     panels3D.push(mesh);
   }
@@ -4985,7 +5025,7 @@ function updateAssembly() {
     // Hinged lid: rotate about the pivot axis (X axis through the back tabs); front edge swings UP
     const hp = mesh.userData.hingePivot;
     if (hp) {
-      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -(state.hingeOpen || 0) * HINGE_MAX_DEG * Math.PI / 180);
+      const q = new THREE.Quaternion().setFromAxisAngle(mesh.userData.hingeAxis || new THREE.Vector3(1, 0, 0), -(state.hingeOpen || 0) * HINGE_MAX_DEG * Math.PI / 180);
       const rp = hp.clone().applyQuaternion(q);
       mesh.quaternion.copy(q);
       px += hp.x - rp.x; py += hp.y - rp.y; pz += hp.z - rp.z;
