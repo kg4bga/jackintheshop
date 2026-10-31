@@ -414,7 +414,7 @@
           </div>
           <div class="ctrl" id="shapeControls">
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
-            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option></select>
+            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option></select>
           </div>
           <div class="ctrl" id="heartControls" style="display:none">
             <label><input type="checkbox" id="heartTop" checked onchange="setHeartTop(this.checked)"> Include removable top</label>
@@ -431,7 +431,7 @@
               <label class="ctrl-lbl" for="heartLidLift">Lift lid (preview) <span class="ctrl-val" id="heartLidLiftVal">0%</span></label>
               <input type="range" id="heartLidLift" min="0" max="100" step="1" value="0" oninput="onHeartLidLift(this.value)">
             </div>
-            <div class="hint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
+            <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
           </div>
           <div id="wallCountControls" class="ctrl">
             <label class="ctrl-lbl" for="inSides">Number of walls</label>
@@ -1109,9 +1109,10 @@ function setGenerator(g) {
 }
 
 function setBoxShape(shape) {
-  if (!['standard', 'heart'].includes(shape) || shape === state.shape) return;
+  if (!['standard', 'heart', 'cross'].includes(shape) || shape === state.shape) return;
   pushHistoryNow();
   state.shape = shape;
+  if (shape === 'cross') state.D = state.W * 1.5;
   syncInputs();
   rebuild();
 }
@@ -1141,17 +1142,18 @@ function onHeartLidLift(v) {
   onPullLift(v);
   $('heartLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
 }
-function heartActive() { return state.generator !== 'frame' && state.shape === 'heart'; }
+function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross'].includes(state.shape); }
 function updateShapeUI() {
-  const heart = heartActive(), frame = state.generator === 'frame';
+  const heart = shapedBoxActive(), frame = state.generator === 'frame';
   $('genFrame').style.display = heart ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
+  $('shapedBoxHint').textContent = (state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
   $('heartTop').checked = state.heartTop !== false;
   $('heartLidControls').style.display = state.heartTop === false ? 'none' : '';
   $('heartHandle').checked = state.heartHandle !== false;
   $('heartHandleControls').style.display = state.heartHandle === false ? 'none' : '';
   $('heartHandleSize').value = state.heartHandleSize ?? 18;
-  $('heartHandleSizeVal').textContent = fmtLen(Math.min(state.heartHandleSize ?? 18, Math.min(dims().ow,dims().od)*0.22), 1, 3);
+  $('heartHandleSizeVal').textContent = fmtLen(Math.min(state.heartHandleSize ?? 18, Math.min(dims().ow,dims().od)*0.22, state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
   $('heartLidFit').value = state.heartLidFit ?? 0.4;
   $('heartLidFitVal').textContent = fmtLen(state.heartLidFit ?? 0.4, 2, 3);
   $('heartLidLift').value = Math.round((state.pullLift || 0)*100);
@@ -1343,7 +1345,7 @@ function syncRaiseUI() {
   if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(rz, 1, 2) : 'n/a';
   if (ok && $('sldRaise')) {
     const T = state.T;
-    const lidT = (heartActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+    const lidT = (shapedBoxActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
     const maxR = state.mode === 'inside' ? 60 : Math.max(0, Math.min(60, state.H - lidT - Math.max(2, 2 * T)));
     $('sldRaise').max = maxR;
   }
@@ -1733,8 +1735,8 @@ function updateLabels() {
     $('sldSlideBorder').max = maxB;
   }
   if ($('infoSides')) {
-    if (heartActive()) {
-      $('infoSides').textContent = 'Heart (24 straight walls)';
+    if (shapedBoxActive()) {
+      $('infoSides').textContent = state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
     } else if (state.generator === 'frame') {
       $('infoSides').textContent = 'Frame';
     } else {
@@ -1949,7 +1951,7 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
-  if (heartActive()) return false;
+  if (shapedBoxActive()) return false;
   // Raised bottoms + decorative feet work on rectangles, frames, and hexagons.
   // Flat-top with wall joints off (true lantern / V-groove walls) is excluded.
   // Flat-top overhang is allowed: when raise is active, overhang scales only the top plate.
@@ -1965,7 +1967,7 @@ function bottomRaise() {
 function dims() {
   const T = state.T;
   // Flat and hinged lids both occupy one thickness at the top, so the interior height stays what you typed.
-  const lidT = (heartActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+  const lidT = (shapedBoxActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
   const minI = Math.max(2, 2 * T);
   // Raised bottom: Interior mode keeps the interior height (walls grow); Exterior mode keeps the overall height.
   let rz = bottomRaise();
@@ -2381,7 +2383,7 @@ function arcPts(cx, cy, r, a0, a1, steps = 8) {
 }
 
 function hingeActive() {
-  return !heartActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
+  return !shapedBoxActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
 }
 
 /** All hinge-lid dimensions in one place (mm). Needs dims() output. */
@@ -3314,11 +3316,18 @@ function generateHeartPanels(d) {
     const f=(target-distances[j-1])/(distances[j]-distances[j-1]);
     right.push(half[j-1].map((v,axis)=>v+(half[j][axis]-v)*f));
   }
+  const cross = state.shape === 'cross';
+  const shapeName = cross ? 'Cross' : 'Heart';
   let verts=[...right,...right.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
   if (polyArea(verts) < 0) verts.reverse();
   // Smooth cutting contours are independent of the 24 straight wall facets.
   const smoothHalf=half.filter((_,i)=>i%5===0);
-  const smooth=[...smoothHalf,...smoothHalf.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
+  let smooth=[...smoothHalf,...smoothHalf.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
+  if (cross) {
+    const x=ow/6, edge=ow/2, top=-od/2, barTop=top+od*0.23, barBottom=barTop+od*0.22, bottom=od/2;
+    verts=[[-x,top],[x,top],[x,barTop],[edge,barTop],[edge,barBottom],[x,barBottom],[x,bottom],[-x,bottom],[-x,barBottom],[-edge,barBottom],[-edge,barTop],[-x,barTop]];
+    smooth=verts.map(p=>p.slice());
+  }
   let rimInset=Math.max(6,3*T);
   let opening=insetHeartContour(smooth,rimInset);
   d.poly = { verts }; d.sides = verts.length; d.heart = true;
@@ -3349,8 +3358,8 @@ function generateHeartPanels(d) {
       const point=(x,y)=>[origin[0]+ux*x+ix*y,origin[1]+uy*x+iy*y];
       holes.push([point(tab.a,0),point(tab.b,0),point(tab.b,T),point(tab.a,T)]);
     }
-    defs.push({name:'Heart wall '+(i+1), role:'poly-side', w, h:oh,
-      sideIndex:i, nSides:24, heartWall:{origin,ux,uy},
+    defs.push({name:shapeName+' wall '+(i+1), role:'poly-side', w, h:oh,
+      sideIndex:i, nSides:verts.length, heartWall:{origin,ux,uy},
       outline:tabbedWallOutline(w,oh,T,null,null,wallTabs,wallTabs)});
   }
   // Keep a uniform rim width, increasing it only enough to support every wall slot.
@@ -3375,14 +3384,14 @@ function generateHeartPanels(d) {
   const clearance=state.heartLidFit ?? 0.4;
   const insert=insetHeartContour(opening,clearance);
   d.heartRimWidth=rimInset;
-  defs.unshift({name:'Heart bottom', role:'bottom', poly:true, outline:smooth, holes});
-  defs.push({name:'Heart top rim',role:'top',poly:true,outline:smooth,holes:[...holes,opening]});
+  defs.unshift({name:shapeName+' bottom', role:'bottom', poly:true, outline:smooth, holes});
+  defs.push({name:shapeName+' top rim',role:'top',poly:true,outline:smooth,holes:[...holes,opening]});
   if (state.heartTop !== false) {
-    defs.push({name:'Heart lid insert (glue under cap)',role:'pull-insert',poly:true,outline:insert});
-    const cap={name:'Heart lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert],holes:[]};
+    defs.push({name:shapeName+' lid insert (glue under cap)',role:'pull-insert',poly:true,outline:insert});
+    const cap={name:shapeName+' lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert],holes:[]};
     defs.push(cap);
     if (state.heartHandle !== false) {
-      const R=Math.min(state.heartHandleSize ?? 18, Math.min(ow,od)*0.22);
+      const R=Math.min(state.heartHandleSize ?? 18, Math.min(ow,od)*0.22, cross ? Math.max(2,ow/6-T-1) : Infinity);
       const band=Math.min(Math.max(3,T*1.5),R*0.4), inner=R-band;
       // Two full-thickness tabs pass through the cap and stop on the insert.
       const handle=[[-R,0],[-R,T]];
@@ -3394,7 +3403,7 @@ function generateHeartPanels(d) {
       const outline=cleanPoly(handle).reverse();
       const slot=(a,b)=>[[a,-T/2],[b,-T/2],[b,T/2],[a,T/2]];
       cap.holes=[slot(-R,-inner),slot(inner,R)];
-      defs.push({name:'Heart lid handle',role:'pull-handle',outline});
+      defs.push({name:shapeName+' lid handle',role:'pull-handle',outline});
       d.pull={tabLen:T,R,B:band,rIn:inner};
     }
   }
@@ -3425,7 +3434,7 @@ function generatePanels() {
     return generateFramePanels(d, J);
   }
 
-  if (heartActive()) return generateHeartPanels(d);
+  if (shapedBoxActive()) return generateHeartPanels(d);
 
   // ---------- Regular polygon boxes (6) ----------
   if (nSides !== 4) {
@@ -4940,7 +4949,7 @@ function rebuild3D() {
     }
     // Pull-off lid (insert + cap + handle): lifts straight up off the box
     let pullLidLift = [0, 0, 0];
-    if ((state.lid === 'pull' || heartActive()) && p.role && p.role.startsWith('pull-')) {
+    if ((state.lid === 'pull' || shapedBoxActive()) && p.role && p.role.startsWith('pull-')) {
       pullLidLift = [0, Math.max(40, (d.oh || 50) * 0.7 + 20), 0];
     }
     mesh.userData = {
@@ -5082,7 +5091,7 @@ function refreshSVGPreview() {
 
 function fileBase() {
   const d = dims();
-  const prefix = heartActive() ? 'jackintheshop_heart' : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
+  const prefix = shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
   return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
