@@ -4034,7 +4034,8 @@ function generatePanelsBase(d = dims()) {
     const clear = Math.max(0.05, state.drawerClear || 0.5);
     const openEnd = state.drawerOpen || 'front'; // front | back | left | right
     const drIh = Math.max(T * 2, Math.min(state.drawerH || 25, ih - clear - (hinge && d.hinge ? 2 * T + d.hinge.relD : T)));
-    const drOh = drIh + 2 * T; // walls span bottom + top plate joints
+    const drOh = drIh + 2 * T; // full drawer height, including its smooth top plate
+    const drWallH = drOh - T; // walls stop under the top instead of passing through it
 
     // Specs: bottom/top/left/right edges — null = plain (open side)
     // Plate edges: [bottom, right, top, left] in panelOutline order for a horizontal plate
@@ -4051,21 +4052,23 @@ function generatePanelsBase(d = dims()) {
     const drFb = [
       J(true, true),
       openR ? null : J(true, true),
-      J(true, true),
+      null, // smooth upper edge; top plate is glued on
       openL ? null : J(true, true),
     ];
     // Left/Right walls: [bottom, right, top, left] — right edge of left wall faces front
     const drLeft = [
       J(true, false),
       openF ? null : J(false, false), // right edge → front
-      J(true, false),
+      null, // smooth upper edge
       openB ? null : J(false, false), // left edge → back
     ];
+    // Both side walls run from back to front in placementTray.
+    // Their local right edge is the front; local left edge is the back.
     const drRight = [
       J(true, false),
-      openB ? null : J(false, false), // right edge → back
-      J(true, false),
-      openF ? null : J(false, false), // left edge → front
+      openF ? null : J(false, false), // right edge → front
+      null, // smooth upper edge
+      openB ? null : J(false, false), // left edge → back
     ];
 
     let xPos = 0;
@@ -4091,11 +4094,11 @@ function generatePanelsBase(d = dims()) {
         const pullHole = circlePoly(hx, hy, holeR, 24);
 
         defs.push({ name: `${label} Bottom`, role: 'dr-bottom', w: drW, h: drD, specs: drPlate, trayIndex: trays.length });
-        defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: drPlate, holes: [pullHole], trayIndex: trays.length });
-        if (!openF) defs.push({ name: `${label} Front`, role: 'dr-front', w: drW, h: drOh, specs: drFb, trayIndex: trays.length });
-        if (!openB) defs.push({ name: `${label} Back`, role: 'dr-back', w: drW, h: drOh, specs: drFb, trayIndex: trays.length });
-        if (!openL) defs.push({ name: `${label} Left`, role: 'dr-left', w: drD, h: drOh, specs: drLeft, trayIndex: trays.length });
-        if (!openR) defs.push({ name: `${label} Right`, role: 'dr-right', w: drD, h: drOh, specs: drRight, trayIndex: trays.length });
+        defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: [null,null,null,null], holes: [pullHole], trayIndex: trays.length });
+        if (!openF) defs.push({ name: `${label} Front`, role: 'dr-front', w: drW, h: drWallH, specs: drFb, trayIndex: trays.length });
+        if (!openB) defs.push({ name: `${label} Back`, role: 'dr-back', w: drW, h: drWallH, specs: drFb, trayIndex: trays.length });
+        if (!openL) defs.push({ name: `${label} Left`, role: 'dr-left', w: drD, h: drWallH, specs: drLeft, trayIndex: trays.length });
+        if (!openR) defs.push({ name: `${label} Right`, role: 'dr-right', w: drD, h: drWallH, specs: drRight, trayIndex: trays.length });
 
         trays.push({
           ci, ri, label, drW, drD, drOh, drIh, openEnd,
