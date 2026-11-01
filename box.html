@@ -2244,7 +2244,7 @@ function tabbedWallOutline(Pw, Ph, T, leftSpec, rightSpec, topTabs, botTabs) {
 }
 
 /** Offset a CCW rectilinear polygon outward by d (kerf compensation). */
-function offsetPoly(pts, d) {
+function offsetPoly(pts, d, miterLimit = Infinity) {
   if (!d) return pts.map(p => [p[0], p[1]]);
   const n = pts.length, out = [];
   for (let i = 0; i < n; i++) {
@@ -2255,7 +2255,11 @@ function offsetPoly(pts, d) {
     e1x /= l1; e1y /= l1; e2x /= l2; e2y /= l2;
     const n1x = e1y, n1y = -e1x, n2x = e2y, n2y = -e2x; // outward normals (CCW)
     const denom = 1 + n1x * n2x + n1y * n2y || 1;
-    out.push([c[0] + d * (n1x + n2x) / denom, c[1] + d * (n1y + n2y) / denom]);
+    const mx=d*(n1x+n2x)/denom,my=d*(n1y+n2y)/denom;
+    if(Math.hypot(mx,my)>Math.abs(d)*miterLimit) {
+      // Bevel needle-like cusps instead of allowing arbitrarily long spikes.
+      out.push([c[0]+d*n1x,c[1]+d*n1y],[c[0]+d*n2x,c[1]+d*n2y]);
+    } else out.push([c[0]+mx,c[1]+my]);
   }
   return out;
 }
@@ -3290,6 +3294,29 @@ function buildPullOffLidDefs(d) {
   return defs;
 }
 
+/** Trim tiny kerf-offset loops at the heart's sharp center notch. */
+function heartCutOutline(outline, kerf) {
+  let pts=offsetPoly(outline,kerf/2,4);
+  const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+  for(let pass=0;pass<200;pass++) {
+    let found=false;
+    outer:for(let i=0;i<pts.length;i++)for(let j=i+2;j<pts.length;j++) {
+      if(i===0&&j===pts.length-1)continue;
+      const a=pts[i],b=pts[(i+1)%pts.length],c=pts[j],d=pts[(j+1)%pts.length];
+      const u=[b[0]-a[0],b[1]-a[1]],v=[d[0]-c[0],d[1]-c[1]],q=[c[0]-a[0],c[1]-a[1]],den=cross(u,v);
+      if(Math.abs(den)<1e-12)continue;
+      const t=cross(q,v)/den,k=cross(q,u)/den;
+      if(t<=1e-9||t>=1-1e-9||k<=1e-9||k>=1-1e-9)continue;
+      const hit=[a[0]+t*u[0],a[1]+t*u[1]];
+      const first=[hit,...pts.slice(i+1,j+1)],second=[hit,...pts.slice(j+1),...pts.slice(0,i+1)];
+      pts=polyArea(first)>polyArea(second)?first:second;
+      found=true;break outer;
+    }
+    if(!found)break;
+  }
+  return cleanPoly(pts);
+}
+
 /** True-distance inset with round concave corners and removal of offset loops. */
 function insetHeartContour(contour, amount) {
   if (amount <= 0) return contour.map(p=>p.slice());
@@ -3463,7 +3490,7 @@ function generateHeartPanels(d) {
     }
   }
   const panels=defs.map(def=>{
-    const outline=def.outline, cut=offsetPoly(outline,state.kerf/2);
+    const outline=def.outline, cut=state.shape === 'heart' && def.poly ? heartCutOutline(outline,state.kerf) : offsetPoly(outline,state.kerf/2);
     const xs=cut.map(p=>p[0]), ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
     return {...def, cut, holes:(def.holes||[]).map(h=>h === opening ? h.map(p=>p.slice()) : offsetPoly(polyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),
