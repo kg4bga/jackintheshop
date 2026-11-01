@@ -709,8 +709,9 @@
             </div>
           </div>
           <div class="ctrl">
-            <div class="ctrl-lbl"><strong>Divider height</strong><span class="ctrl-val" id="valDivH">100%</span></div>
-            <input type="range" id="sldDivH" min="20" max="100" step="5" value="100" oninput="onDivH(this.value)">
+            <div class="ctrl-lbl"><strong>Divider height</strong><span class="ctrl-val" id="valDivH">50.0 mm</span></div>
+            <input type="range" id="sldDivH" min="3" max="50" step="0.1" value="50" oninput="onDivH(this.value)">
+            <div class="hint" id="dividerHeightHint" style="margin-top:4px">Adjust from 3 mm up to the available space beneath the lid.</div>
            
           </div>
           <div id="colSpacing" style="display:none;margin-top:6px;"></div>
@@ -890,7 +891,7 @@ const DEFAULTS = {
   lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
   slideDir: 'front', slideBorder: 15, slideFromTop: 3,
   sides: 4, // 4 = rectangle, 6 = hexagon
-  divCols: 1, divRows: 1, divHpct: 100,
+  divCols: 1, divRows: 1, divHeight: null,
   colWeights: [1], rowWeights: [1],
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerHoleShape: 'round', drawerHoleSize: 16,
@@ -1513,8 +1514,9 @@ function onDivGrid() {
 }
 function onDivH(v) {
   pushHistory();
-  state.divHpct = parseFloat(v);
-  $('valDivH').textContent = state.divHpct + '%';
+  const height=Number(v);
+  if(!Number.isFinite(height)||height<3) return;
+  state.divHeight=height;
   rebuild();
 }
 function onColWeight(i, v) {
@@ -1790,8 +1792,7 @@ function syncInputs() {
   if ($('valSlipLift')) $('valSlipLift').textContent = Math.round((state.slipLift || 0) * 100) + '%';
   if ($('inCols')) $('inCols').value = state.divCols;
   if ($('inRows')) $('inRows').value = state.divRows;
-  if ($('sldDivH')) $('sldDivH').value = state.divHpct;
-  if ($('valDivH')) $('valDivH').textContent = state.divHpct + '%';
+
   if ($('chkDrawer')) $('chkDrawer').checked = !!state.drawer;
   if ($('drawerControls')) $('drawerControls').style.display = state.drawer ? 'block' : 'none';
   if ($('drawerPullCtrl')) $('drawerPullCtrl').style.display = state.drawer ? 'block' : 'none';
@@ -2326,6 +2327,39 @@ function fingerSegments(H, ownEven) {
   return segs;
 }
 
+// The divider stands on the bottom plate; its maximum follows the lowest lid layer.
+function dividerHeightLimit(d, ceiling = null) {
+  const base=d.T+(d.raise || 0);
+  let top=ceiling ?? d.oh;
+  const covered=ceiling != null || state.lid !== 'none';
+  if(ceiling == null) {
+    if(['flat','pull','hinge'].includes(state.lid)) top=d.oh-d.T;
+    else if(state.lid === 'slide') top=d.slide ? d.slide.lowerY : d.oh-3*d.T-0.5;
+  }
+  return Math.max(0,top-base-(covered ? 0.5 : 0));
+}
+function dividerHeightForLimit(maximum) {
+  const height=maximum<3 ? 0 : state.divHeight == null ? maximum : Math.max(3,Math.min(maximum,state.divHeight));
+  const slider=$('sldDivH');
+  slider.min=3; slider.max=Math.max(3,maximum); slider.step='any';
+  slider.value=height || 3; slider.disabled=maximum<3;
+  $('valDivH').textContent=height ? fmtLen(height,1,3) : 'No space';
+  $('dividerHeightHint').textContent=maximum<3 ? 'There is less than 3 mm beneath the lid. Increase the box height to add dividers.' : 'Minimum '+fmtLen(3,0,3)+' · Maximum '+fmtLen(maximum,1,3)+'; leaves 0.5 mm beneath a lid.';
+  return height;
+}
+
+/** Shared end profile: leave at least 6 mm of cut material clear of plate joints. */
+function dividerFingerSegments(H, T) {
+  // Both cut boundaries can expand by half the kerf, so reserve a full kerf too.
+  const margin=6+Math.max(0,state.kerf || 0)+0.01;
+  const usable=H-2*margin;
+  if(usable<Math.max(1,T)) return [{a:0,b:H,isFinger:false}];
+  const middle=usable<3*T ? [{a:0,b:usable,isFinger:true}] : fingerSegments(usable,true);
+  return [{a:0,b:margin,isFinger:false},
+    ...middle.map(seg=>({...seg,a:margin+seg.a,b:margin+seg.b})),
+    {a:H-margin,b:H,isFinger:false}];
+}
+
 /**
  * Divider panel outline with finger-jointed ends (same pattern as box walls)
  * and cross-lap notches where column/row dividers interlock.
@@ -2339,7 +2373,7 @@ function fingerSegments(H, ownEven) {
  */
 function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
   const length = interiorSpan + 2 * T;
-  const segs = fingerSegments(H, true); // divider owns even → fingers on even segments
+  const segs = dividerFingerSegments(H, T); // same guarded profile as the wall slots
   const slotD = H / 2; // half-height cross-lap
   const slotW = T;     // must match material thickness of the crossing divider
 
@@ -2619,7 +2653,7 @@ function circlePoly(cx, cy, r, steps = 24) {
 function wallFingerSlots(slotX, baseY, H, T) {
   // Wall receives the mating profile: where divider has a finger, wall has a slot.
   // Divider ownEven=true → fingers on even segments → slots on wall at those y ranges.
-  const segs = fingerSegments(H, true);
+  const segs = dividerFingerSegments(H, T);
   const slots = [];
   for (const seg of segs) {
     if (seg.isFinger) {
@@ -3002,10 +3036,10 @@ function generateFramePanels(d, J) {
     const underY = outsideFace ? (oh - T) : (oh - 2 * T - fromTop);
     const divBase = T + rz; // sit on the raised bottom plate
     const gap = Math.max(0, underY - divBase);
-    const divH = Math.max(0, Math.min(ih * ((state.divHpct || 100) / 100), gap));
+    const divH = dividerHeightForLimit(dividerHeightLimit(d,underY));
     const xCenters = dividerCenters(state.colWeights, iw, T);
     const yCenters = dividerCenters(state.rowWeights, id, T);
-    d.dividers = { divH, xCenters, yCenters, gap };
+    d.dividers = { divH, xCenters, yCenters, gap, noHeight: divH === 0 && (state.divCols>1 || state.divRows>1) };
     if (divH > 0.4) {
       for (const cx of xCenters) {
         const sx = T + cx - T / 2;
@@ -4202,10 +4236,10 @@ function generatePanelsBase(d = dims()) {
   }
 
   // --- Dividers (normal floor-plan grid; box stays open-top) ---
-  const divH = Math.max(T * 2, Math.min(ih * (state.divHpct / 100), hinge ? ih - 0.5 : Infinity));
-  const xCenters = dividerCenters(state.colWeights, iw, T);
-  const yCenters = dividerCenters(state.rowWeights, id, T);
-  d.dividers = { divH, xCenters, yCenters };
+  const divH = dividerHeightForLimit(dividerHeightLimit(d));
+  const xCenters = divH ? dividerCenters(state.colWeights, iw, T) : [];
+  const yCenters = divH ? dividerCenters(state.rowWeights, id, T) : [];
+  d.dividers = { divH, xCenters, yCenters, noHeight: divH === 0 && (state.divCols>1 || state.divRows>1) };
 
   const wallSlots = { front: [], back: [], left: [], right: [] };
   // Raised bottom: slots in every wall where the bottom plate's fingers enter.
@@ -4254,11 +4288,12 @@ function generatePanelsBase(d = dims()) {
 
   xCenters.forEach((cx, i) => {
     let { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
-    if (hinge && d.hinge) {
+    if (hinge && d.hinge && divH > ih - 0.5 - d.hinge.relD) {
+      const reliefDepth=Math.max(0,d.hinge.relD-(ih-0.5-divH));
       // Relief at the back-top so the rear of the hinged lid can swing down past this divider
       const xr1 = id + 2 * T - T, xr0 = xr1 - d.hinge.relW;
       const rel = insertOnTopEdge(outline, divH, xr0, xr1,
-        () => [[xr0, divH], [xr0, divH - d.hinge.relD], [xr1, divH - d.hinge.relD], [xr1, divH]]);
+        () => [[xr0, divH], [xr0, divH - reliefDepth], [xr1, divH - reliefDepth], [xr1, divH]]);
       outline = rel.outline;
     }
     defs.push({
@@ -5151,6 +5186,12 @@ function updateHUD(d, panels) {
     wb.classList.add('show');
   } else if (d.thinRaise) {
     wb.textContent = 'Bottom raise is thinner than the material, so only a thin sliver of wall remains under the bottom slots. Use 0 or at least one material thickness.';
+    wb.classList.add('show');
+  } else if (d.dividers && d.dividers.noHeight) {
+    wb.textContent = 'There is less than 3 mm beneath the lid. Increase the box height to add dividers.';
+    wb.classList.add('show');
+  } else if (d.dividers && (d.dividers.xCenters.length || d.dividers.yCenters.length) && !dividerFingerSegments(d.dividers.divH,d.T).some(s=>s.isFinger)) {
+    wb.textContent = 'Dividers are too short for wall fingers with 6 mm clearance from the plate joints. Increase divider or box height; these dividers currently need glue.';
     wb.classList.add('show');
   } else if (d.hingeWarn) {
     wb.textContent = 'Box is too small for the hinged lid (rings and back tabs need room). Increase the width/depth.';
