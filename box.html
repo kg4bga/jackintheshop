@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
-<head><script type='text/javascript' src='https://jackintheshop.com/2Wo6WmfZIXLavh07Fsl_NhqCKQqJWQ9co5d6kZ6SuvqDoH_Dy8tMel-8cLWz7y_wcORoXVPsBciB7rssn-2Em04D_zCuXtrONj4hfwkh60GOVNj2H7M4UHhRQv3ECSpfj2lxmvESI1fKc1GM1ImMQUUpeHjXfXarJZrGrkeztIe4dclSS-6DLvLTpofOj6yq2jHHiAmTGKdgJjDEsHHSq9GmHLkPO-DSEehw7QZ8jtcl3aVDzV7GjytQCnxI2W0z4lVoSyX0Csc-l9bxiOuRdFjtkPNgq630G4TyQjqBGeRPShBZ-VkEGSg3212gg59uq2fubGVHrq3Zo5byUwJQU7mMQP7Kc1pLKT9w_amXOkYPSThehjAYM8quKgJr8rR1pOtlEdXmXLDstkBsHlIVraofQ6_s93tuwboKyhJ_Ye4jfa0k8kIc26h2tHZ44QSY2VZmk5aNACogd3Iskjc'></script><script type='text/javascript' src='https://jackintheshop.com/jZyFsX8r7SkuCN0thmN-93e2tzSS0_D4Ra4DXRsRF345BvSAbhumWmhfQ1_cjnpFCbNy4uM0YWkXCdXqjFCedQblA0Bv_F7v6BZ3oBSsHIuePsTqcvMGpDgA8cSWCyvyROuojJYQVPCj3ijEXzzou0b5d9nSmUpCBeioSfi8odReZzJt_d5HY6bKLFtJexWRO7RVQBffapuqbKh3XF_0MjhFOF_shkcvilBlDa71bn_0kXxwCPeuVC9VVQdbsyUdkeLAX05fbc7k2A3FUZy_PIoKvLpr598rH7jtkzyU8ou5GRzWslZYEO0vru2strUk9k28ZEp6l67_n2lAH4GqQb7mXM_yGn3cO-mcLyoOYAF3n7M68RdOh2Ke6iEoXx7YVIawFH1n7OlgjDVJNZPfdC1RYdolqFzu1X6KSms32esIhmSQZJpOD-MRtpXIZDNfPjp7TV7dlwWkWpBfttA'></script>
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
@@ -364,11 +364,11 @@
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name"><center>Jack's Boxes<p>Ver 0.7</center></span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.7</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
-      <button class="tb-btn" id="btnUndo" titlnclick="undo()" disabled>↶ Undo</button>
+      <button class="tb-btn" id="btnUndo" title="Undo" onclick="undo()" disabled>↶ Undo</button>
       <button class="tb-btn primary" title="Export SVG" onclick="showSVG()">⬇ SVG</button>
       <button class="tb-btn" title="Export DXF" onclick="downloadDXF()">DXF</button>
     </div>
@@ -416,20 +416,20 @@
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
             <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option></select>
           </div>
-          <div class="ctrl" id="heartControls" style="display:none">
-            <label><input type="checkbox" id="heartTop" checked onchange="setHeartTop(this.checked)"> Include removable top</label>
-            <div class="ctrl" style="margin-top:10px" id="heartLidControls">
-              <label><input type="checkbox" id="heartHandle" checked onchange="setHeartHandle(this.checked)"> Include lid handle</label>
-              <div class="ctrl" style="margin-top:8px" id="heartHandleControls">
-                <label class="ctrl-lbl" for="heartHandleSize">Handle size (radius) <span class="ctrl-val" id="heartHandleSizeVal">18.0 mm</span></label>
-                <input type="range" id="heartHandleSize" min="8" max="35" step="0.5" value="18" oninput="onHeartHandleSize(this.value)">
+          <div class="ctrl" id="shapedControls" style="display:none">
+            <label><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
+            <div class="ctrl" style="margin-top:10px" id="shapedLidControls">
+              <label><input type="checkbox" id="shapedHandle" checked onchange="setShapedHandle(this.checked)"> Include lid handle</label>
+              <div class="ctrl" style="margin-top:8px" id="shapedHandleControls">
+                <label class="ctrl-lbl" for="shapedHandleSize">Handle size (radius) <span class="ctrl-val" id="shapedHandleSizeVal">18.0 mm</span></label>
+                <input type="range" id="shapedHandleSize" min="8" max="35" step="0.5" value="18" oninput="onShapedHandleSize(this.value)">
                 <div class="hint">Half-ring handle with two tabs. Glue into the lid cap slots. Size is limited automatically on small lids.</div>
               </div>
-              <label class="ctrl-lbl" for="heartLidFit">Lid fit clearance <span class="ctrl-val" id="heartLidFitVal">0.40 mm</span></label>
-              <input type="range" id="heartLidFit" min="0" max="2" step="0.05" value="0.4" oninput="onHeartLidFit(this.value)">
+              <label class="ctrl-lbl" for="shapedLidFit">Lid fit clearance <span class="ctrl-val" id="shapedLidFitVal">0.40 mm</span></label>
+              <input type="range" id="shapedLidFit" min="0" max="2" step="0.05" value="0.4" oninput="onShapedLidFit(this.value)">
               <div class="hint">Lower = tighter; higher = looser. Clearance around the lid insert, in millimeters.</div>
-              <label class="ctrl-lbl" for="heartLidLift">Lift lid (preview) <span class="ctrl-val" id="heartLidLiftVal">0%</span></label>
-              <input type="range" id="heartLidLift" min="0" max="100" step="1" value="0" oninput="onHeartLidLift(this.value)">
+              <label class="ctrl-lbl" for="shapedLidLift">Lift lid (preview) <span class="ctrl-val" id="shapedLidLiftVal">0%</span></label>
+              <input type="range" id="shapedLidLift" min="0" max="100" step="1" value="0" oninput="onShapedLidLift(this.value)">
             </div>
             <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
           </div>
@@ -883,13 +883,13 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
-  shape: 'standard', heartTop: true, heartLidFit: 0.4, heartHandle: true, heartHandleSize: 18,
+  shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
   frameBorder: 15, // mm — width of the mitered face frame
   frameFromTop: 0, // mm — how far the face sits below the top of the walls (0 = flush)
   frameJoint: 'face', // 'face' = fingers on the mitered frame, 'under' = fingers on the underlay
   lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
-  slideDir: 'front', slideBorder: 15, slideFromTop: 3,
+  slideDir: 'front', slideBorder: 15,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHeight: null,
   colWeights: [1], rowWeights: [1],
@@ -967,26 +967,6 @@ function undo() {
   // Ensure arrays are copies so future edits don't mutate history entries
   state.colWeights = (prev.colWeights || [1]).slice();
   state.rowWeights = (prev.rowWeights || [1]).slice();
-  // Restore discrete UI toggles
-  $('unitMM').classList.toggle('active', state.unit === 'mm');
-  $('unitIN').classList.toggle('active', state.unit === 'in');
-  $('modeI').classList.toggle('active', state.mode === 'inside');
-  $('modeO').classList.toggle('active', state.mode === 'outside');
-  $('lidNone').classList.toggle('active', state.lid === 'none');
-  $('lidFlat').classList.toggle('active', state.lid === 'flat');
-  if ($('lidSlip')) $('lidSlip').classList.toggle('active', state.lid === 'slip');
-  if ($('lidPull')) $('lidPull').classList.toggle('active', state.lid === 'pull');
-  if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
-  if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
-  if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
-  if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
-  if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
-  if ($('jointUnder')) $('jointUnder').classList.toggle('active', state.frameJoint === 'under');
-  if ($('sldAssembly')) {
-    $('sldAssembly').value = Math.round((state.assembly || 1) * 100);
-    $('valAssembly').textContent = Math.round((state.assembly || 1) * 100) + '%';
-  }
-  updateFrameHints();
   syncInputs();
   rebuild();
   applyingHistory = false;
@@ -1084,48 +1064,15 @@ function setFrameJoint(which) {
   state.frameJoint = which;
   if ($('jointFace')) $('jointFace').classList.toggle('active', which === 'face');
   if ($('jointUnder')) $('jointUnder').classList.toggle('active', which === 'under');
-  updateFrameHints();
   rebuild();
 }
 
-function updateFrameHints() {
-  const onUnder = state.frameJoint === 'under';
-  if ($('frameJointHint')) {
-    $('frameJointHint').textContent = onUnder
-      ? 'Fingers are on the underlay. At the top, the face caps the outside of the box. Drop it and the face fits the inside.'
-      : 'Fingers are on the mitered face and lock into the walls. The underlay has no joints.';
-  }
-  if ($('framePosHint')) {
-    $('framePosHint').textContent = onUnder
-      ? '0 = face sits on the wall tops, outer edge flush with the outside of the box. Any lower and the face fits the inside opening.'
-      : '0 = flush with top of walls. Increase to lower the face down the sides.';
-  }
-}
 
 function setGenerator(g) {
   if (g === state.generator) return;
-  pushHistoryNow();
-  state.generator = g;
-  $('genBox').classList.toggle('active', g === 'box');
-  $('genFrame').classList.toggle('active', g === 'frame');
-  // Frame forces rectangle, no lid/drawer
-  if (g === 'frame') {
-    state.sides = 4;
-    state.lid = 'none';
-    state.drawer = false;
-    if ($('chkDrawer')) $('chkDrawer').checked = false;
-    if ($('lidNone')) {
-      $('lidNone').classList.add('active');
-      $('lidFlat').classList.remove('active');
-      if ($('lidSlip')) $('lidSlip').classList.remove('active');
-      if ($('lidPull')) $('lidPull').classList.remove('active');
-      if ($('lidSlide')) $('lidSlide').classList.remove('active');
-      if ($('lidHinge')) $('lidHinge').classList.remove('active');
-    }
-  }
-  updateGeneratorUI();
-  syncInputs();
-  rebuild();
+  pushHistoryNow(); state.generator=g;
+  if(g==='frame') { state.sides=4; state.lid='none'; state.drawer=false; }
+  syncInputs(); rebuild();
 }
 
 function setBoxShape(shape) {
@@ -1137,55 +1084,55 @@ function setBoxShape(shape) {
   syncInputs();
   rebuild();
 }
-function setHeartTop(on) {
+function setShapedTop(on) {
   pushHistoryNow();
-  state.heartTop = !!on;
+  state.shapedTop = !!on;
   syncInputs();
   rebuild();
 }
-function setHeartHandle(on) {
-  pushHistoryNow(); state.heartHandle=!!on;
+function setShapedHandle(on) {
+  pushHistoryNow(); state.shapedHandle=!!on;
   updateShapeUI(); rebuild();
 }
-function onHeartHandleSize(v) {
+function onShapedHandleSize(v) {
   const size=Number(v);
   if (!Number.isFinite(size) || size<8 || size>35) return;
-  pushHistory(); state.heartHandleSize=size;
+  pushHistory(); state.shapedHandleSize=size;
   updateShapeUI(); rebuild();
 }
-function onHeartLidFit(v) {
+function onShapedLidFit(v) {
   const fit=Number(v);
   if (!Number.isFinite(fit) || fit<0 || fit>2) return;
-  pushHistory(); state.heartLidFit=fit;
+  pushHistory(); state.shapedLidFit=fit;
   updateShapeUI(); rebuild();
 }
-function onHeartLidLift(v) {
+function onShapedLidLift(v) {
   onPullLift(v);
-  $('heartLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
+  $('shapedLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
 }
 function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross', 'star'].includes(state.shape); }
 function updateShapeUI() {
-  const heart = shapedBoxActive(), frame = state.generator === 'frame';
-  $('genFrame').style.display = heart ? 'none' : '';
+  const shaped = shapedBoxActive(), frame = state.generator === 'frame';
+  $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
   $('shapedBoxHint').textContent = (state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
-  $('heartTop').checked = state.heartTop !== false;
-  $('heartLidControls').style.display = state.heartTop === false ? 'none' : '';
-  $('heartHandle').checked = state.heartHandle !== false;
-  $('heartHandleControls').style.display = state.heartHandle === false ? 'none' : '';
-  $('heartHandleSize').value = state.heartHandleSize ?? 18;
-  $('heartHandleSizeVal').textContent = fmtLen(Math.min(state.heartHandleSize ?? 18, Math.min(dims().ow,dims().od)*(state.shape === 'star' ? 0.16 : 0.22), state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
-  $('heartLidFit').value = state.heartLidFit ?? 0.4;
-  $('heartLidFitVal').textContent = fmtLen(state.heartLidFit ?? 0.4, 2, 3);
-  $('heartLidLift').value = Math.round((state.pullLift || 0)*100);
-  $('heartLidLiftVal').textContent = Math.round((state.pullLift || 0)*100)+'%';
+  $('shapedTop').checked = state.shapedTop !== false;
+  $('shapedLidControls').style.display = state.shapedTop === false ? 'none' : '';
+  $('shapedHandle').checked = state.shapedHandle !== false;
+  $('shapedHandleControls').style.display = state.shapedHandle === false ? 'none' : '';
+  $('shapedHandleSize').value = state.shapedHandleSize ?? 18;
+  $('shapedHandleSizeVal').textContent = fmtLen(Math.min(state.shapedHandleSize ?? 18, Math.min(dims().ow,dims().od)*(state.shape === 'star' ? 0.16 : 0.22), state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
+  $('shapedLidFit').value = state.shapedLidFit ?? 0.4;
+  $('shapedLidFitVal').textContent = fmtLen(state.shapedLidFit ?? 0.4, 2, 3);
+  $('shapedLidLift').value = Math.round((state.pullLift || 0)*100);
+  $('shapedLidLiftVal').textContent = Math.round((state.pullLift || 0)*100)+'%';
   $('shapeControls').style.display = frame ? 'none' : '';
-  $('heartControls').style.display = heart ? '' : 'none';
-  $('wallCountControls').style.display = frame || heart ? 'none' : '';
-  ['s-lid', 's-drawer', 's-feet'].forEach(id => { $(id).style.display = frame || heart ? 'none' : ''; });
-  $('s-div').style.display = heart ? 'none' : '';
-  $('fingerLengthControls').style.display = heart ? 'none' : '';
-  const depthEnabled = frame || heart || state.sides === 4;
+  $('shapedControls').style.display = shaped ? '' : 'none';
+  $('wallCountControls').style.display = frame || shaped ? 'none' : '';
+  ['s-lid', 's-drawer', 's-feet'].forEach(id => { $(id).style.display = frame || shaped ? 'none' : ''; });
+  $('s-div').style.display = shaped ? 'none' : '';
+  $('fingerLengthControls').style.display = shaped ? 'none' : '';
+  const depthEnabled = frame || shaped || state.sides === 4;
   $('depthGrp').style.opacity = depthEnabled ? '1' : '0.35';
   $('inD').disabled = $('sldD').disabled = !depthEnabled;
 }
@@ -1218,31 +1165,7 @@ function setLid(l) {
   if (l === state.lid) return;
   pushHistoryNow();
   state.lid = l;
-  $('lidNone').classList.toggle('active', l === 'none');
-  $('lidFlat').classList.toggle('active', l === 'flat');
-  $('lidSlip').classList.toggle('active', l === 'slip');
-  if ($('lidPull')) $('lidPull').classList.toggle('active', l === 'pull');
-  if ($('lidSlide')) $('lidSlide').classList.toggle('active', l === 'slide');
-  if ($('lidHinge')) $('lidHinge').classList.toggle('active', l === 'hinge');
-  const hingeCtrls = $('lidHingeControls');
-  if (hingeCtrls) hingeCtrls.style.display = l === 'hinge' ? 'block' : 'none';
-  const slipCtrls = $('lidSlipControls');
-  if (slipCtrls) slipCtrls.style.display = l === 'slip' ? 'block' : 'none';
-  const pullCtrls = $('lidPullControls');
-  if (pullCtrls) pullCtrls.style.display = l === 'pull' ? 'block' : 'none';
-  const flatCtrls = $('lidFlatControls');
-  if (flatCtrls) flatCtrls.style.display = l === 'flat' ? 'block' : 'none';
-  const slideCtrls = $('lidSlideControls');
-  if (slideCtrls) slideCtrls.style.display = l === 'slide' ? 'block' : 'none';
-  const hints = {
-    none: 'None = open top. Flat top = closed box. Slip-on = lid that fits over the box. Pull-off = two-layer plug lid with handle. Slide-in = double frame channel with sliding panel. Hinged = inside-fit lid on back rings with a front finger tab.',
-    flat: 'Flat top = closed box with finger-jointed or slotted top plate.',
-    slip: 'Slip-on = lid that fits over the box.',
-    pull: 'Pull-off = insert plug + outer plate flush with walls, glued together. Half-circle handle has finger tabs that seat in centered slots in the outer plate.',
-    slide: 'Slide-in = two frame layers form a channel; panel slides in from the chosen side.',
-    hinge: 'Hinged = lid sits inside the box. Choose the hinge side. Lid tabs turn in rings on the neighboring walls; the finger tab rests in a notch on the opposite wall. Rectangular boxes only.',
-  };
-  if ($('lidHint')) $('lidHint').textContent = hints[l] || hints.none;
+  syncLidControls();
   rebuild();
 }
 
@@ -1362,7 +1285,6 @@ function syncRaiseUI() {
   if ($('raiseGrp')) $('raiseGrp').style.opacity = ok ? '1' : '0.35';
   if ($('sldRaise')) $('sldRaise').disabled = !ok;
   if ($('inRaise')) $('inRaise').disabled = !ok;
-  if ($('raiseHint')) $('raiseHint').style.display = ok ? '' : 'none';
   if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(rz, 1, 2) : 'n/a';
   if (ok && $('sldRaise')) {
     const T = state.T;
@@ -1382,7 +1304,6 @@ function syncRaiseUI() {
     $('inFootCut').disabled = !cutOk;
     $('inFootCut').value = numDisp(state.footCutout || 0);
   }
-  if ($('footCutHint')) $('footCutHint').style.display = ok ? '' : 'none';
   if ($('valFootCut')) $('valFootCut').textContent = cutOk ? fmtLen(state.footCutout || 0, 1, 2) : (ok ? '0 (raise first)' : 'n/a');
   // Foot width — active whenever cutouts can appear
   if ($('footWidthGrp')) $('footWidthGrp').style.opacity = cutOk ? '1' : '0.35';
@@ -1401,14 +1322,12 @@ function syncRaiseUI() {
     $('sldFootRound').disabled = !roundOk;
     $('sldFootRound').value = state.footRound || 0;
   }
-  if ($('footRoundHint')) $('footRoundHint').style.display = ok ? '' : 'none';
   if ($('valFootRound')) $('valFootRound').textContent = roundOk ? Math.round(state.footRound || 0) + '%' : (cutOk ? '0%' : 'n/a');
   if ($('footBellyGrp')) $('footBellyGrp').style.opacity = roundOk ? '1' : '0.35';
   if ($('sldFootBelly')) {
     $('sldFootBelly').disabled = !roundOk;
     $('sldFootBelly').value = state.footBelly || 0;
   }
-  if ($('footBellyHint')) $('footBellyHint').style.display = ok ? '' : 'none';
   if ($('valFootBelly')) $('valFootBelly').textContent = roundOk ? Math.round(state.footBelly || 0) + '%' : (cutOk ? '0%' : 'n/a');
 }
 const HINGE_MAX_DEG = 110;
@@ -1437,12 +1356,6 @@ function onSlidePull(v) {
   state.slidePull = Math.max(0, Math.min(1, parseFloat(v) / 100));
   if ($('valSlidePull')) $('valSlidePull').textContent = Math.round(state.slidePull * 100) + '%';
   updateAssembly();
-}
-function onSlideFromTop(v) {
-  pushHistory();
-  state.slideFromTop = Math.max(3, parseFloat(v) || 3);
-  if ($('valSlideFromTop')) $('valSlideFromTop').textContent = fmtLen(state.slideFromTop, 1, 2);
-  rebuild();
 }
 function onFlatOverhang(v) {
   pushHistory();
@@ -1668,12 +1581,6 @@ function onFrameFromTopInput(v) {
   if ($('valFrameFromTop')) $('valFrameFromTop').textContent = fmtLen(state.frameFromTop, 1, 2);
   rebuild();
 }
-function onDim() {
-  // legacy fallback if any caller remains
-  onDimInput('W', $('inW').value);
-  onDimInput('H', $('inH').value);
-  onDimInput('D', $('inD').value);
-}
 function onThicknessSlider(v) {
   pushHistory();
   state.T = parseFloat(v);
@@ -1751,12 +1658,6 @@ function updateLabels() {
     $('infoLid').textContent = lidNames[state.lid] || 'None';
   }
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
-  if ($('valSlideFromTop')) $('valSlideFromTop').textContent = fmtLen(state.slideFromTop || 3, 1, 2);
-  if ($('sldSlideFromTop')) {
-    const maxFT = Math.max(10, (state.H || 50) - 5);
-    $('sldSlideFromTop').max = maxFT;
-    if ((state.slideFromTop || 3) > maxFT) state.slideFromTop = maxFT;
-  }
   if ($('sldSlideBorder')) {
     const maxB = Math.max(10, Math.min(state.W || 150, state.D || 100) / 2 - 2);
     $('sldSlideBorder').max = maxB;
@@ -1774,7 +1675,29 @@ function updateLabels() {
   }
 }
 
+function syncLidControls() {
+  for(const [kind,suffix] of Object.entries({none:'None',flat:'Flat',slip:'Slip',pull:'Pull',slide:'Slide',hinge:'Hinge'})) {
+    $('lid'+suffix).classList.toggle('active',state.lid===kind);
+    const controls=$('lid'+suffix+'Controls');
+    if(controls) controls.style.display=state.lid===kind?'block':'none';
+  }
+}
+function syncSelections() {
+  $('unitMM').classList.toggle('active',state.unit==='mm');
+  $('unitIN').classList.toggle('active',state.unit==='in');
+  $('modeI').classList.toggle('active',state.mode==='inside');
+  $('modeO').classList.toggle('active',state.mode==='outside');
+  $('genBox').classList.toggle('active',state.generator!=='frame');
+  $('genFrame').classList.toggle('active',state.generator==='frame');
+  $('jointFace').classList.toggle('active',state.frameJoint!=='under');
+  $('jointUnder').classList.toggle('active',state.frameJoint==='under');
+  $('sldAssembly').value=Math.round((state.assembly ?? 1)*100);
+  $('valAssembly').textContent=$('sldAssembly').value+'%';
+  syncLidControls();
+}
+
 function syncInputs() {
+  syncSelections();
   const inch = state.unit === 'in';
   $('inW').value = numDisp(state.W);
   $('inH').value = numDisp(state.H);
@@ -1802,11 +1725,6 @@ function syncInputs() {
   if ($('inFrameBorder')) $('inFrameBorder').value = numDisp(state.frameBorder || 15);
   if ($('sldFrameFromTop')) $('sldFrameFromTop').value = state.frameFromTop || 0;
   if ($('inFrameFromTop')) $('inFrameFromTop').value = numDisp(state.frameFromTop || 0);
-  if ($('genBox')) $('genBox').classList.toggle('active', state.generator !== 'frame');
-  if ($('genFrame')) $('genFrame').classList.toggle('active', state.generator === 'frame');
-  if ($('jointFace')) $('jointFace').classList.toggle('active', state.frameJoint !== 'under');
-  if ($('jointUnder')) $('jointUnder').classList.toggle('active', state.frameJoint === 'under');
-  updateFrameHints();
   updateGeneratorUI();
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   syncDrawerHoleUI();
@@ -1824,11 +1742,6 @@ function syncInputs() {
   $('lblW').textContent = `Width (${state.unit})`;
   $('lblH').textContent = `Height (${state.unit})`;
   $('lblD').textContent = `Depth (${state.unit})`;
-  const slipCtrls = $('lidSlipControls');
-  if (slipCtrls) slipCtrls.style.display = state.lid === 'slip' ? 'block' : 'none';
-  const pullCtrls = $('lidPullControls');
-  if (pullCtrls) pullCtrls.style.display = state.lid === 'pull' ? 'block' : 'none';
-  if ($('lidPull')) $('lidPull').classList.toggle('active', state.lid === 'pull');
   if ($('sldPullClear')) $('sldPullClear').value = state.pullClear || 0.4;
   if ($('valPullClear')) $('valPullClear').textContent = fmtLen(state.pullClear || 0.4, 2, 3);
   if ($('sldPullHandleR')) $('sldPullHandleR').value = state.pullHandleR || 18;
@@ -1837,15 +1750,9 @@ function syncInputs() {
   if ($('valPullHandleBar')) $('valPullHandleBar').textContent = fmtLen(state.pullHandleBar || 6, 1, 2);
   if ($('sldPullLift')) $('sldPullLift').value = Math.round((state.pullLift || 0) * 100);
   if ($('valPullLift')) $('valPullLift').textContent = Math.round((state.pullLift || 0) * 100) + '%';
-  const flatCtrls = $('lidFlatControls');
-  if (flatCtrls) flatCtrls.style.display = state.lid === 'flat' ? 'block' : 'none';
-  const slideCtrls = $('lidSlideControls');
-  if (slideCtrls) slideCtrls.style.display = state.lid === 'slide' ? 'block' : 'none';
-  if ($('lidSlide')) $('lidSlide').classList.toggle('active', state.lid === 'slide');
   if ($('sldSlideBorder')) $('sldSlideBorder').value = state.slideBorder || 15;
   if ($('sldSlidePull')) $('sldSlidePull').value = Math.round((state.slidePull || 0) * 100);
   if ($('valSlidePull')) $('valSlidePull').textContent = Math.round((state.slidePull || 0) * 100) + '%';
-  if ($('sldSlideFromTop')) $('sldSlideFromTop').value = state.slideFromTop || 3;
   ['front','back','left','right'].forEach(s => {
     const el = $('slideDir' + s[0].toUpperCase());
     if (el) el.classList.toggle('active', (state.slideDir || 'front') === s);
@@ -1853,9 +1760,6 @@ function syncInputs() {
   if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
   if ($('chkWallJoints')) $('chkWallJoints').checked = state.wallJoints !== false;
-  const hingeCtrls = $('lidHingeControls');
-  if (hingeCtrls) hingeCtrls.style.display = state.lid === 'hinge' ? 'block' : 'none';
-  if ($('lidHinge')) $('lidHinge').classList.toggle('active', state.lid === 'hinge');
   if ($('sldRaise')) $('sldRaise').value = state.bottomRaise || 0;
   if ($('inRaise')) $('inRaise').value = numDisp(state.bottomRaise || 0);
   if ($('sldFootCut')) $('sldFootCut').value = state.footCutout || 0;
@@ -2265,13 +2169,17 @@ function offsetPoly(pts, d, miterLimit = Infinity) {
   return out;
 }
 
-function polyArea(pts) {
+function signedPolyArea(pts) {
   let a = 0;
   for (let i = 0; i < pts.length; i++) {
     const p = pts[i], q = pts[(i + 1) % pts.length];
     a += p[0] * q[1] - q[0] * p[1];
   }
-  return Math.abs(a) / 2;
+  return a / 2;
+}
+
+function polyArea(pts) {
+  return Math.abs(signedPolyArea(pts));
 }
 
 /**
@@ -3099,7 +3007,7 @@ function generateFramePanels(d, J) {
     }
     const holes = (def.holes || []).map(h => {
       if (!h || h.length < 3) return h;
-      const ccw = polyArea(h) > 0 ? h : h.slice().reverse();
+      const ccw = signedPolyArea(h) > 0 ? h : h.slice().reverse();
       return offsetPoly(ccw, state.kerf / 2);
     });
     let slots = [];
@@ -3187,7 +3095,7 @@ function buildPolySlipOnLidDefs(d, J) {
 
 /**
  * Pull-off lid pieces: insert plug + outer cap + half-ring handle with finger tabs.
- * Works for rectangle (4) and regular polygon (6). Returns defs to push onto the panel list.
+ * Works for rectangles and regular polygon boxes. Returns defs to push onto the panel list.
  */
 function buildPullOffLidDefs(d) {
   const { ow, od, T, iw, id } = d;
@@ -3352,10 +3260,9 @@ function heartCutOutline(outline, kerf) {
 }
 
 /** True-distance inset with round concave corners and removal of offset loops. */
-function insetHeartContour(contour, amount) {
+function insetContour(contour, amount) {
   if (amount <= 0) return contour.map(p=>p.slice());
-  const signedArea=p=>p.reduce((sum,a,i)=>{const b=p[(i+1)%p.length];return sum+a[0]*b[1]-b[0]*a[1];},0)/2;
-  const input=signedArea(contour)>0?contour:contour.slice().reverse();
+  const input=signedPolyArea(contour)>0?contour:contour.slice().reverse();
   let result=[];
   for(let i=0;i<input.length;i++) {
     const a=input[(i+input.length-1)%input.length],p=input[i],b=input[(i+1)%input.length];
@@ -3370,7 +3277,7 @@ function insetHeartContour(contour, amount) {
       result.push([p[0]+amount*(n1[0]+n2[0])/Math.max(1e-10,divisor),p[1]+amount*(n1[1]+n2[1])/Math.max(1e-10,divisor)]);
     }
   }
-  // Discard cusp-offset branches outside the eroded heart.
+  // Discard cusp-offset branches outside the inset contour.
   const valid=p=>{
     let inside=false,nearest=Infinity;
     for(let i=0,j=input.length-1;i<input.length;j=i++) {
@@ -3395,7 +3302,7 @@ function insetHeartContour(contour, amount) {
       if(t<=1e-8||t>=1-1e-8||k<=1e-8||k>=1-1e-8)continue;
       const p=[a[0]+t*u[0],a[1]+t*u[1]];
       const first=[p,...result.slice(i+1,j+1)],second=[p,...result.slice(j+1),...result.slice(0,i+1)];
-      result=Math.abs(signedArea(first))>Math.abs(signedArea(second))?first:second;
+      result=Math.abs(signedPolyArea(first))>Math.abs(signedPolyArea(second))?first:second;
       found=true;break outer;
     }
     if(!found)break;
@@ -3403,8 +3310,8 @@ function insetHeartContour(contour, amount) {
   return cleanPoly(result);
 }
 
-/** Faceted heart with tab-and-slot plate joints and plain wall ends. */
-function generateHeartPanels(d) {
+/** Shared shaped-box construction: tab-and-slot plates and plain wall ends. */
+function generateShapedPanels(d) {
   const { ow, od, oh, T } = d;
   // Sample each half by distance, keeping both the notch and tip as vertices.
   // Uniform parameter steps crowd tiny, redundant panels around the bottom tip.
@@ -3425,7 +3332,7 @@ function generateHeartPanels(d) {
   const star = state.shape === 'star';
   const shapeName = star ? 'Star' : cross ? 'Cross' : 'Heart';
   let verts=[...right,...right.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
-  if (polyArea(verts) < 0) verts.reverse();
+  if (signedPolyArea(verts) < 0) verts.reverse();
   // Smooth cutting contours are independent of the 24 straight wall facets.
   const smoothHalf=half.filter((_,i)=>i%5===0);
   let smooth=[...smoothHalf,...smoothHalf.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
@@ -3445,8 +3352,8 @@ function generateHeartPanels(d) {
     smooth=verts.map(p=>p.slice());
   }
   let rimInset=Math.max(6,3*T);
-  let opening=insetHeartContour(smooth,rimInset);
-  d.poly = { verts }; d.sides = verts.length; d.heart = true;
+  let opening=insetContour(smooth,rimInset);
+  d.poly = { verts }; d.sides = verts.length; d.shapedBox = true;
   const holes = [], defs = [];
   for (let i = 0; i < verts.length; i++) {
     const a=verts[i], b=verts[(i+1)%verts.length];
@@ -3475,7 +3382,7 @@ function generateHeartPanels(d) {
       holes.push([point(tab.a,0),point(tab.b,0),point(tab.b,T),point(tab.a,T)]);
     }
     defs.push({name:shapeName+' wall '+(i+1), role:'poly-side', w, h:oh,
-      sideIndex:i, nSides:verts.length, heartWall:{origin,ux,uy},
+      sideIndex:i, nSides:verts.length, shapedWall:{origin,ux,uy},
       outline:tabbedWallOutline(w,oh,T,null,null,wallTabs,wallTabs)});
   }
   // Keep a uniform rim width, increasing it only enough to support every wall slot.
@@ -3495,19 +3402,19 @@ function generateHeartPanels(d) {
   const touchesSlots=()=>holes.some(h=>h.some(p=>inside(p,opening)||opening.some((a,i)=>distance(p,a,opening[(i+1)%opening.length])<T*0.6))||opening.some(p=>inside(p,h)));
   for(let attempt=0;attempt<80 && touchesSlots();attempt++) {
     rimInset+=0.25;
-    opening=insetHeartContour(smooth,rimInset);
+    opening=insetContour(smooth,rimInset);
   }
-  const clearance=state.heartLidFit ?? 0.4;
-  const insert=insetHeartContour(opening,clearance);
-  d.heartRimWidth=rimInset;
+  const clearance=state.shapedLidFit ?? 0.4;
+  const insert=insetContour(opening,clearance);
+  d.shapedRimWidth=rimInset;
   defs.unshift({name:shapeName+' bottom', role:'bottom', poly:true, outline:smooth, holes});
   defs.push({name:shapeName+' top rim',role:'top',poly:true,outline:smooth,holes:[...holes,opening]});
-  if (state.heartTop !== false) {
+  if (state.shapedTop !== false) {
     defs.push({name:shapeName+' lid insert (glue under cap)',role:'pull-insert',poly:true,outline:insert});
     const cap={name:shapeName+' lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert],holes:[]};
     defs.push(cap);
-    if (state.heartHandle !== false) {
-      const R=Math.min(state.heartHandleSize ?? 18, Math.min(ow,od)*(star ? 0.16 : 0.22), cross ? Math.max(2,ow/6-T-1) : Infinity);
+    if (state.shapedHandle !== false) {
+      const R=Math.min(state.shapedHandleSize ?? 18, Math.min(ow,od)*(star ? 0.16 : 0.22), cross ? Math.max(2,ow/6-T-1) : Infinity);
       const band=Math.min(Math.max(3,T*1.5),R*0.4), inner=R-band;
       // Two full-thickness tabs pass through the cap and stop on the insert.
       const handle=[[-R,0],[-R,T]];
@@ -3527,8 +3434,8 @@ function generateHeartPanels(d) {
     const outline=def.outline, cut=state.shape === 'heart' && def.poly ? heartCutOutline(outline,state.kerf) : offsetPoly(outline,state.kerf/2);
     const xs=cut.map(p=>p[0]), ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-    return {...def, cut, holes:(def.holes||[]).map(h=>h === opening ? h.map(p=>p.slice()) : offsetPoly(polyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),
-      slots:[], minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:Math.abs(polyArea(outline))};
+    return {...def, cut, holes:(def.holes||[]).map(h=>h === opening ? h.map(p=>p.slice()) : offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),
+      slots:[], minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   return {panels,dims:d};
 }
@@ -3569,9 +3476,9 @@ function generatePanelsBase(d = dims()) {
     return generateFramePanels(d, J);
   }
 
-  if (shapedBoxActive()) return generateHeartPanels(d);
+  if (shapedBoxActive()) return generateShapedPanels(d);
 
-  // ---------- Regular polygon boxes (6) ----------
+  // ---------- Regular polygon boxes ----------
   if (nSides !== 4) {
     const poly = regularPolygonVerts(nSides, ow);
     d.poly = poly;
@@ -3726,7 +3633,7 @@ function generatePanelsBase(d = dims()) {
       // Enlarge holes for kerf (offsetPoly expands CCW outward; ensure CCW)
       const holes = (def.holes || []).map(h => {
         if (!h || h.length < 3) return h;
-        const ccw = polyArea(h) > 0 ? h : h.slice().reverse();
+        const ccw = signedPolyArea(h) > 0 ? h : h.slice().reverse();
         return offsetPoly(ccw, state.kerf / 2);
       });
       let slots = [];
@@ -4811,12 +4718,6 @@ function placementTray(p, d) {
 }
 
 /** Horizontal shelf plate between drawer rows. */
-function placementShelf(p, d) {
-  const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  const { iw, id, T } = d;
-  const y = T + (p.shelfY || 0);
-  return { o: V(-iw / 2, y, id / 2), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
-}
 
 /** 3D placement for regular-polygon side walls and plates. */
 function placementPoly(p, d) {
@@ -4872,8 +4773,8 @@ function placementPoly(p, d) {
       n: V(nx, 0, ny),
     };
   }
-  if (p.role === 'poly-side' && p.heartWall) {
-    const {origin,ux,uy} = p.heartWall;
+  if (p.role === 'poly-side' && p.shapedWall) {
+    const {origin,ux,uy} = p.shapedWall;
     return {o:V(origin[0],0,origin[1]),u:V(ux,0,uy),v:V(0,1,0),n:V(-uy,0,ux)};
   }
   if (p.role === 'poly-side') {
@@ -5020,7 +4921,7 @@ function rebuild3D() {
     for (const h of useHoles) {
       if (h.length < 3) continue;
       const holePath = new THREE.Path();
-      const area = polyArea(h);
+      const area = signedPolyArea(h);
       const pts = area > 0 ? h.slice().reverse() : h;
       holePath.moveTo(pts[0][0], pts[0][1]);
       for (let i = 1; i < pts.length; i++) holePath.lineTo(pts[i][0], pts[i][1]);
@@ -5279,17 +5180,6 @@ function resetAll() {
     colWeights: [1],
     rowWeights: [1],
   });
-  $('unitMM').classList.add('active');  $('unitIN').classList.remove('active');
-  $('modeI').classList.add('active');   $('modeO').classList.remove('active');
-  $('lidNone').classList.add('active');
-  $('lidFlat').classList.remove('active');
-  if ($('lidSlip')) $('lidSlip').classList.remove('active');
-  if ($('lidPull')) $('lidPull').classList.remove('active');
-  if ($('lidSlide')) $('lidSlide').classList.remove('active');
-  if ($('lidHinge')) $('lidHinge').classList.remove('active');
-  if ($('genBox')) $('genBox').classList.add('active');
-  if ($('genFrame')) $('genFrame').classList.remove('active');
-  $('sldAssembly').value = 100; $('valAssembly').textContent = '100%';
   syncInputs();
   rebuild();
   setView('persp', document.querySelector('.toolbar .tb-btn[onclick*="persp"]'));
