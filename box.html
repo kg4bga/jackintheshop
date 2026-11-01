@@ -414,7 +414,7 @@
           </div>
           <div class="ctrl" id="shapeControls">
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
-            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option></select>
+            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option></select>
           </div>
           <div class="ctrl" id="heartControls" style="display:none">
             <label><input type="checkbox" id="heartTop" checked onchange="setHeartTop(this.checked)"> Include removable top</label>
@@ -742,6 +742,17 @@
               <input type="range" id="sldDrawerClear" min="0.1" max="2" step="0.1" value="0.5" oninput="onDrawerClear(this.value)">
               <div class="hint" style="margin-top:4px">Gap per side inside each compartment so trays slide freely.</div>
             </div>
+            <div class="ctrl">
+              <label class="ctrl-lbl" for="drawerHoleShape">Finger hole shape</label>
+              <select class="dim-inp" id="drawerHoleShape" onchange="setDrawerHoleShape(this.value)">
+                <option value="round">Round</option><option value="slot">Rounded slot</option>
+              </select>
+            </div>
+            <div class="ctrl">
+              <label class="ctrl-lbl" for="drawerHoleSize"><span id="drawerHoleSizeLabel">Finger hole diameter</span><span class="ctrl-val" id="drawerHoleSizeVal">16.0 mm</span></label>
+              <input type="range" id="drawerHoleSize" min="6" max="40" step="0.5" value="16" oninput="onDrawerHoleSize(this.value)">
+              <div class="hint">Slot height is half its width. Openings shrink automatically when needed to leave material around the edge of a small drawer.</div>
+            </div>
             <div class="ctrl" style="margin-top:8px;">
               <div class="ctrl-lbl"><strong>Open end</strong></div>
               <div class="seg" style="margin-top:4px;">
@@ -882,6 +893,7 @@ const DEFAULTS = {
   divCols: 1, divRows: 1, divHpct: 100,
   colWeights: [1], rowWeights: [1],
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
+  drawerHoleShape: 'round', drawerHoleSize: 16,
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
   slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
   slipLift: 0, // slip-on lid: 0 = on the box, 1 = fully lifted off (view-only)
@@ -1116,10 +1128,11 @@ function setGenerator(g) {
 }
 
 function setBoxShape(shape) {
-  if (!['standard', 'heart', 'cross'].includes(shape) || shape === state.shape) return;
+  if (!['standard', 'heart', 'cross', 'star'].includes(shape) || shape === state.shape) return;
   pushHistoryNow();
   state.shape = shape;
   if (shape === 'cross') state.D = state.W * 1.5;
+  if (shape === 'star') state.D = state.W;
   syncInputs();
   rebuild();
 }
@@ -1149,18 +1162,18 @@ function onHeartLidLift(v) {
   onPullLift(v);
   $('heartLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
 }
-function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross'].includes(state.shape); }
+function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross', 'star'].includes(state.shape); }
 function updateShapeUI() {
   const heart = shapedBoxActive(), frame = state.generator === 'frame';
   $('genFrame').style.display = heart ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
-  $('shapedBoxHint').textContent = (state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
+  $('shapedBoxHint').textContent = (state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
   $('heartTop').checked = state.heartTop !== false;
   $('heartLidControls').style.display = state.heartTop === false ? 'none' : '';
   $('heartHandle').checked = state.heartHandle !== false;
   $('heartHandleControls').style.display = state.heartHandle === false ? 'none' : '';
   $('heartHandleSize').value = state.heartHandleSize ?? 18;
-  $('heartHandleSizeVal').textContent = fmtLen(Math.min(state.heartHandleSize ?? 18, Math.min(dims().ow,dims().od)*0.22, state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
+  $('heartHandleSizeVal').textContent = fmtLen(Math.min(state.heartHandleSize ?? 18, Math.min(dims().ow,dims().od)*(state.shape === 'star' ? 0.16 : 0.22), state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
   $('heartLidFit').value = state.heartLidFit ?? 0.4;
   $('heartLidFitVal').textContent = fmtLen(state.heartLidFit ?? 0.4, 2, 3);
   $('heartLidLift').value = Math.round((state.pullLift || 0)*100);
@@ -1748,7 +1761,7 @@ function updateLabels() {
   }
   if ($('infoSides')) {
     if (shapedBoxActive()) {
-      $('infoSides').textContent = state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
+      $('infoSides').textContent = state.shape === 'star' ? 'Star (10 straight walls)' : state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
     } else if (state.generator === 'frame') {
       $('infoSides').textContent = 'Frame';
     } else {
@@ -1795,6 +1808,7 @@ function syncInputs() {
   updateFrameHints();
   updateGeneratorUI();
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
+  syncDrawerHoleUI();
   if ($('sldDrawerClear')) $('sldDrawerClear').value = state.drawerClear;
   if ($('valDrawerClear')) $('valDrawerClear').textContent = fmtLen(state.drawerClear, 1, 2);
   if ($('sldDrawerPull')) $('sldDrawerPull').value = Math.round((state.drawerPull || 0) * 100);
@@ -1890,6 +1904,23 @@ function onDrawerH(v) {
   state.drawerH = Math.max(5, parseFloat(v) || 25);
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   rebuild();
+}
+function syncDrawerHoleUI() {
+  $('drawerHoleShape').value=state.drawerHoleShape || 'round';
+  $('drawerHoleSize').value=state.drawerHoleSize ?? 16;
+  $('drawerHoleSizeVal').textContent=fmtLen(state.drawerHoleSize ?? 16,1,3);
+  $('drawerHoleSizeLabel').textContent=state.drawerHoleShape === 'slot' ? 'Finger slot width' : 'Finger hole diameter';
+}
+function setDrawerHoleShape(shape) {
+  if (!['round','slot'].includes(shape) || shape===state.drawerHoleShape) return;
+  pushHistoryNow(); state.drawerHoleShape=shape;
+  syncDrawerHoleUI(); rebuild();
+}
+function onDrawerHoleSize(v) {
+  const size=Number(v);
+  if(!Number.isFinite(size)||size<6||size>40) return;
+  pushHistory(); state.drawerHoleSize=size;
+  syncDrawerHoleUI(); rebuild();
 }
 function onDrawerClear(v) {
   pushHistory();
@@ -3330,7 +3361,8 @@ function generateHeartPanels(d) {
     right.push(half[j-1].map((v,axis)=>v+(half[j][axis]-v)*f));
   }
   const cross = state.shape === 'cross';
-  const shapeName = cross ? 'Cross' : 'Heart';
+  const star = state.shape === 'star';
+  const shapeName = star ? 'Star' : cross ? 'Cross' : 'Heart';
   let verts=[...right,...right.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
   if (polyArea(verts) < 0) verts.reverse();
   // Smooth cutting contours are independent of the 24 straight wall facets.
@@ -3339,6 +3371,16 @@ function generateHeartPanels(d) {
   if (cross) {
     const x=ow/6, edge=ow/2, top=-od/2, barTop=top+od*0.23, barBottom=barTop+od*0.22, bottom=od/2;
     verts=[[-x,top],[x,top],[x,barTop],[edge,barTop],[edge,barBottom],[x,barBottom],[x,bottom],[-x,bottom],[-x,barBottom],[-edge,barBottom],[-edge,barTop],[-x,barTop]];
+    smooth=verts.map(p=>p.slice());
+  }
+  if (star) {
+    const raw=Array.from({length:10},(_,i)=>{
+      const angle=-Math.PI/2+i*Math.PI/5,r=i%2 ? 0.48 : 1;
+      return [r*Math.cos(angle),r*Math.sin(angle)];
+    });
+    const minX=Math.min(...raw.map(p=>p[0])),maxX=Math.max(...raw.map(p=>p[0]));
+    const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
+    verts=raw.map(([x,y])=>[(x-(minX+maxX)/2)*ow/(maxX-minX),(y-(minY+maxY)/2)*od/(maxY-minY)]);
     smooth=verts.map(p=>p.slice());
   }
   let rimInset=Math.max(6,3*T);
@@ -3404,7 +3446,7 @@ function generateHeartPanels(d) {
     const cap={name:shapeName+' lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert],holes:[]};
     defs.push(cap);
     if (state.heartHandle !== false) {
-      const R=Math.min(state.heartHandleSize ?? 18, Math.min(ow,od)*0.22, cross ? Math.max(2,ow/6-T-1) : Infinity);
+      const R=Math.min(state.heartHandleSize ?? 18, Math.min(ow,od)*(star ? 0.16 : 0.22), cross ? Math.max(2,ow/6-T-1) : Infinity);
       const band=Math.min(Math.max(3,T*1.5),R*0.4), inner=R-band;
       // Two full-thickness tabs pass through the cap and stop on the insert.
       const handle=[[-R,0],[-R,T]];
@@ -4083,15 +4125,25 @@ function generatePanelsBase(d = dims()) {
         const cx = xPos + cellW / 2;
         const cz = zPos + cellD / 2;
 
-        // Finger hole on TOP next to the open end
-        const holeR = Math.min(8, Math.max(4, Math.min(drW, drD) * 0.18));
-        const m = holeR + Math.max(T, 2);
-        let hx = drW / 2, hy = drD / 2;
-        if (openF) { hx = drW / 2; hy = m; }
-        else if (openB) { hx = drW / 2; hy = drD - m; }
-        else if (openL) { hx = m; hy = drD / 2; }
-        else if (openR) { hx = drW - m; hy = drD / 2; }
-        const pullHole = circlePoly(hx, hy, holeR, 24);
+        // Place a round hole or rounded slot near the open end, entirely in the cap.
+        const requested=state.drawerHoleSize ?? 16;
+        const margin=Math.min(Math.max(T,2),Math.min(drW,drD)*0.2);
+        const slot=state.drawerHoleShape === 'slot';
+        const width=Math.min(requested,drW-2*margin,slot ? 2*(drD-2*margin) : drD-2*margin);
+        const height=slot ? width/2 : width;
+        let hx=drW/2,hy=drD/2;
+        if(openF) hy=height/2+margin;
+        else if(openB) hy=drD-height/2-margin;
+        else if(openL) hx=width/2+margin;
+        else if(openR) hx=drW-width/2-margin;
+        let pullHole;
+        if(slot) {
+          const r=height/2, span=(width-height)/2;
+          pullHole=cleanPoly([
+            ...arcPts(hx+span,hy,r,-Math.PI/2,Math.PI/2,32),
+            ...arcPts(hx-span,hy,r,Math.PI/2,3*Math.PI/2,32),
+          ]);
+        } else pullHole=circlePoly(hx,hy,width/2,64);
 
         defs.push({ name: `${label} Bottom`, role: 'dr-bottom', w: drW, h: drD, specs: drPlate, trayIndex: trays.length });
         defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: [null,null,null,null], holes: [pullHole], trayIndex: trays.length });
@@ -4243,6 +4295,7 @@ function generatePanelsBase(d = dims()) {
     const cut = offsetPoly(outline, state.kerf / 2);
     // Kerf-compensate holes (enlarge for internal cuts)
     const holes = (def.holes || []).map(h => {
+      if (def.role === 'dr-top') return offsetPoly(h, state.kerf / 2);
       const xs = h.map(p => p[0]), ys = h.map(p => p[1]);
       const minX = Math.min(...xs) - state.kerf / 2, maxX = Math.max(...xs) + state.kerf / 2;
       const minY = Math.min(...ys) - state.kerf / 2, maxY = Math.max(...ys) + state.kerf / 2;
