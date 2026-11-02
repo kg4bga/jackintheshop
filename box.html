@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.7</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -364,7 +364,7 @@
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.7</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -416,6 +416,8 @@
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
             <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option></select>
           </div>
+          
+          
           <div class="ctrl" id="shapedControls" style="display:none">
             <label><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
             <div class="ctrl" style="margin-top:10px" id="shapedLidControls">
@@ -431,13 +433,9 @@
               <label class="ctrl-lbl" for="shapedLidLift">Lift lid (preview) <span class="ctrl-val" id="shapedLidLiftVal">0%</span></label>
               <input type="range" id="shapedLidLift" min="0" max="100" step="1" value="0" oninput="onShapedLidLift(this.value)">
             </div>
-            <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
+            
           </div>
-          <div id="wallCountControls" class="ctrl">
-            <label class="ctrl-lbl" for="inSides">Number of walls</label>
-            <input class="dim-inp" id="inSides" type="number" min="4" max="20" step="2" value="4" aria-describedby="sidesHint" onchange="onWallCount(this)">
-            <div class="hint" id="sidesHint">Enter an even number from 4 to 20. Four walls uses width × depth; higher counts make a regular polygon.</div>
-          </div>
+          
          
           <div class="ctrl">
             <div class="ctrl-lbl"><strong id="lblW">Width (mm)</strong><span class="ctrl-val" id="valW">150.0 mm</span></div>
@@ -505,6 +503,46 @@
       </div>
 
       <!-- Frame panel -->
+      <div class="lb-panel" id="s-walls">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-walls')">
+          <span class="title">Walls</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <div id="wallCountControls" class="ctrl">
+            <label class="ctrl-lbl" for="inSides">Number of walls</label>
+            <input class="dim-inp" id="inSides" type="number" min="4" max="20" step="2" value="4" aria-describedby="sidesHint" onchange="onWallCount(this)">
+            <div class="hint" id="sidesHint">Enter an even number from 4 to 20. Four walls uses width × depth; higher counts make a regular polygon.</div>
+          </div>
+          <div class="ctrl" id="wallStyleControls">
+            <label class="ctrl-lbl" for="wallStyle">Wall construction</label>
+            <select class="dim-inp" id="wallStyle" onchange="setWallStyle(this.value)"><option value="panels">Panel walls</option><option value="living">Living hinge wrap</option></select>
+            <div class="hint">Living hinges support rounded rectangular boxes and hearts.</div>
+          </div>
+          <div id="livingControls" style="display:none">
+            <div class="ctrl"><label class="ctrl-lbl" for="livingRadius" id="livingRadiusLabel">Corner radius (mm)</label><input class="dim-inp" type="number" id="livingRadius" min="8" max="60" step="0.5" onchange="setLivingSetting('livingRadius',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingPitch">Cut spacing (mm)</label><input class="dim-inp" type="number" id="livingPitch" min="1" max="5" step="0.1" onchange="setLivingSetting('livingPitch',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingSlit">Slit length (mm)</label><input class="dim-inp" type="number" id="livingSlit" min="4" max="30" step="0.5" onchange="setLivingSetting('livingSlit',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingBridge">Connecting bridge (mm)</label><input class="dim-inp" type="number" id="livingBridge" min="1" max="5" step="0.1" onchange="setLivingSetting('livingBridge',this.value)"></div>
+            <div class="hint" id="livingInfo"></div>
+            <div class="hint">Glue the wrap seam and tabs into the bottom and rim slots. Keep slit cuts as open red cut lines. Test this pattern on your material first; flexibility and minimum bend radius are material-dependent.</div>
+          </div>
+          <div class="ctrl" id="fingerLengthControls">
+            <label class="ctrl-lbl" for="sldFingerLength"><strong>Wall finger length</strong><span class="ctrl-val" id="valFingerLength">100%</span></label>
+            <input type="range" id="sldFingerLength" min="50" max="150" step="1" value="100" oninput="onFingerLength(this.value)" aria-describedby="fingerLengthHint">
+            <div class="hint" id="fingerLengthHint" style="margin-top:4px">Polygon walls only. 100% uses the calculated corner reach; lower shortens fingers, higher extends them. Recess depth stays the same.</div>
+          </div>
+          <div class="ctrl" id="wallJointControls" style="margin-top:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
+                <span><strong>Wall finger joints</strong> — joints between side walls</span>
+              </label>
+              
+            </div>
+          <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
+        </div>
+      </div>
+
       <div class="lb-panel" id="s-frame">
         <div class="lb-panel-hdr" onclick="toggleSec('s-frame')">
           <span class="title">Frame</span>
@@ -554,11 +592,7 @@
             <div class="hint" style="margin-top:4px">Odd number of equal fingers per edge. Actual size adjusts slightly.</div>
             <div class="joint-info" id="jointInfo"></div>
           </div>
-          <div class="ctrl" id="fingerLengthControls">
-            <label class="ctrl-lbl" for="sldFingerLength"><strong>Wall finger length</strong><span class="ctrl-val" id="valFingerLength">100%</span></label>
-            <input type="range" id="sldFingerLength" min="50" max="150" step="1" value="100" oninput="onFingerLength(this.value)" aria-describedby="fingerLengthHint">
-            <div class="hint" id="fingerLengthHint" style="margin-top:4px">Polygon walls only. 100% uses the calculated corner reach; lower shortens fingers, higher extends them. Recess depth stays the same.</div>
-          </div>
+          
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Kerf (beam width)</strong><span class="ctrl-val" id="valKerf">0.10 mm</span></div>
             <input type="range" id="sldKerf" min="0" max="0.5" step="0.01" oninput="onKerf(this.value)">
@@ -636,13 +670,7 @@
               <input type="range" id="sldFlatOH" min="0" max="30" step="0.5" value="0" oninput="onFlatOverhang(this.value)">
               <div class="hint" style="margin-top:4px">0 = flush lid with finger joints. Increase for a solid overhanging top plate with slots for the wall tabs. When feet/raise are on, only the top plate scales — the bottom stays flush so the feet still work.</div>
             </div>
-            <div class="ctrl" style="margin-top:10px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
-                <span><strong>Wall finger joints</strong> — joints between side walls</span>
-              </label>
-              
-            </div>
+            
           </div>
           <div id="lidHingeControls" style="display:none; margin-top:8px;">
             <div class="ctrl">
@@ -734,9 +762,9 @@
           <div class="hint" style="margin-top:4px">Main box stays open-top. Each Columns×Rows cell gets a finger-jointed mini box with a finger hole on the top lid so you can lift it out.</div>
           <div id="drawerControls" style="display:none;margin-top:8px;">
             <div class="ctrl">
-              <div class="ctrl-lbl"><strong>Tray height</strong><span class="ctrl-val" id="valDrawerH">25.0 mm</span></div>
-              <input type="range" id="sldDrawerH" min="8" max="80" step="0.5" value="25" oninput="onDrawerH(this.value)">
-              <div class="hint" style="margin-top:4px">Wall height of each mini tray (above its bottom).</div>
+              <div class="ctrl-lbl"><strong>Drawer interior height</strong><span class="ctrl-val" id="valDrawerH">25.0 mm</span></div>
+              <input type="range" id="sldDrawerH" min="3" max="80" step="any" value="25" oninput="onDrawerH(this.value)">
+              <div class="hint" id="drawerHeightHint" style="margin-top:4px">Adjust from 3 mm; maximum accounts for both drawer plates and space beneath the lid.</div>
             </div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Fit clearance</strong><span class="ctrl-val" id="valDrawerClear">0.5 mm</span></div>
@@ -883,6 +911,7 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
+  wallStyle:'panels', livingRadius:15, livingPitch:2, livingSlit:15, livingBridge:2,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
   frameBorder: 15, // mm — width of the mitered face frame
@@ -1110,12 +1139,34 @@ function onShapedLidLift(v) {
   onPullLift(v);
   $('shapedLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
 }
+function livingActive() { return state.generator!=='frame' && (state.shape==='heart'||state.shape==='standard'&&state.sides===4) && state.wallStyle==='living'; }
+function setWallStyle(style) {
+  if(!['panels','living'].includes(style)||style===state.wallStyle)return;
+  pushHistoryNow();state.wallStyle=style;
+  syncInputs();rebuild();
+}
+function setLivingSetting(key,value) {
+  const limits={livingRadius:[8,60],livingPitch:[1,5],livingSlit:[4,30],livingBridge:[1,5]},n=Number(value);
+  if(!limits[key]||!Number.isFinite(n))return;
+  pushHistory();state[key]=Math.max(limits[key][0],Math.min(limits[key][1],n));
+  syncInputs();rebuild();
+}
 function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross', 'star'].includes(state.shape); }
 function updateShapeUI() {
-  const shaped = shapedBoxActive(), frame = state.generator === 'frame';
+  const living=livingActive();
+  $('s-walls').style.display=state.generator==='frame'?'none':'';
+  $('shapedBoxHint').style.display=shapedBoxActive()||living?'':'none';
+  const shaped = shapedBoxActive() || living, frame = state.generator === 'frame';
+  $('wallStyleControls').style.display=frame||!['standard','heart'].includes(state.shape) ? 'none' : '';
+  $('wallStyle').disabled=state.shape==='standard'&&state.sides!==4;
+  $('wallStyle').value=state.wallStyle;
+  $('livingControls').style.display=living?'':'none';
+  $('livingRadiusLabel').textContent='Corner radius (mm)';
+  $('livingRadius').parentElement.style.display=state.shape==='heart'?'none':'';
+  for(const key of ['livingRadius','livingPitch','livingSlit','livingBridge'])$(key).value=state[key];
   $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
-  $('shapedBoxHint').textContent = (state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
+  $('shapedBoxHint').textContent = (living ? (state.shape==='heart'?'Two flexible heart walls meet at the sharp top notch and bottom tip. Glue the two seams; sand the ends to mate if needed.':'One wraparound wall with living-hinge corners. Permanent top rim and optional two-layer lid.') : state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
   $('shapedTop').checked = state.shapedTop !== false;
   $('shapedLidControls').style.display = state.shapedTop === false ? 'none' : '';
   $('shapedHandle').checked = state.shapedHandle !== false;
@@ -1288,7 +1339,7 @@ function syncRaiseUI() {
   if ($('valRaise')) $('valRaise').textContent = ok ? fmtLen(rz, 1, 2) : 'n/a';
   if (ok && $('sldRaise')) {
     const T = state.T;
-    const lidT = (shapedBoxActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+    const lidT = (shapedBoxActive() || livingActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
     const maxR = state.mode === 'inside' ? 60 : Math.max(0, Math.min(60, state.H - lidT - Math.max(2, 2 * T)));
     $('sldRaise').max = maxR;
   }
@@ -1663,7 +1714,9 @@ function updateLabels() {
     $('sldSlideBorder').max = maxB;
   }
   if ($('infoSides')) {
-    if (shapedBoxActive()) {
+    if(livingActive()) {
+      $('infoSides').textContent='Living hinge wrap';
+    } else if (shapedBoxActive()) {
       $('infoSides').textContent = state.shape === 'star' ? 'Star (10 straight walls)' : state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
     } else if (state.generator === 'frame') {
       $('infoSides').textContent = 'Frame';
@@ -1676,6 +1729,7 @@ function updateLabels() {
 }
 
 function syncLidControls() {
+  $('wallJointControls').style.display=state.lid==='flat'&&state.generator!=='frame'&&!shapedBoxActive()&&!livingActive()?'':'none';
   for(const [kind,suffix] of Object.entries({none:'None',flat:'Flat',slip:'Slip',pull:'Pull',slide:'Slide',hinge:'Hinge'})) {
     $('lid'+suffix).classList.toggle('active',state.lid===kind);
     const controls=$('lid'+suffix+'Controls');
@@ -1790,7 +1844,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-feet', 's-walls', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -1806,7 +1860,9 @@ function onDrawer(on) {
 }
 function onDrawerH(v) {
   pushHistory();
-  state.drawerH = Math.max(5, parseFloat(v) || 25);
+  const height=Number(v);
+  if(!Number.isFinite(height)||height<3) return;
+  state.drawerH=height;
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   rebuild();
 }
@@ -1900,7 +1956,7 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
-  if (shapedBoxActive()) return false;
+  if (shapedBoxActive() || livingActive()) return false;
   // Raised bottoms + decorative feet work on rectangles, frames, and hexagons.
   // Flat-top with wall joints off (true lantern / V-groove walls) is excluded.
   // Flat-top overhang is allowed: when raise is active, overhang scales only the top plate.
@@ -2246,6 +2302,18 @@ function dividerHeightLimit(d, ceiling = null) {
   }
   return Math.max(0,top-base-(covered ? 0.5 : 0));
 }
+// Drawer height is interior space; both its floor and cap must fit below the lid.
+function drawerHeightForDims(d) {
+  const swingRelief=hingeActive() && d.hinge ? d.hinge.relD : 0;
+  const maximum=Math.max(0,dividerHeightLimit(d)-2*d.T-swingRelief);
+  const height=maximum<3 ? 0 : Math.max(3,Math.min(maximum,state.drawerH ?? 25));
+  $('sldDrawerH').min=3; $('sldDrawerH').max=Math.max(3,maximum);
+  $('sldDrawerH').value=height || 3; $('sldDrawerH').disabled=maximum<3;
+  $('valDrawerH').textContent=height ? fmtLen(height,1,3) : 'No space';
+  $('drawerHeightHint').textContent=maximum<3 ? 'Not enough space beneath the lid for a 3 mm drawer interior plus its bottom and top. Increase box height.' : 'Minimum '+fmtLen(3,0,3)+' · Maximum '+fmtLen(maximum,1,3)+'. Includes room for both drawer plates and 0.5 mm clearance beneath a lid.';
+  return {height,maximum};
+}
+
 function dividerHeightForLimit(maximum) {
   const height=maximum<3 ? 0 : state.divHeight == null ? maximum : Math.max(3,Math.min(maximum,state.divHeight));
   const slider=$('sldDivH');
@@ -2373,7 +2441,7 @@ function arcPts(cx, cy, r, a0, a1, steps = 8) {
 }
 
 function hingeActive() {
-  return !shapedBoxActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
+  return !shapedBoxActive() && !livingActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
 }
 
 /** All hinge-lid dimensions in one place (mm). Needs dims() output. */
@@ -3440,6 +3508,161 @@ function generateShapedPanels(d) {
   return {panels,dims:d};
 }
 
+/** Rounded rectangle, parameterized by distance along the neutral wall line. */
+function livingPerimeter(w,h,r) {
+  const segments=[],hw=w/2,hh=h/2;
+  const line=(a,b)=>segments.push({type:'line',a,b,length:Math.hypot(b[0]-a[0],b[1]-a[1])});
+  const arc=(center,angle)=>segments.push({type:'arc',center,angle,r,length:Math.PI*r/2});
+  // Put the glue seam midway along a straight wall, away from the flexible corners.
+  line([0,-hh],[hw-r,-hh]);arc([hw-r,-hh+r],-Math.PI/2);
+  line([hw,-hh+r],[hw,hh-r]);arc([hw-r,hh-r],0);
+  line([hw-r,hh],[-hw+r,hh]);arc([-hw+r,hh-r],Math.PI/2);
+  line([-hw,hh-r],[-hw,-hh+r]);arc([-hw+r,-hh+r],Math.PI);
+  line([-hw+r,-hh],[0,-hh]);
+  let total=0;for(const seg of segments){seg.start=total;total+=seg.length;}
+  const at=distance=>{
+    const q=((distance%total)+total)%total;
+    const seg=segments.find(a=>q<=a.start+a.length+1e-8)||segments[segments.length-1],u=Math.max(0,Math.min(1,(q-seg.start)/seg.length));
+    if(seg.type==='line') {const dx=(seg.b[0]-seg.a[0])/seg.length,dy=(seg.b[1]-seg.a[1])/seg.length;return {x:seg.a[0]+dx*seg.length*u,z:seg.a[1]+dy*seg.length*u,nx:dy,nz:-dx};}
+    const angle=seg.angle+u*Math.PI/2;return {x:seg.center[0]+r*Math.cos(angle),z:seg.center[1]+r*Math.sin(angle),nx:Math.cos(angle),nz:Math.sin(angle)};
+  };
+  return {segments,total,at};
+}
+function roundedLivingOutline(w,h,r) {
+  const path=livingPerimeter(w,h,r),pts=[];
+  for(const seg of path.segments){const steps=seg.type==='arc'?32:1;for(let i=0;i<steps;i++){const p=path.at(seg.start+seg.length*i/steps);pts.push([p.x,p.z]);}}
+  return cleanPoly(pts);
+}
+/** Sharp heart outline with two separately flexible side walls. */
+function livingHeartGeometry(d) {
+  const {ow,od,T}=d;
+  const pts=[];let from=[0,-0.2];
+  const bezier=(a,b,to)=>{
+    const start=from;
+    for(let i=0;i<60;i++){const t=i/60,u=1-t;pts.push([u*u*u*start[0]+3*u*u*t*a[0]+3*u*t*t*b[0]+t*t*t*to[0],u*u*u*start[1]+3*u*u*t*a[1]+3*u*t*t*b[1]+t*t*t*to[1]]);}
+    from=to;
+  };
+  // Four curves: split at the sharp notch and point, never bend through either.
+  bezier([0.2,-0.55],[0.5,-0.45],[0.5,-0.1]);
+  bezier([0.5,0.12],[0.2,0.3],[0,0.5]);
+  bezier([-0.2,0.3],[-0.5,0.12],[-0.5,-0.1]);
+  bezier([-0.5,-0.45],[-0.2,-0.55],[0,-0.2]);
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),lo=Math.min(...ys),hi=Math.max(...ys),left=Math.min(...xs),right=Math.max(...xs);
+  const outer=pts.map(([x,y])=>[(x-(left+right)/2)*ow/(right-left),(y-(lo+hi)/2)*od/(hi-lo)]);
+  const neutral=offsetPoly(outer,-1.5*T,8);
+  const segments=[];let total=0;
+  const normals=neutral.map((q,i)=>{
+    const a=neutral[(i+neutral.length-1)%neutral.length],b=neutral[(i+1)%neutral.length];
+    const l1=Math.hypot(q[0]-a[0],q[1]-a[1]),l2=Math.hypot(b[0]-q[0],b[1]-q[1]);
+    const x=(q[1]-a[1])/l1+(b[1]-q[1])/l2,z=-(q[0]-a[0])/l1-(b[0]-q[0])/l2,L=Math.hypot(x,z);return [x/L,z/L];
+  });
+  for(let i=0;i<neutral.length;i++){const a=neutral[i],b=neutral[(i+1)%neutral.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);segments.push({a,b,length,start:total,index:i});total+=length;}
+  const at=distance=>{
+    const x=((distance%total)+total)%total,seg=segments.find(s=>x<=s.start+s.length+1e-9)||segments[segments.length-1],t=Math.max(0,Math.min(1,(x-seg.start)/seg.length));
+    const a=normals[seg.index],b=normals[(seg.index+1)%normals.length],nx=a[0]+(b[0]-a[0])*t,nz=a[1]+(b[1]-a[1])*t,L=Math.hypot(nx,nz);
+    return {x:seg.a[0]+(seg.b[0]-seg.a[0])*t,z:seg.a[1]+(seg.b[1]-seg.a[1])*t,nx:nx/L,nz:nz/L};
+  };
+  return {outer,path:{segments,total,at},split:segments[120].start};
+}
+
+function generateLivingPanels(d) {
+  const {ow,od,oh,T}=d;
+  const maxRadius=Math.min(ow,od)/2-T-0.5;
+  const radius=Math.min(maxRadius,Math.max(3*T,state.livingRadius));
+  const heart=state.shape==='heart',heartGeometry=heart?livingHeartGeometry(d):null;
+  const path=heart?heartGeometry.path:livingPerimeter(ow-3*T,od-3*T,Math.max(0.2,radius-1.5*T));
+  const seam=heart?0:0.4, width=path.total-seam, tabs=[],holes=[],openCuts=[];
+  for(const seg of path.segments)if(seg.type==='line') {
+    const margin=Math.min(2*T,seg.length*0.2),span=seg.length-2*margin;
+    if(span<=1)continue;
+    const baseTabs=lanternTabs(span,T),chosen=baseTabs.length?baseTabs:[{a:span*0.3,b:span*0.7}];
+    for(const t of chosen){const a=seg.start+margin+t.a-seam/2,b=seg.start+margin+t.b-seam/2;
+      if(a<=T||b>=width-T)continue;
+      tabs.push({a,b});const p=path.at(a+seam/2),q=path.at(b+seam/2);
+      holes.push([[p.x-p.nx*T/2,p.z-p.nz*T/2],[q.x-q.nx*T/2,q.z-q.nz*T/2],[q.x+q.nx*T/2,q.z+q.nz*T/2],[p.x+p.nx*T/2,p.z+p.nz*T/2]]);
+    }
+  }
+  if(heart) {
+    // Short curved tabs follow the neutral path; matching slots use the same samples.
+    const count=Math.max(10,Math.ceil(width/24)),tabWidth=Math.min(6,Math.max(3,T*1.5));
+    for(let i=0;i<count;i++){
+      const mid=(i+0.5)*width/count,a=mid-tabWidth/2,b=mid+tabWidth/2;
+      if(a<6||b>width-6||(heart && a<heartGeometry.split+6 && b>heartGeometry.split-6))continue;
+      tabs.push({a,b});const inner=[],outer=[];
+      const steps=Math.max(4,Math.ceil(tabWidth/0.5));
+      for(let j=0;j<=steps;j++){const q=path.at(a+(b-a)*j/steps+seam/2);inner.push([q.x-q.nx*T/2,q.z-q.nz*T/2]);outer.push([q.x+q.nx*T/2,q.z+q.nz*T/2]);}
+      holes.push([...inner,...outer.reverse()]);
+    }
+  }
+  const band=Math.max(3,1.5*T),low=T+band,high=oh-T-band;
+  const hingeZones=heart?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:width-heartGeometry.split-12}]:path.segments.filter(s=>s.type==='arc');
+  for(const seg of hingeZones) {
+    const columns=Math.max(3,Math.ceil(seg.length/state.livingPitch));
+    for(let col=0;col<columns;col++) {
+      const x=seg.start+seg.length*(col+0.5)/columns-seam/2,period=state.livingSlit+state.livingBridge;
+      for(let y=low-(col%2?period/2:0);y<high;y+=period) {
+        const a=Math.max(low,y),b=Math.min(high,y+state.livingSlit);
+        if(b-a>=2)openCuts.push([[x,a],[x,b]]);
+      }
+    }
+  }
+  const outer=heart?heartGeometry.outer:roundedLivingOutline(ow,od,radius);
+  const rim=Math.min(3*T+1,Math.min(ow,od)*0.3);
+  const opening=heart?insetContour(outer,rim):roundedLivingOutline(ow-2*rim,od-2*rim,Math.max(0.2,radius-rim));
+  const fit=state.shapedLidFit ?? 0.4;
+  const insert=heart?insetContour(opening,fit):roundedLivingOutline(ow-2*(rim+fit),od-2*(rim+fit),Math.max(0.2,radius-rim-fit));
+  const defs=[{name:'Living hinge wall wrap (glue seam)',role:'living-wrap',outline:tabbedWallOutline(width,oh,T,null,null,tabs,tabs),openCuts,flex:{path,seam,tabs,width}},
+    {name:'Living box bottom',role:'bottom',poly:true,outline:outer,holes},
+    {name:'Living box top rim',role:'top',poly:true,outline:outer,holes:[...holes,opening]}];
+  if(state.shapedTop!==false) {
+    defs.push({name:'Living lid insert',role:'pull-insert',poly:true,outline:insert});
+    defs.push({name:'Living lid cap',role:'pull-cap',poly:true,outline:outer,engrave:[insert]});
+    if(state.shapedHandle!==false) {
+      // Reuse the established pull-off handle design, centered on this lid.
+      // This helper is normally gated by the selected lid; living mode owns its lid.
+      const saved={lid:state.lid,pullHandleR:state.pullHandleR};let parts;
+      try{state.lid='pull';state.pullHandleR=Math.min(state.shapedHandleSize,Math.min(ow,od)*0.22);parts=buildPullOffLidDefs({...d,sides:6});}finally{Object.assign(state,saved);}
+      const cap=defs[defs.length-1],handle=parts.find(p=>p.role==='pull-handle'),sourceCap=parts.find(p=>p.role==='pull-cap');
+      if(handle&&sourceCap){cap.holes=sourceCap.holes;defs.push({name:'Living lid handle',role:'pull-handle',outline:handle.outlineOverride});}
+    }
+  }
+  if(heart) {
+    const whole=defs.shift(),ranges=[[0,heartGeometry.split,'Right',1],[heartGeometry.split,path.total,'Left',-1]];
+    for(const [start,end,label,side] of ranges) {
+      const localTabs=tabs.filter(t=>t.a>=start&&t.b<=end).map(t=>({a:t.a-start,b:t.b-start}));
+      const localCuts=openCuts.filter(line=>line[0][0]>start&&line[0][0]<end).map(line=>line.map(([x,y])=>[x-start,y]));
+      const partPath={total:end-start,at:x=>path.at(start+Math.max(0,Math.min(end-start,x))),segments:[]};
+      defs.unshift({name:'Heart '+label+' living-hinge wall (join at notch and tip)',role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side}});
+    }
+  }
+  d.sides=4;d.poly={verts:outer};d.living=true;
+  d.livingWarn=openCuts.length===0;
+  $('livingInfo').textContent=(heart?'Two heart walls · Sharp notch and tip':'Actual corner radius '+fmtLen(radius,1,3))+' · Wrap '+fmtLen(width,1,3)+' total length · '+openCuts.length+' slit cuts. '+(d.livingWarn?'Increase height to leave room for the hinge pattern.':'Uncut bands protect the top and bottom tabs.');
+  const panels=defs.map(def=>{
+    const outline=def.outline,cut=heart&&def.poly?heartCutOutline(outline,state.kerf):offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    return {...def,cut,holes:(def.holes||[]).map(h=>h===opening?h:offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
+  });
+  return {panels,dims:d};
+}
+/** Preview the neutral-length wrap bent around its rounded perimeter. */
+function livingWallGeometry(p,d) {
+  const {path,seam,tabs,width}=p.flex,T=d.T,H=d.oh,positions=[];
+  const stations=new Set([0,width,...tabs.flatMap(t=>[t.a,t.b])]);
+  for(let x=0;x<width;x+=1)stations.add(x);
+  const samples=[...stations].sort((a,b)=>a-b);
+  const point=(x,y,side)=>{const q=path.at(x+seam/2);const wx=q.x+q.nx*side*T/2;return [p.flex.heartHalf>0?Math.max(0,wx):p.flex.heartHalf<0?Math.min(0,wx):wx,y,q.z+q.nz*side*T/2];};
+  const quad=(a,b,c,e)=>positions.push(...a,...b,...c,...a,...c,...e);
+  for(let i=0;i<samples.length-1;i++) {
+    const a=samples[i],b=samples[i+1],hasTab=tabs.some(t=>(a+b)/2>=t.a&&(a+b)/2<=t.b),lo=hasTab?0:T,hi=hasTab?H:H-T;
+    const A=point(a,lo,1),B=point(b,lo,1),C=point(b,hi,1),D=point(a,hi,1),E=point(a,lo,-1),F=point(b,lo,-1),G=point(b,hi,-1),I=point(a,hi,-1);
+    quad(A,B,C,D);quad(F,E,I,G);quad(E,F,B,A);quad(D,C,G,I);
+    if(i===0||tabs.some(t=>Math.abs(t.a-a)<1e-8||Math.abs(t.b-a)<1e-8))quad(E,A,D,I);
+    if(i===samples.length-2||tabs.some(t=>Math.abs(t.a-b)<1e-8||Math.abs(t.b-b)<1e-8))quad(B,F,G,C);
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.computeVertexNormals();return geo;
+}
+
 // Generate in the existing back-hinge orientation, then rotate the full assembly.
 // Swapping plan dimensions first preserves the user's width and depth on side hinges.
 function generatePanels() {
@@ -3476,6 +3699,7 @@ function generatePanelsBase(d = dims()) {
     return generateFramePanels(d, J);
   }
 
+  if (livingActive()) return generateLivingPanels(d);
   if (shapedBoxActive()) return generateShapedPanels(d);
 
   // ---------- Regular polygon boxes ----------
@@ -4040,10 +4264,11 @@ function generatePanelsBase(d = dims()) {
   const rowCells = cellSizes(state.rowWeights, id, T);
   const trays = [];
 
-  if (drawerOn) {
+  const drawerLimits=drawerHeightForDims(d);
+  if (drawerOn && drawerLimits.height) {
     const clear = Math.max(0.05, state.drawerClear || 0.5);
     const openEnd = state.drawerOpen || 'front'; // front | back | left | right
-    const drIh = Math.max(T * 2, Math.min(state.drawerH || 25, ih - clear - (hinge && d.hinge ? 2 * T + d.hinge.relD : T)));
+    const drIh = drawerLimits.height;
     const drOh = drIh + 2 * T; // full drawer height, including its smooth top plate
     const drWallH = drOh - T; // walls stop under the top instead of passing through it
 
@@ -4140,6 +4365,11 @@ function generatePanelsBase(d = dims()) {
         ? `${n} drawer${n > 1 ? 's' : ''} · open ${openEnd} · ~${t0.drW.toFixed(0)}×${t0.drD.toFixed(0)}×${drIh.toFixed(0)} mm`
         : 'Set Columns & Rows for compartments.';
     }
+  }
+
+  if (drawerOn && !drawerLimits.height) {
+    d.drawer={trays:[],noHeight:true};
+    $('drawerInfo').textContent='Not enough room beneath the lid. Increase box height to fit the drawers.';
   }
 
   // --- Dividers (normal floor-plan grid; box stays open-top) ---
@@ -4338,6 +4568,10 @@ function buildSVG(showLabels = true, compact = true) {
     // SVG is Y-down: flip each panel so it matches the 3D model orientation
     const shifted = p.cut.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
     paths += `    <path d="${ptsToPath(shifted)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
+    for(const line of (p.openCuts || [])) {
+      const shifted=line.map(([x,y])=>[x-p.minX+p.ox,p.maxY-y+p.oy]);
+      paths += '    <path d="'+ptsToPath(shifted,false)+'" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n';
+    }
     // Cross-lap holes on dividers
     for (const h of (p.holes || [])) {
       const hs = h.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
@@ -4393,6 +4627,7 @@ function buildDXF() {
   };
   for (const p of placed) {
     addPoly(p.cut.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]));
+    for(const line of (p.openCuts || [])) addPoly(line.map(([x,y])=>[x-p.minX+p.ox,y-p.minY+p.oy]),'CUT',false);
     for (const h of (p.holes || [])) {
       addPoly(h.map(([x, y]) => [x - p.minX + p.ox, y - p.minY + p.oy]));
     }
@@ -4928,10 +5163,11 @@ function rebuild3D() {
       holePath.closePath();
       shape.holes.push(holePath);
     }
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: d.T, bevelEnabled: false });
+    const geo = p.flex ? livingWallGeometry(p,d) : new THREE.ExtrudeGeometry(shape, { depth: d.T, bevelEnabled: false });
 
     let pl;
-    if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
+    if(p.flex) pl={o:new THREE.Vector3(),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),n:new THREE.Vector3(0,0,1)};
+    else if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
     else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, layoutD);
     else if (
       p.role === 'poly-side' || p.role === 'lid-poly-side' ||
@@ -4953,7 +5189,7 @@ function rebuild3D() {
     const mesh = new THREE.Mesh(geo, mat);
     // No edge overlay when the mesh has internal holes/slots — those edges clutter the sides
     const hasInternalCuts = (p.holes && p.holes.length) || (p.slots && p.slots.length);
-    if (!hasInternalCuts) {
+    if (!hasInternalCuts && !p.flex) {
       const line = new THREE.LineSegments(
         new THREE.EdgesGeometry(geo, 20),
         new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.4 })
@@ -4961,6 +5197,12 @@ function rebuild3D() {
       mesh.add(line);
     }
 
+    if(p.flex) {
+      const vertices=[];
+      for(const line of p.openCuts)for(const [x,y] of line){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y,q.z+q.nz*(d.T/2+0.02));}
+      const slitGeo=new THREE.BufferGeometry();slitGeo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+      mesh.add(new THREE.LineSegments(slitGeo,new THREE.LineBasicMaterial({color:0x5b3020})));
+    }
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
     // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
     if ((p.role === 'poly-side' || p.role === 'lid-poly-side') && (d.poly || p.nSides)) {
@@ -5003,7 +5245,7 @@ function rebuild3D() {
     }
     // Pull-off lid (insert + cap + handle): lifts straight up off the box
     let pullLidLift = [0, 0, 0];
-    if ((state.lid === 'pull' || shapedBoxActive()) && p.role && p.role.startsWith('pull-')) {
+    if ((state.lid === 'pull' || shapedBoxActive() || livingActive()) && p.role && p.role.startsWith('pull-')) {
       pullLidLift = [0, Math.max(40, (d.oh || 50) * 0.7 + 20), 0];
     }
     mesh.userData = {
@@ -5088,6 +5330,11 @@ function updateHUD(d, panels) {
   } else if (d.thinRaise) {
     wb.textContent = 'Bottom raise is thinner than the material, so only a thin sliver of wall remains under the bottom slots. Use 0 or at least one material thickness.';
     wb.classList.add('show');
+  } else if (d.livingWarn) {
+    wb.textContent='The wall is too short for the living-hinge pattern. Increase the box height.';wb.classList.add('show');
+  } else if (d.drawer && d.drawer.noHeight) {
+    wb.textContent = 'Not enough room beneath the lid for drawers with a 3 mm interior and both plates. Increase the box height.';
+    wb.classList.add('show');
   } else if (d.dividers && d.dividers.noHeight) {
     wb.textContent = 'There is less than 3 mm beneath the lid. Increase the box height to add dividers.';
     wb.classList.add('show');
@@ -5156,7 +5403,7 @@ function refreshSVGPreview() {
 
 function fileBase() {
   const d = dims();
-  const prefix = shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
+  const prefix = livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
   return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
