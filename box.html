@@ -414,11 +414,12 @@
           </div>
           <div class="ctrl" id="shapeControls">
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
-            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option></select>
+            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option><option value="snowman">Snowman</option></select>
           </div>
           
           
           <div class="ctrl" id="shapedControls" style="display:none">
+            <div id="snowmanEngravingControls" style="display:none;margin-bottom:8px"><label><input type="checkbox" id="snowmanEngraving" checked onchange="setSnowmanEngraving(this.checked)"> Engrave snowman details on lid</label></div>
             <label><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
             <div class="ctrl" style="margin-top:10px" id="shapedLidControls">
               <label><input type="checkbox" id="shapedHandle" checked onchange="setShapedHandle(this.checked)"> Include lid handle</label>
@@ -469,6 +470,46 @@
       </div>
 
       <!-- Feet panel -->
+      <div class="lb-panel" id="s-walls">
+        <div class="lb-panel-hdr" onclick="toggleSec('s-walls')">
+          <span class="title">Walls</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+          <div id="wallCountControls" class="ctrl">
+            <label class="ctrl-lbl" for="inSides">Number of walls</label>
+            <input class="dim-inp" id="inSides" type="number" min="4" max="20" step="2" value="4" aria-describedby="sidesHint" onchange="onWallCount(this)">
+            <div class="hint" id="sidesHint">Enter an even number from 4 to 20. Four walls uses width × depth; higher counts make a regular polygon.</div>
+          </div>
+          <div class="ctrl" id="wallStyleControls">
+            <label class="ctrl-lbl" for="wallStyle">Wall construction</label>
+            <select class="dim-inp" id="wallStyle" onchange="setWallStyle(this.value)"><option value="panels">Panel walls</option><option value="living">Living hinge wrap</option></select>
+            <div class="hint">Living hinges support rounded rectangular boxes, hearts, and snowmen.</div>
+          </div>
+          <div id="livingControls" style="display:none">
+            <div class="ctrl"><label class="ctrl-lbl" for="livingRadius" id="livingRadiusLabel">Corner radius (mm)</label><input class="dim-inp" type="number" id="livingRadius" min="8" max="60" step="0.5" onchange="setLivingSetting('livingRadius',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingPitch">Cut spacing (mm)</label><input class="dim-inp" type="number" id="livingPitch" min="1" max="5" step="0.1" onchange="setLivingSetting('livingPitch',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingSlit">Slit length (mm)</label><input class="dim-inp" type="number" id="livingSlit" min="4" max="30" step="0.5" onchange="setLivingSetting('livingSlit',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingBridge">Connecting bridge (mm)</label><input class="dim-inp" type="number" id="livingBridge" min="1" max="5" step="0.1" onchange="setLivingSetting('livingBridge',this.value)"></div>
+            <div class="hint" id="livingInfo"></div>
+            <div class="hint">Glue the wrap seam and tabs into the bottom and rim slots. Keep slit cuts as open red cut lines. Test this pattern on your material first; flexibility and minimum bend radius are material-dependent.</div>
+          </div>
+          <div class="ctrl" id="fingerLengthControls">
+            <label class="ctrl-lbl" for="sldFingerLength"><strong>Wall finger length</strong><span class="ctrl-val" id="valFingerLength">100%</span></label>
+            <input type="range" id="sldFingerLength" min="50" max="150" step="1" value="100" oninput="onFingerLength(this.value)" aria-describedby="fingerLengthHint">
+            <div class="hint" id="fingerLengthHint" style="margin-top:4px">Polygon walls only. 100% uses the calculated corner reach; lower shortens fingers, higher extends them. Recess depth stays the same.</div>
+          </div>
+          <div class="ctrl" id="wallJointControls" style="margin-top:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
+                <span><strong>Wall finger joints</strong> — joints between side walls</span>
+              </label>
+              
+            </div>
+          <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
+        </div>
+      </div>
+
       <div class="lb-panel" id="s-feet">
         <div class="lb-panel-hdr" onclick="toggleSec('s-feet')">
           <span class="title">Feet</span>
@@ -503,45 +544,7 @@
       </div>
 
       <!-- Frame panel -->
-      <div class="lb-panel" id="s-walls">
-        <div class="lb-panel-hdr" onclick="toggleSec('s-walls')">
-          <span class="title">Walls</span>
-          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-        <div class="lb-panel-body">
-          <div id="wallCountControls" class="ctrl">
-            <label class="ctrl-lbl" for="inSides">Number of walls</label>
-            <input class="dim-inp" id="inSides" type="number" min="4" max="20" step="2" value="4" aria-describedby="sidesHint" onchange="onWallCount(this)">
-            <div class="hint" id="sidesHint">Enter an even number from 4 to 20. Four walls uses width × depth; higher counts make a regular polygon.</div>
-          </div>
-          <div class="ctrl" id="wallStyleControls">
-            <label class="ctrl-lbl" for="wallStyle">Wall construction</label>
-            <select class="dim-inp" id="wallStyle" onchange="setWallStyle(this.value)"><option value="panels">Panel walls</option><option value="living">Living hinge wrap</option></select>
-            <div class="hint">Living hinges support rounded rectangular boxes and hearts.</div>
-          </div>
-          <div id="livingControls" style="display:none">
-            <div class="ctrl"><label class="ctrl-lbl" for="livingRadius" id="livingRadiusLabel">Corner radius (mm)</label><input class="dim-inp" type="number" id="livingRadius" min="8" max="60" step="0.5" onchange="setLivingSetting('livingRadius',this.value)"></div>
-            <div class="ctrl"><label class="ctrl-lbl" for="livingPitch">Cut spacing (mm)</label><input class="dim-inp" type="number" id="livingPitch" min="1" max="5" step="0.1" onchange="setLivingSetting('livingPitch',this.value)"></div>
-            <div class="ctrl"><label class="ctrl-lbl" for="livingSlit">Slit length (mm)</label><input class="dim-inp" type="number" id="livingSlit" min="4" max="30" step="0.5" onchange="setLivingSetting('livingSlit',this.value)"></div>
-            <div class="ctrl"><label class="ctrl-lbl" for="livingBridge">Connecting bridge (mm)</label><input class="dim-inp" type="number" id="livingBridge" min="1" max="5" step="0.1" onchange="setLivingSetting('livingBridge',this.value)"></div>
-            <div class="hint" id="livingInfo"></div>
-            <div class="hint">Glue the wrap seam and tabs into the bottom and rim slots. Keep slit cuts as open red cut lines. Test this pattern on your material first; flexibility and minimum bend radius are material-dependent.</div>
-          </div>
-          <div class="ctrl" id="fingerLengthControls">
-            <label class="ctrl-lbl" for="sldFingerLength"><strong>Wall finger length</strong><span class="ctrl-val" id="valFingerLength">100%</span></label>
-            <input type="range" id="sldFingerLength" min="50" max="150" step="1" value="100" oninput="onFingerLength(this.value)" aria-describedby="fingerLengthHint">
-            <div class="hint" id="fingerLengthHint" style="margin-top:4px">Polygon walls only. 100% uses the calculated corner reach; lower shortens fingers, higher extends them. Recess depth stays the same.</div>
-          </div>
-          <div class="ctrl" id="wallJointControls" style="margin-top:10px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
-                <span><strong>Wall finger joints</strong> — joints between side walls</span>
-              </label>
-              
-            </div>
-          <div class="hint" id="shapedBoxHint" style="margin-top:6px">24 straight panels with plain side edges for gluing. Tabs join the curved bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline. Square-cut corners may need sanding.</div>
-        </div>
-      </div>
+      
 
       <div class="lb-panel" id="s-frame">
         <div class="lb-panel-hdr" onclick="toggleSec('s-frame')">
@@ -912,6 +915,7 @@ const DEFAULTS = {
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
   wallStyle:'panels', livingRadius:15, livingPitch:2, livingSlit:15, livingBridge:2,
+  snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
   frameBorder: 15, // mm — width of the mitered face frame
@@ -1105,11 +1109,12 @@ function setGenerator(g) {
 }
 
 function setBoxShape(shape) {
-  if (!['standard', 'heart', 'cross', 'star'].includes(shape) || shape === state.shape) return;
+  if (!['standard', 'heart', 'cross', 'star', 'snowman'].includes(shape) || shape === state.shape) return;
   pushHistoryNow();
   state.shape = shape;
   if (shape === 'cross') state.D = state.W * 1.5;
   if (shape === 'star') state.D = state.W;
+  if (shape === 'snowman') state.D = state.W*1.6;
   syncInputs();
   rebuild();
 }
@@ -1139,7 +1144,10 @@ function onShapedLidLift(v) {
   onPullLift(v);
   $('shapedLidLiftVal').textContent=Math.round(state.pullLift*100)+'%';
 }
-function livingActive() { return state.generator!=='frame' && (state.shape==='heart'||state.shape==='standard'&&state.sides===4) && state.wallStyle==='living'; }
+function setSnowmanEngraving(on) {
+  pushHistoryNow();state.snowmanEngraving=!!on;syncInputs();rebuild();
+}
+function livingActive() { return state.generator!=='frame' && (['heart','snowman'].includes(state.shape)||state.shape==='standard'&&state.sides===4) && state.wallStyle==='living'; }
 function setWallStyle(style) {
   if(!['panels','living'].includes(style)||style===state.wallStyle)return;
   pushHistoryNow();state.wallStyle=style;
@@ -1151,22 +1159,24 @@ function setLivingSetting(key,value) {
   pushHistory();state[key]=Math.max(limits[key][0],Math.min(limits[key][1],n));
   syncInputs();rebuild();
 }
-function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross', 'star'].includes(state.shape); }
+function shapedBoxActive() { return state.generator !== 'frame' && ['heart', 'cross', 'star', 'snowman'].includes(state.shape); }
 function updateShapeUI() {
   const living=livingActive();
   $('s-walls').style.display=state.generator==='frame'?'none':'';
   $('shapedBoxHint').style.display=shapedBoxActive()||living?'':'none';
   const shaped = shapedBoxActive() || living, frame = state.generator === 'frame';
-  $('wallStyleControls').style.display=frame||!['standard','heart'].includes(state.shape) ? 'none' : '';
+  $('wallStyleControls').style.display=frame||!['standard','heart','snowman'].includes(state.shape) ? 'none' : '';
   $('wallStyle').disabled=state.shape==='standard'&&state.sides!==4;
   $('wallStyle').value=state.wallStyle;
+  $('snowmanEngravingControls').style.display=state.shape==='snowman'?'':'none';
+  $('snowmanEngraving').checked=state.snowmanEngraving!==false;
   $('livingControls').style.display=living?'':'none';
   $('livingRadiusLabel').textContent='Corner radius (mm)';
-  $('livingRadius').parentElement.style.display=state.shape==='heart'?'none':'';
+  $('livingRadius').parentElement.style.display=['heart','snowman'].includes(state.shape)?'none':'';
   for(const key of ['livingRadius','livingPitch','livingSlit','livingBridge'])$(key).value=state[key];
   $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
-  $('shapedBoxHint').textContent = (living ? (state.shape==='heart'?'Two flexible heart walls meet at the sharp top notch and bottom tip. Glue the two seams; sand the ends to mate if needed.':'One wraparound wall with living-hinge corners. Permanent top rim and optional two-layer lid.') : state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
+  $('shapedBoxHint').textContent = (living ? (state.shape==='snowman'?'Two flexible walls: upper head and lower body. Join the two ends at the neck; sand the seams to mate if needed.':state.shape==='heart'?'Two flexible heart walls meet at the sharp top notch and bottom tip. Glue the two seams; sand the ends to mate if needed.':'One wraparound wall with living-hinge corners. Permanent top rim and optional two-layer lid.') : state.shape === 'snowman' ? '28 straight panels around a snowman.' : state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
   $('shapedTop').checked = state.shapedTop !== false;
   $('shapedLidControls').style.display = state.shapedTop === false ? 'none' : '';
   $('shapedHandle').checked = state.shapedHandle !== false;
@@ -1717,7 +1727,7 @@ function updateLabels() {
     if(livingActive()) {
       $('infoSides').textContent='Living hinge wrap';
     } else if (shapedBoxActive()) {
-      $('infoSides').textContent = state.shape === 'star' ? 'Star (10 straight walls)' : state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
+      $('infoSides').textContent = state.shape === 'snowman' ? 'Snowman (28 straight walls)' : state.shape === 'star' ? 'Star (10 straight walls)' : state.shape === 'cross' ? 'Cross (12 straight walls)' : 'Heart (24 straight walls)';
     } else if (state.generator === 'frame') {
       $('infoSides').textContent = 'Frame';
     } else {
@@ -1844,7 +1854,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-feet', 's-walls', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-walls', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -3398,7 +3408,7 @@ function generateShapedPanels(d) {
   }
   const cross = state.shape === 'cross';
   const star = state.shape === 'star';
-  const shapeName = star ? 'Star' : cross ? 'Cross' : 'Heart';
+  const shapeName = state.shape==='snowman'?'Snowman':star ? 'Star' : cross ? 'Cross' : 'Heart';
   let verts=[...right,...right.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
   if (signedPolyArea(verts) < 0) verts.reverse();
   // Smooth cutting contours are independent of the 24 straight wall facets.
@@ -3418,6 +3428,10 @@ function generateShapedPanels(d) {
     const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
     verts=raw.map(([x,y])=>[(x-(minX+maxX)/2)*ow/(maxX-minX),(y-(minY+maxY)/2)*od/(maxY-minY)]);
     smooth=verts.map(p=>p.slice());
+  }
+  if(state.shape==='snowman') {
+    const snow=snowmanContour(d);smooth=snow.outer;
+    verts=[...Array.from({length:12},(_,i)=>smooth[Math.floor(i*snow.splitIndex/12)]),...Array.from({length:16},(_,i)=>smooth[snow.splitIndex+Math.floor(i*(smooth.length-snow.splitIndex)/16)])];
   }
   let rimInset=Math.max(6,3*T);
   let opening=insetContour(smooth,rimInset);
@@ -3479,7 +3493,7 @@ function generateShapedPanels(d) {
   defs.push({name:shapeName+' top rim',role:'top',poly:true,outline:smooth,holes:[...holes,opening]});
   if (state.shapedTop !== false) {
     defs.push({name:shapeName+' lid insert (glue under cap)',role:'pull-insert',poly:true,outline:insert});
-    const cap={name:shapeName+' lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert],holes:[]};
+    const cap={name:shapeName+' lid cap',role:'pull-cap',poly:true,outline:smooth,engrave:[insert,...(state.shape==='snowman'&&state.snowmanEngraving!==false?snowmanEngraving(d):[])],holes:[]};
     defs.push(cap);
     if (state.shapedHandle !== false) {
       const R=Math.min(state.shapedHandleSize ?? 18, Math.min(ow,od)*(star ? 0.16 : 0.22), cross ? Math.max(2,ow/6-T-1) : Infinity);
@@ -3533,6 +3547,31 @@ function roundedLivingOutline(w,h,r) {
   for(const seg of path.segments){const steps=seg.type==='arc'?32:1;for(let i=0;i<steps;i++){const p=path.at(seg.start+seg.length*i/steps);pts.push([p.x,p.z]);}}
   return cleanPoly(pts);
 }
+/** Two overlapping circles form the head/body outline; seams meet at the neck. */
+function snowmanContour(d) {
+  const headR=0.32,bodyR=0.5,headY=-0.48,bodyY=0.18,span=bodyY-headY;
+  const neck=headY+(headR*headR-bodyR*bodyR+span*span)/(2*span),nx=Math.sqrt(headR*headR-(neck-headY)*(neck-headY));
+  const raw=[];
+  const headStart=Math.atan2(neck-headY,-nx),headEnd=Math.atan2(neck-headY,nx)+2*Math.PI;
+  const bodyStart=Math.atan2(neck-bodyY,nx),bodyEnd=Math.atan2(neck-bodyY,-nx)+2*Math.PI;
+  for(let i=0;i<120;i++){const a=headStart+(headEnd-headStart)*i/120;raw.push([headR*Math.cos(a),headY+headR*Math.sin(a)]);}
+  for(let i=0;i<160;i++){const a=bodyStart+(bodyEnd-bodyStart)*i/160;raw.push([bodyR*Math.cos(a),bodyY+bodyR*Math.sin(a)]);}
+  const minY=headY-headR,maxY=bodyY+bodyR;
+  const point=([x,y])=>[x*d.ow,y*d.od/(maxY-minY)-(minY+maxY)*d.od/(2*(maxY-minY))];
+  return {outer:raw.map(point),splitIndex:120,point,neck,nx};
+}
+function snowmanEngraving(d) {
+  const snow=snowmanContour(d),p=snow.point,lines=[];
+  const circle=(x,y,r)=>lines.push(circlePoly(x,y,r,48).map(p));
+  circle(-0.1,-0.53,0.025);circle(0.1,-0.53,0.025);
+  lines.push([[0,-0.48],[0.16,-0.45],[0,-0.43]].map(p));
+  for(let i=0;i<6;i++){const a=0.2+i*(Math.PI-0.4)/6,b=0.2+(i+1)*(Math.PI-0.4)/6;lines.push([[0.13*Math.cos(a),-0.46+0.12*Math.sin(a)],[0.13*Math.cos(b),-0.46+0.12*Math.sin(b)]].map(p));}
+  lines.push([[-0.2,snow.neck-0.025],[0.2,snow.neck-0.025],[0.22,snow.neck+0.055],[-0.22,snow.neck+0.055]].map(p));
+  lines.push([[0.09,snow.neck+0.055],[0.18,snow.neck+0.055],[0.21,snow.neck+0.24],[0.12,snow.neck+0.24]].map(p));
+  for(const y of [0.05,0.23,0.41])circle(0,y,0.025);
+  return lines;
+}
+
 /** Sharp heart outline with two separately flexible side walls. */
 function livingHeartGeometry(d) {
   const {ow,od,T}=d;
@@ -3549,6 +3588,9 @@ function livingHeartGeometry(d) {
   bezier([-0.5,-0.45],[-0.2,-0.55],[0,-0.2]);
   const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),lo=Math.min(...ys),hi=Math.max(...ys),left=Math.min(...xs),right=Math.max(...xs);
   const outer=pts.map(([x,y])=>[(x-(left+right)/2)*ow/(right-left),(y-(lo+hi)/2)*od/(hi-lo)]);
+  return livingPathForOutline(outer,120,T);
+}
+function livingPathForOutline(outer,splitIndex,T) {
   const neutral=offsetPoly(outer,-1.5*T,8);
   const segments=[];let total=0;
   const normals=neutral.map((q,i)=>{
@@ -3562,14 +3604,16 @@ function livingHeartGeometry(d) {
     const a=normals[seg.index],b=normals[(seg.index+1)%normals.length],nx=a[0]+(b[0]-a[0])*t,nz=a[1]+(b[1]-a[1])*t,L=Math.hypot(nx,nz);
     return {x:seg.a[0]+(seg.b[0]-seg.a[0])*t,z:seg.a[1]+(seg.b[1]-seg.a[1])*t,nx:nx/L,nz:nz/L};
   };
-  return {outer,path:{segments,total,at},split:segments[120].start};
+  return {outer,path:{segments,total,at},split:segments[splitIndex].start};
 }
 
 function generateLivingPanels(d) {
   const {ow,od,oh,T}=d;
   const maxRadius=Math.min(ow,od)/2-T-0.5;
   const radius=Math.min(maxRadius,Math.max(3*T,state.livingRadius));
-  const heart=state.shape==='heart',heartGeometry=heart?livingHeartGeometry(d):null;
+  const snowman=state.shape==='snowman',heart=state.shape==='heart'||snowman;
+  const snow=snowman?snowmanContour(d):null;
+  const heartGeometry=heart?(snowman?livingPathForOutline(snow.outer,snow.splitIndex,T):livingHeartGeometry(d)):null;
   const path=heart?heartGeometry.path:livingPerimeter(ow-3*T,od-3*T,Math.max(0.2,radius-1.5*T));
   const seam=heart?0:0.4, width=path.total-seam, tabs=[],holes=[],openCuts=[];
   for(const seg of path.segments)if(seg.type==='line') {
@@ -3616,7 +3660,7 @@ function generateLivingPanels(d) {
     {name:'Living box top rim',role:'top',poly:true,outline:outer,holes:[...holes,opening]}];
   if(state.shapedTop!==false) {
     defs.push({name:'Living lid insert',role:'pull-insert',poly:true,outline:insert});
-    defs.push({name:'Living lid cap',role:'pull-cap',poly:true,outline:outer,engrave:[insert]});
+    defs.push({name:snowman?'Snowman lid cap':'Living lid cap',role:'pull-cap',poly:true,outline:outer,engrave:[insert,...(snowman&&state.snowmanEngraving!==false?snowmanEngraving(d):[])]});
     if(state.shapedHandle!==false) {
       // Reuse the established pull-off handle design, centered on this lid.
       // This helper is normally gated by the selected lid; living mode owns its lid.
@@ -3627,17 +3671,18 @@ function generateLivingPanels(d) {
     }
   }
   if(heart) {
-    const whole=defs.shift(),ranges=[[0,heartGeometry.split,'Right',1],[heartGeometry.split,path.total,'Left',-1]];
+    defs.shift();
+    const ranges=snowman?[[0,heartGeometry.split,'Upper head',0],[heartGeometry.split,path.total,'Lower body',0]]:[[0,heartGeometry.split,'Right',1],[heartGeometry.split,path.total,'Left',-1]];
     for(const [start,end,label,side] of ranges) {
       const localTabs=tabs.filter(t=>t.a>=start&&t.b<=end).map(t=>({a:t.a-start,b:t.b-start}));
       const localCuts=openCuts.filter(line=>line[0][0]>start&&line[0][0]<end).map(line=>line.map(([x,y])=>[x-start,y]));
       const partPath={total:end-start,at:x=>path.at(start+Math.max(0,Math.min(end-start,x))),segments:[]};
-      defs.unshift({name:'Heart '+label+' living-hinge wall (join at notch and tip)',role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side}});
+      defs.unshift({name:(snowman?'Snowman ':'Heart ')+label+' living-hinge wall'+(snowman?' (join at neck)':' (join at notch and tip)'),role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side,snowmanHalf:snowman?(start===0?-1:1):0,seamZ:snowman?path.at(0).z:0}});
     }
   }
   d.sides=4;d.poly={verts:outer};d.living=true;
   d.livingWarn=openCuts.length===0;
-  $('livingInfo').textContent=(heart?'Two heart walls · Sharp notch and tip':'Actual corner radius '+fmtLen(radius,1,3))+' · Wrap '+fmtLen(width,1,3)+' total length · '+openCuts.length+' slit cuts. '+(d.livingWarn?'Increase height to leave room for the hinge pattern.':'Uncut bands protect the top and bottom tabs.');
+  $('livingInfo').textContent=(snowman?'Two snowman walls · Head and body':heart?'Two heart walls · Sharp notch and tip':'Actual corner radius '+fmtLen(radius,1,3))+' · Wrap '+fmtLen(width,1,3)+' total length · '+openCuts.length+' slit cuts. '+(d.livingWarn?'Increase height to leave room for the hinge pattern.':'Uncut bands protect the top and bottom tabs.');
   const panels=defs.map(def=>{
     const outline=def.outline,cut=heart&&def.poly?heartCutOutline(outline,state.kerf):offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
@@ -3651,7 +3696,7 @@ function livingWallGeometry(p,d) {
   const stations=new Set([0,width,...tabs.flatMap(t=>[t.a,t.b])]);
   for(let x=0;x<width;x+=1)stations.add(x);
   const samples=[...stations].sort((a,b)=>a-b);
-  const point=(x,y,side)=>{const q=path.at(x+seam/2);const wx=q.x+q.nx*side*T/2;return [p.flex.heartHalf>0?Math.max(0,wx):p.flex.heartHalf<0?Math.min(0,wx):wx,y,q.z+q.nz*side*T/2];};
+  const point=(x,y,side)=>{const q=path.at(x+seam/2);const wx=q.x+q.nx*side*T/2;return [p.flex.heartHalf>0?Math.max(0,wx):p.flex.heartHalf<0?Math.min(0,wx):wx,y,p.flex.snowmanHalf<0?Math.min(p.flex.seamZ,q.z+q.nz*side*T/2):p.flex.snowmanHalf>0?Math.max(p.flex.seamZ,q.z+q.nz*side*T/2):q.z+q.nz*side*T/2];};
   const quad=(a,b,c,e)=>positions.push(...a,...b,...c,...a,...c,...e);
   for(let i=0;i<samples.length-1;i++) {
     const a=samples[i],b=samples[i+1],hasTab=tabs.some(t=>(a+b)/2>=t.a&&(a+b)/2<=t.b),lo=hasTab?0:T,hi=hasTab?H:H-T;
@@ -5202,6 +5247,17 @@ function rebuild3D() {
       for(const line of p.openCuts)for(const [x,y] of line){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y,q.z+q.nz*(d.T/2+0.02));}
       const slitGeo=new THREE.BufferGeometry();slitGeo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
       mesh.add(new THREE.LineSegments(slitGeo,new THREE.LineBasicMaterial({color:0x5b3020})));
+    }
+    if(state.shape==='snowman' && p.role==='pull-cap' && p.engrave) {
+      const points=[];
+      for(const line of p.engrave) {
+        const count=line.length===2?1:line.length;
+        for(let i=0;i<count;i++)for(const point of [line[i],line[(i+1)%line.length]]) {
+          const q=new THREE.Vector3(point[0],point[1],d.T+0.03).applyMatrix4(m);points.push(q.x,q.y,q.z);
+        }
+      }
+      const detailGeo=new THREE.BufferGeometry();detailGeo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+      mesh.add(new THREE.LineSegments(detailGeo,new THREE.LineBasicMaterial({color:0x234877})));
     }
     let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
     // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
