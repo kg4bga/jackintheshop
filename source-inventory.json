@@ -1,0 +1,114 @@
+{
+  "links": [
+    "https://www.jackintheshop.com/",
+    "https://cdn.tailwindcss.com",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+    "https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;700;900&display=swap",
+    "#",
+    "JITS Clear BG.png",
+    "https://jackintheshop.com",
+    "https://jackintheshop.etsy.com",
+    "contact.html",
+    "/pics/projects.html",
+    "about.html",
+    "lamp.webp",
+    "https://www.etsy.com/listing/1747839349/rustic-vintage-meter-lamp-with-working",
+    "Knife.jpg",
+    "https://www.etsy.com/listing/1702834146/custom-engraved-lineman-pocket-knife?ref=listings_manager_grid",
+    "saw.webp",
+    "https://www.etsy.com/listing/1381591681/rustic-metal-wall-sign-with-custom?ref=listings_manager_grid",
+    "carve.webp",
+    "https://www.etsy.com/listing/1664696929/lineman-3d-relief-carve-engraving-wood?ref=listings_manager_grid",
+    "flag.jpg",
+    "https://www.etsy.com/listing/1748035269/wooden-lineman-american-flag-handcrafted?ref=listings_manager_grid",
+    "tray.jpg",
+    "https://www.etsy.com/listing/1738211003/glass-insulator-nightlight-catchall-tray?ref=listings_manager_grid",
+    "cup.jpg",
+    "https://www.etsy.com/listing/1890355413/20oz-tumbler-personalized-engraved-add?ref=listings_manager_grid",
+    "lightbox.webp",
+    "https://www.etsy.com/listing/4297327991/light-up-memory-box-personalized-3d?ref=listings_manager_grid",
+    "https://www.etsy.com/images/shop/rating_4.8_med.png",
+    "https://images.unsplash.com/photo-1608500218874-ed5bb5042899?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+    "https://www.facebook.com/profile.php?id=100089834354983",
+    "https://www.instagram.com/jacintheshopengraving/",
+    "https://youtube.com/jackintheshop",
+    "mailto:Jack@JackInTheShop.com",
+    "https://cdn.iconscout.com/icon/free/png-256/free-cc-visa-5-555705.png",
+    "https://cdn.iconscout.com/icon/free/png-256/free-mastercard-5-555701.png",
+    "https://cdn.iconscout.com/icon/free/png-256/free-american-express-5-555704.png",
+    "https://cdn.iconscout.com/icon/free/png-256/free-paypal-5-555693.png",
+    "https://cdn.iconscout.com/icon/free/png-256/free-etsy-3-555677.png"
+  ],
+  "results": [
+    {
+      "path": "contact.html",
+      "status": 200,
+      "bytes": 5320
+    },
+    {
+      "path": "about.html",
+      "status": 200,
+      "bytes": 9257
+    },
+    {
+      "path": "pics/projects.html",
+      "status": 200,
+      "bytes": 29624
+    },
+    {
+      "path": "robots.txt",
+      "status": 404,
+      "bytes": 9379
+    },
+    {
+      "path": "sitemap.xml",
+      "status": 404,
+      "bytes": 9379
+    },
+    {
+      "asset": "JITS Clear BG.png",
+      "status": 200,
+      "bytes": 1926491
+    },
+    {
+      "asset": "lamp.webp",
+      "status": 200,
+      "bytes": 28054
+    },
+    {
+      "asset": "Knife.jpg",
+      "status": 200,
+      "bytes": 733970
+    },
+    {
+      "asset": "saw.webp",
+      "status": 200,
+      "bytes": 598022
+    },
+    {
+      "asset": "carve.webp",
+      "status": 200,
+      "bytes": 174966
+    },
+    {
+      "asset": "flag.jpg",
+      "status": 200,
+      "bytes": 380200
+    },
+    {
+      "asset": "tray.jpg",
+      "status": 200,
+      "bytes": 612352
+    },
+    {
+      "asset": "cup.jpg",
+      "status": 200,
+      "bytes": 287019
+    },
+    {
+      "asset": "lightbox.webp",
+      "status": 200,
+      "bytes": 268718
+    }
+  ]
+}
