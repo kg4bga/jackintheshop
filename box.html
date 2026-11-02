@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.82</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -364,7 +364,7 @@
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.82</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -487,10 +487,24 @@
             <div class="hint">Living hinges support rounded rectangular boxes, hearts, and snowmen.</div>
           </div>
           <div id="livingControls" style="display:none">
-            <div class="ctrl"><label class="ctrl-lbl" for="livingPattern">Hinge cut pattern</label><select class="dim-inp" id="livingPattern" onchange="setLivingPattern(this.value)"><option value="edge">Alternating top/bottom edge cuts</option><option value="staggered">Internal staggered slits</option></select><div class="hint">Edge cuts alternate from top and bottom. Connecting bridges keep the wall in one piece; mounting tabs stay intact.</div></div>
+            <div class="ctrl">
+              <label class="ctrl-lbl" for="livingDesign">Living hinge design</label>
+              <select class="dim-inp" id="livingDesign" onchange="setLivingDesign(this.value)">
+                <option value="straight">Straight slots</option>
+                <option value="wave">Wave slots</option>
+                <option value="zigzag">Zigzag slots</option>
+                <option value="diamond">Diamond lattice</option>
+                <option value="oval">Oval lattice</option>
+                <option value="ladder">Rounded ladder</option>
+                <option value="chevron">Chevron</option>
+                <option value="meander">Square meander</option>
+                <option value="brick">Brick steps</option>
+              </select>
+              <div class="hint">Patterns inspired by the reference: parallel slots, diamond/oval lattices, rounded ladders and meanders. All cuts reach alternating top/bottom edges. Test a sample when changing designs.</div>
+            </div>
             <div class="ctrl"><label class="ctrl-lbl" for="livingRadius" id="livingRadiusLabel">Corner radius (mm)</label><input class="dim-inp" type="number" id="livingRadius" min="8" max="60" step="0.5" onchange="setLivingSetting('livingRadius',this.value)"></div>
             <div class="ctrl"><label class="ctrl-lbl" for="livingPitch">Cut spacing (mm)</label><input class="dim-inp" type="number" id="livingPitch" min="1" max="5" step="0.1" onchange="setLivingSetting('livingPitch',this.value)"></div>
-            <div class="ctrl"><label class="ctrl-lbl" for="livingSlit">Slit length (mm)</label><input class="dim-inp" type="number" id="livingSlit" min="4" max="30" step="0.5" onchange="setLivingSetting('livingSlit',this.value)"></div>
+            <div class="ctrl"><label class="ctrl-lbl" for="livingRepeat">Pattern repeat length (mm)</label><input class="dim-inp" type="number" id="livingRepeat" min="4" max="30" step="0.5" onchange="setLivingSetting('livingRepeat',this.value)"></div>
             <div class="ctrl"><label class="ctrl-lbl" for="livingBridge">Connecting bridge (mm)</label><input class="dim-inp" type="number" id="livingBridge" min="1" max="5" step="0.1" onchange="setLivingSetting('livingBridge',this.value)"></div>
             <div class="hint" id="livingInfo"></div>
             <div class="hint">Glue the wrap seam and tabs into the bottom and rim slots. Keep slit cuts as open red cut lines. Test this pattern on your material first; flexibility and minimum bend radius are material-dependent.</div>
@@ -915,7 +929,7 @@ const DEFAULTS = {
   unit: 'mm', mode: 'inside',
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
-  wallStyle:'panels', livingPattern:'edge', livingRadius:15, livingPitch:2, livingSlit:15, livingBridge:2,
+  wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
@@ -1154,12 +1168,12 @@ function setWallStyle(style) {
   pushHistoryNow();state.wallStyle=style;
   syncInputs();rebuild();
 }
-function setLivingPattern(pattern) {
-  if(!['edge','staggered'].includes(pattern)||pattern===state.livingPattern)return;
-  pushHistoryNow();state.livingPattern=pattern;syncInputs();rebuild();
+function setLivingDesign(design) {
+  if(!['straight','wave','zigzag','diamond','oval','ladder','chevron','meander','brick'].includes(design)||design===state.livingDesign)return;
+  pushHistoryNow();state.livingDesign=design;syncInputs();rebuild();
 }
 function setLivingSetting(key,value) {
-  const limits={livingRadius:[8,60],livingPitch:[1,5],livingSlit:[4,30],livingBridge:[1,5]},n=Number(value);
+  const limits={livingRadius:[8,60],livingPitch:[1,5],livingRepeat:[4,30],livingBridge:[1,5]},n=Number(value);
   if(!limits[key]||!Number.isFinite(n))return;
   pushHistory();state[key]=Math.max(limits[key][0],Math.min(limits[key][1],n));
   syncInputs();rebuild();
@@ -1178,9 +1192,9 @@ function updateShapeUI() {
   $('livingControls').style.display=living?'':'none';
   $('livingRadiusLabel').textContent='Corner radius (mm)';
   $('livingRadius').parentElement.style.display=['heart','snowman'].includes(state.shape)?'none':'';
-  for(const key of ['livingRadius','livingPitch','livingSlit','livingBridge'])$(key).value=state[key];
-  $('livingPattern').value=state.livingPattern || 'edge';
-  $('livingSlit').parentElement.style.display=state.livingPattern==='staggered'?'':'none';
+  for(const key of ['livingRadius','livingPitch','livingRepeat','livingBridge'])$(key).value=state[key];
+  $('livingDesign').value=state.livingDesign || 'straight';
+  $('livingRepeat').parentElement.style.display=state.livingDesign==='straight'?'none':'';
   $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
   $('shapedBoxHint').textContent = (living ? (state.shape==='snowman'?'Three flexible walls: one upper head and two lower body sections. Join at both sides of the neck and the bottom center; sand the seams to mate if needed.':state.shape==='heart'?'Two flexible heart walls meet at the sharp top notch and bottom tip. Glue the two seams; sand the ends to mate if needed.':'One wraparound wall with living-hinge corners. Permanent top rim and optional two-layer lid.') : state.shape === 'snowman' ? '28 straight panels around a snowman.' : state.shape === 'star' ? '10 straight panels around a five-point star.' : state.shape === 'cross' ? '12 straight panels around a Cross.' : '24 straight panels around a smooth heart.') + ' Plain side edges for gluing; tabs join the bottom and permanent top rim. Glue the lid insert under its cap using the blue alignment outline.';
@@ -3614,6 +3628,48 @@ function livingPathForOutline(outer,splitIndex,T) {
   return {outer,path:{segments,total,at},split:segments[splitIndex].start};
 }
 
+/** Keep curved/meandering cuts in non-overlapping lanes with material between them. */
+function livingCutAmplitude(pitch) {
+  return state.livingDesign==='straight'?0:Math.max(0,Math.min(pitch*0.3,(pitch-Math.max(0.6,2*state.kerf))/2));
+}
+function livingHingeCut(x,a,b,pitch,T,column=0) {
+  const design=state.livingDesign || 'straight';
+  if(design==='straight') return [[x,a],[x,b]];
+  const amplitude=livingCutAmplitude(pitch),period=state.livingRepeat || 12;
+  const paired=['diamond','oval','ladder','brick'].includes(design),sign=paired&&column%2 ? -1:1;
+  const points=[],add=(y,shift)=>{
+    const q=[x+amplitude*sign*shift,y],last=points[points.length-1];
+    if(!last||Math.hypot(last[0]-q[0],last[1]-q[1])>1e-9)points.push(q);
+  };
+  const field=y=>{
+    const phase=(y-T)/period,t=phase-Math.floor(phase);
+    if(design==='wave'||design==='oval')return Math.sin(2*Math.PI*t);
+    if(design==='ladder')return Math.tanh(3*Math.sin(2*Math.PI*t))/Math.tanh(3);
+    if(design==='chevron')return t<0.3?-1+2*t/0.3:1-2*(t-0.3)/0.7;
+    if(design==='meander')return t<0.5?-1:1;
+    if(design==='brick')return [-1,0,1,0][Math.min(3,Math.floor(t*4))];
+    return 4*Math.abs(t-0.5)-1;
+  };
+  if(design==='meander'||design==='brick') {
+    const slices=design==='brick'?4:2;
+    add(a,field(a));
+    for(let k=Math.floor((a-T)/period*slices)+1;T+k*period/slices<b;k++){
+      const y=T+k*period/slices;
+      add(y,field(y-1e-7));add(y,field(y+1e-7));
+    }
+    add(b,field(b));
+  } else {
+    const ys=[a,b];
+    if(['wave','oval','ladder'].includes(design))for(let y=a+Math.min(0.4,period/32);y<b;y+=Math.min(0.4,period/32))ys.push(y);
+    else {
+      const fractions=design==='chevron'?[0,0.3]:[0,0.5];
+      for(let cycle=Math.floor((a-T)/period)-1;cycle<=Math.ceil((b-T)/period);cycle++)for(const f of fractions){const y=T+(cycle+f)*period;if(y>a&&y<b)ys.push(y);}
+    }
+    for(const y of ys.sort((a,b)=>a-b))add(y,field(y));
+  }
+  return points;
+}
+
 function generateLivingPanels(d) {
   const {ow,od,oh,T}=d;
   const maxRadius=Math.min(ow,od)/2-T-0.5;
@@ -3646,27 +3702,19 @@ function generateLivingPanels(d) {
       holes.push([...inner,...outer.reverse()]);
     }
   }
-  const band=Math.max(3,1.5*T),low=T+band,high=oh-T-band;
   const hingeZones=snowman?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:bodySplit-heartGeometry.split-12},{start:bodySplit+6,length:width-bodySplit-12}]:heart?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:width-heartGeometry.split-12}]:path.segments.filter(s=>s.type==='arc');
   for(const seg of hingeZones) {
     const columns=Math.max(3,Math.ceil(seg.length/state.livingPitch));
+    const pitch=seg.length/columns,amplitude=livingCutAmplitude(pitch);
     let edgeColumn=0;
     for(let col=0;col<columns;col++) {
-      const x=seg.start+seg.length*(col+0.5)/columns-seam/2,period=state.livingSlit+state.livingBridge;
-      if(state.livingPattern!=='staggered') {
-        // Cut through one edge of the wall body, while leaving the opposite bridge.
-        // Avoid mounting tabs and their roots so the rim/floor attachment stays solid.
-        if(tabs.some(t=>x>=t.a-0.5&&x<=t.b+0.5))continue;
-        const bottom=T,top=oh-T,bridge=Math.max(state.livingBridge,2*state.kerf+0.5);
-        if(top-bottom-bridge<2)continue;
-        const fromBottom=edgeColumn++%2===0;
-        openCuts.push([[x,fromBottom?bottom:bottom+bridge],[x,fromBottom?top-bridge:top]]);
-        continue;
-      }
-      for(let y=low-(col%2?period/2:0);y<high;y+=period) {
-        const a=Math.max(low,y),b=Math.min(high,y+state.livingSlit);
-        if(b-a>=2)openCuts.push([[x,a],[x,b]]);
-      }
+      const x=seg.start+seg.length*(col+0.5)/columns-seam/2;
+      // Every design reaches one wall edge; the opposite-end bridge remains solid.
+      if(tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude))continue;
+      const bottom=T,top=oh-T,bridge=Math.max(state.livingBridge,2*state.kerf+0.5);
+      if(top-bottom-bridge<2)continue;
+      const column=edgeColumn++,fromBottom=column%2===0;
+      openCuts.push(livingHingeCut(x,fromBottom?bottom:bottom+bridge,fromBottom?top-bridge:top,pitch,T,column));
     }
   }
   const outer=heart?heartGeometry.outer:roundedLivingOutline(ow,od,radius);
@@ -3701,7 +3749,7 @@ function generateLivingPanels(d) {
   }
   d.sides=4;d.poly={verts:outer};d.living=true;
   d.livingWarn=openCuts.length===0;
-  $('livingInfo').textContent=(snowman?'Three snowman walls · Head and split body':heart?'Two heart walls · Sharp notch and tip':'Actual corner radius '+fmtLen(radius,1,3))+' · Wrap '+fmtLen(width,1,3)+' total length · '+openCuts.length+' slit cuts. '+(d.livingWarn?'Increase height to leave room for the hinge pattern.':state.livingPattern==='staggered'?'Uncut bands protect the top and bottom tabs.':'Cuts alternate to the top and bottom edges; opposite-end bridges and mounting tabs remain intact.');
+  $('livingInfo').textContent=(snowman?'Three snowman walls · Head and split body':heart?'Two heart walls · Sharp notch and tip':'Actual corner radius '+fmtLen(radius,1,3))+' · Wrap '+fmtLen(width,1,3)+' total length · '+openCuts.length+' slit cuts. '+(d.livingWarn?'Increase height to leave room for the hinge pattern.':'Cuts alternate to the top and bottom edges; opposite-end bridges and mounting tabs remain intact.');
   const panels=defs.map(def=>{
     const outline=def.outline,cut=heart&&def.poly?heartCutOutline(outline,state.kerf):offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
@@ -5268,7 +5316,7 @@ function rebuild3D() {
 
     if(p.flex) {
       const vertices=[];
-      for(const line of p.openCuts)for(const [x,y] of line){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y,q.z+q.nz*(d.T/2+0.02));}
+      for(const line of p.openCuts)for(let i=0;i<line.length-1;i++)for(const [x,y] of [line[i],line[i+1]]){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y,q.z+q.nz*(d.T/2+0.02));}
       const slitGeo=new THREE.BufferGeometry();slitGeo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
       mesh.add(new THREE.LineSegments(slitGeo,new THREE.LineBasicMaterial({color:0x5b3020})));
     }
