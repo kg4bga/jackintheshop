@@ -8685,7 +8685,8 @@ and disclaimer.
           <label>Sheet W <input class="dim-inp" type="number" id="materialWidth" onchange="setMaterialSize()"></label>
           <label>H <input class="dim-inp" type="number" id="materialHeight" onchange="setMaterialSize()"></label><span id="materialUnit">mm</span>
           <label>Sheet <select class="dim-inp" id="materialSheet" onchange="selectMaterialSheet(this.value)"></select></label>
-          <button class="tb-btn" onclick="autoArrangeMaterial()">Auto arrange</button>
+          <label>Gap <input class="dim-inp" type="number" id="materialGap" min="0.5" max="5" step="0.1" value="1" onchange="setMaterialNestingGap()"></label><span id="materialGapUnit">mm</span>
+          <button class="tb-btn" id="materialNest" onclick="autoArrangeMaterial()">Auto arrange</button>
           <button class="tb-btn" id="materialRotate" disabled onclick="rotateMaterialPart()">Rotate 90°</button>
           <label>Move to <select class="dim-inp" id="materialMove" disabled onchange="moveMaterialPart(this.value)"></select></label>
         </div>
@@ -8779,7 +8780,7 @@ const DEFAULTS = {
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
   wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
-  workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
+  workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
   letter:'A',
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
@@ -12727,28 +12728,52 @@ function layoutPanelsLegacy(panels, gap = 4, compact = true) {
 }
 
 /** Max-rectangle packing into fixed 12-inch sheets, with safe edge margins. */
-let materialCache=null, selectedMaterialKey=null, materialDrag=null;
+let materialCache=null, selectedMaterialKey=null, materialDrag=null, materialNestingRun=0, materialNestingActive=false;
 function materialWallWidthLimit(){return Math.min(WALL_SECTION_LIMIT,Math.max(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN-1);}
 function materialWallHeightLimit(){return Math.min(WALL_SECTION_LIMIT,Math.min(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN-1);}
-function materialLayoutSignature(panels){return state.materialWidth+'x'+state.materialHeight+'|'+panels.map(p=>p.materialKey).join(';');}
+function materialLayoutSignature(panels){return state.materialWidth+'x'+state.materialHeight+'@'+(state.materialGap??1)+'|'+panels.map(p=>p.materialKey).join(';');}
 function layoutPanels(panels,gap=3,compact=true){
   const keyed=panels.map((p,i)=>({...p,materialKey:i+'|'+p.name+'|'+p.bboxW.toFixed(3)+'|'+p.bboxH.toFixed(3)}));
-  const layout=autoLayoutPanels(keyed,gap,compact);layout.signature=materialLayoutSignature(keyed);
+  const layout=autoLayoutPanels(keyed,Math.max(gap,state.materialGap??1),compact);layout.signature=materialLayoutSignature(keyed);
   const saved=state.materialPlacements||{};
   if(state.materialLayoutSignature!==layout.signature||!layout.placed.length||!layout.placed.every(p=>saved[p.materialKey]))return layout;
   const restored=layout.placed.map(p=>{
-    const entry=saved[p.materialKey],rotated=!!entry.rotated;
-    return {...p,ox:entry.x,oy:entry.y,rotated,sheetIndex:entry.sheet,packedW:rotated?p.bboxH:p.bboxW,packedH:rotated?p.bboxW:p.bboxH};
+    const entry=saved[p.materialKey],rotation=entry.rotation??(entry.rotated?1:0),rotated=rotation%2===1;
+    return {...p,ox:entry.x,oy:entry.y,rotation,rotated,sheetIndex:entry.sheet,packedW:rotated?p.bboxH:p.bboxW,packedH:rotated?p.bboxW:p.bboxH};
   });
   if(restored.some(p=>!Number.isFinite(p.ox+p.oy+p.sheetIndex)||p.sheetIndex<0||!Number.isInteger(p.sheetIndex)||!materialPositionFits(p,restored)))return layout;
   const sheets=Array.from({length:Math.max(...restored.map(p=>p.sheetIndex))+1},()=>({material:'box',placed:[]}));
   for(const p of restored){const sheet=sheets[p.sheetIndex];sheet.material=p.role==='slide-panel'?'lid':'box';sheet.placed.push(p);}
   return {...layout,placed:restored,sheets};
 }
-function materialPositionFits(p,placed,gap=0.5){
+function materialCollisionShape(p,gap) {
+  if(!p.cut){const m=gap/2;return [[[p.ox-m,p.oy-m],[p.ox+p.packedW+m,p.oy-m],[p.ox+p.packedW+m,p.oy+p.packedH+m],[p.ox-m,p.oy+p.packedH+m]]];}
+  if(!p.materialCollisionCache||p.materialCollisionCache.gap!==gap){
+    const positive=loop=>signedPolyArea(loop)>0?loop:loop.slice().reverse();
+    const holes=(p.holes||[]).map(positive);
+    for(const [x,y,w,h] of (p.slots||[]))holes.push([[x,y],[x+w,y],[x+w,y+h],[x,y+h]]);
+    const solid=letterDifference([positive(p.cut)],holes);
+    p.materialCollisionCache={gap,paths:gap?letterClipPaths(solid,gap/2):solid};
+  }
+  return p.materialCollisionCache.paths.map(loop=>loop.map(([x,y])=>svgPanelPoint(p,x,y)));
+}
+function materialPartsOverlap(p,q,gap) {
+  if(p.ox>=q.ox+q.packedW+gap-1e-7||p.ox+p.packedW+gap<=q.ox+1e-7||p.oy>=q.oy+q.packedH+gap-1e-7||p.oy+p.packedH+gap<=q.oy+1e-7)return false;
+  const C=window.ClipperLib,S=1000,clip=new C.Clipper(),solution=[];
+  const convert=loops=>loops.map(loop=>loop.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)})));
+  clip.AddPaths(convert(materialCollisionShape(p,gap)),C.PolyType.ptSubject,true);
+  clip.AddPaths(convert(materialCollisionShape(q,gap)),C.PolyType.ptClip,true);
+  clip.Execute(C.ClipType.ctIntersection,solution,C.PolyFillType.pftNonZero,C.PolyFillType.pftNonZero);
+  return solution.some(loop=>Math.abs(C.Clipper.Area(loop))>1);
+}
+function materialPositionFits(p,placed,gap=state.materialGap??1){
   const m=SVG_SHEET_MARGIN;
   if(p.ox<m-1e-7||p.oy<m-1e-7||p.ox+p.packedW>state.materialWidth-m+1e-7||p.oy+p.packedH>state.materialHeight-m+1e-7)return false;
-  return !placed.some(q=>q.materialKey!==p.materialKey&&q.sheetIndex===p.sheetIndex&&(q.role==='slide-panel')!==(p.role==='slide-panel')||q.materialKey!==p.materialKey&&q.sheetIndex===p.sheetIndex&&p.ox<q.ox+q.packedW+gap-1e-7&&p.ox+p.packedW+gap>q.ox+1e-7&&p.oy<q.oy+q.packedH+gap-1e-7&&p.oy+p.packedH+gap>q.oy+1e-7);
+  return !placed.some(q=>{
+    if(q===p||p.materialKey!=null&&q.materialKey===p.materialKey||q.sheetIndex!==p.sheetIndex)return false;
+    if((q.role==='slide-panel')!==(p.role==='slide-panel'))return true;
+    return materialPartsOverlap(p,q,gap);
+  });
 }
 function syncWorkspaceUI(){
   const visible=state.workspaceMode==='material';
@@ -12757,6 +12782,8 @@ function syncWorkspaceUI(){
   document.querySelectorAll('#canvasArea > .hud, #canvasArea > .canvas-hint').forEach(el=>el.style.display=visible?'none':'');
   for(const key of ['materialWidth','materialHeight']){const input=$(key);input.value=numDisp(state[key]);input.min=toDisp(50);input.max=toDisp(2440);input.step=state.unit==='in'?'0.01':'1';}
   $('materialUnit').textContent=state.unit;
+  $('materialGapUnit').textContent=state.unit;
+  $('materialGap').value=numDisp(state.materialGap??1);$('materialGap').min=toDisp(0.5);$('materialGap').max=toDisp(5);$('materialGap').step=state.unit==='in'?'0.005':'0.1';
 }
 function setWorkspaceMode(mode){
   if(!['3d','material'].includes(mode))return;
@@ -12771,7 +12798,76 @@ function setMaterialSize(){
   selectedMaterialKey=null;syncWorkspaceUI();rebuild();
 }
 function selectMaterialSheet(value){state.materialPage=Math.max(0,Number(value)||0);selectedMaterialKey=null;refreshMaterialView();}
-function autoArrangeMaterial(){pushHistoryNow();state.materialPlacements={};state.materialLayoutSignature='';selectedMaterialKey=null;refreshMaterialView();refreshOpenSVG();}
+function cancelMaterialNesting(){materialNestingRun++;materialNestingActive=false;$('materialNest').textContent='Auto arrange';}
+function setMaterialNestingGap(){
+  const gap=fromDisp(Number($('materialGap').value));
+  if(!Number.isFinite(gap)||gap<0.5||gap>5){$('materialStatus').textContent='Gap: 0.5–5 mm.';return;}
+  cancelMaterialNesting();pushHistoryNow();state.materialGap=gap;state.materialPlacements={};state.materialLayoutSignature='';refreshMaterialView();refreshOpenSVG();
+}
+async function nestMaterialPanels(baseline,run,onProgress=()=>{}){
+  const gap=state.materialGap??1,m=SVG_SHEET_MARGIN,w=state.materialWidth,h=state.materialHeight,deadline=Date.now()+15000;
+  const measure=l=>l.sheets.length*1e12+l.sheets.reduce((sum,s)=>sum+(Math.max(m,...s.placed.map(p=>p.ox+p.packedW))-m)*(Math.max(m,...s.placed.map(p=>p.oy+p.packedH))-m),0);
+  let best=baseline;
+  const orders=[(a,b)=>b.bboxW*b.bboxH-a.bboxW*a.bboxH,(a,b)=>Math.max(b.bboxW,b.bboxH)-Math.max(a.bboxW,a.bboxH),(a,b)=>b.bboxH-a.bboxH,(a,b)=>b.bboxW-a.bboxW];
+  for(let pass=0;pass<orders.length;pass++){
+    const sheets=[],placed=[];let complete=true;
+    for(const p of [...baseline.placed].sort(orders[pass])){
+      await new Promise(resolve=>setTimeout(resolve,0));if(run!==materialNestingRun)return null;
+      onProgress(pass+1,placed.length,baseline.placed.length);
+      let chosen=null;const material=p.role==='slide-panel'?'lid':'box';
+      for(let page=0;page<=sheets.length&&!chosen;page++){
+        const sheet=sheets[page]||{material,placed:[]};if(sheet.material!==material)continue;
+        let local=null;
+        for(let rotation=0;rotation<4;rotation++){
+          const q={...p,rotation,rotated:rotation%2===1,packedW:rotation%2?p.bboxH:p.bboxW,packedH:rotation%2?p.bboxW:p.bboxH,sheetIndex:page};
+          if(q.packedW>w-2*m+1e-7||q.packedH>h-2*m+1e-7)continue;
+          const xs=new Set([m]),ys=new Set([m]);
+          for(const other of sheet.placed){
+            for(const loop of materialCollisionShape(other,gap))for(const [x,y] of loop){
+              for(const v of [x+gap/2,x-q.packedW-gap/2])if(v>=m&&v<=w-m-q.packedW)xs.add(Math.round(v*1000)/1000);
+              for(const v of [y+gap/2,y-q.packedH-gap/2])if(v>=m&&v<=h-m-q.packedH)ys.add(Math.round(v*1000)/1000);
+            }
+          }
+          const sample=(values)=>{const sorted=[...values].sort((a,b)=>a-b);return sorted.length<=70?sorted:sorted.filter((_,i)=>i===0||i===sorted.length-1||i%Math.ceil(sorted.length/68)===0);};
+          let checks=0;
+          for(const y of sample(ys)){
+            for(const x of sample(xs)){
+              if(++checks%120===0){await new Promise(resolve=>setTimeout(resolve,0));if(run!==materialNestingRun)return null;}
+              if(Date.now()>deadline){complete=false;break;}
+              const candidate={...q,ox:x,oy:y};if(!materialPositionFits(candidate,sheet.placed,gap))continue;
+              const right=Math.max(x+q.packedW,...sheet.placed.map(a=>a.ox+a.packedW)),bottom=Math.max(y+q.packedH,...sheet.placed.map(a=>a.oy+a.packedH));
+              const score=(right-m)*(bottom-m)+y*0.001;
+              if(!local||score<local.score)local={candidate,page,sheet,score};
+            }
+            if(!complete)break;
+          }
+          if(!complete)break;
+        }
+        chosen=local;if(!complete)break;
+      }
+      if(!complete||!chosen){complete=false;break;}
+      if(!sheets[chosen.page])sheets.push(chosen.sheet);
+      chosen.sheet.placed.push(chosen.candidate);placed.push(chosen.candidate);
+    }
+    if(complete){const result={...baseline,sheets,placed};if(measure(result)<measure(best)&&placed.every(p=>materialPositionFits(p,placed,gap)))best=result;}
+    if(Date.now()>deadline)break;
+  }
+  return best;
+}
+async function autoArrangeMaterial(){
+  if(materialNestingActive){cancelMaterialNesting();$('materialStatus').textContent='Arrangement cancelled.';return;}
+  const run=++materialNestingRun;materialNestingActive=true;$('materialNest').textContent='Cancel arranging';
+  const keyed=()=>generatePanels().panels.map((p,i)=>({...p,materialKey:i+'|'+p.name+'|'+p.bboxW.toFixed(3)+'|'+p.bboxH.toFixed(3)}));
+  try{
+    const panels=keyed(),signature=materialLayoutSignature(panels),baseline=autoLayoutPanels(panels,state.materialGap??1,true);baseline.signature=signature;
+    const result=await nestMaterialPanels(baseline,run,(pass,n,total)=>{$('materialStatus').textContent='Arranging '+pass+'/4 · '+n+'/'+total;});
+    if(!result||run!==materialNestingRun)return;
+    if(materialLayoutSignature(keyed())!==signature){$('materialStatus').textContent='Design changed; arrange again.';return;}
+    pushHistoryNow();saveMaterialLayout(result);selectedMaterialKey=null;refreshMaterialView();refreshOpenSVG();
+    $('materialStatus').textContent=result.oversized.length?'Oversized parts need larger sheets.':'Arranged on '+result.sheets.length+' sheet'+(result.sheets.length===1?'':'s')+' · '+numDisp(state.materialGap??1)+' '+state.unit+' gap.';
+  }catch(error){console.error(error);$('materialStatus').textContent='Arrangement failed; layout kept.';}
+  finally{if(run===materialNestingRun){materialNestingActive=false;$('materialNest').textContent='Auto arrange';}}
+}
 function refreshOpenSVG(){if($('svgModal').classList.contains('show'))refreshSVGPreview();}
 function escapeMaterialText(text){return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
 function materialPanelMarkup(p){
@@ -12803,6 +12899,7 @@ function refreshMaterialView(){
   const point=e=>new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
   svg.addEventListener('pointerdown',e=>{
     if(e.button!=null&&e.button!==0)return;
+    if(materialNestingActive)cancelMaterialNesting();
     const group=e.target.closest('[data-material-part]');if(!group)return;
     const key=group.getAttribute('data-material-part'),p=layout.placed.find(p=>p.materialKey===key);if(!p)return;
     selectedMaterialKey=key;svg.querySelectorAll('[data-material-part]').forEach(g=>g.classList.toggle('selected',g===group));updateMaterialSelection();
@@ -12826,17 +12923,20 @@ function saveMaterialLayout(layout){
   const used=[...new Set(layout.placed.map(p=>p.sheetIndex))].sort((a,b)=>a-b);
   for(const p of layout.placed)p.sheetIndex=used.indexOf(p.sheetIndex);
   state.materialLayoutSignature=layout.signature;
-  state.materialPlacements=Object.fromEntries(layout.placed.map(p=>[p.materialKey,{x:p.ox,y:p.oy,rotated:p.rotated,sheet:p.sheetIndex}]));
+  state.materialPlacements=Object.fromEntries(layout.placed.map(p=>[p.materialKey,{x:p.ox,y:p.oy,rotated:p.rotated,rotation:p.rotation??(p.rotated?1:0),sheet:p.sheetIndex}]));
   const selected=layout.placed.find(p=>p.materialKey===selectedMaterialKey);if(selected)state.materialPage=selected.sheetIndex;
 }
 function rotateMaterialPart(){
+  if(materialNestingActive)cancelMaterialNesting();
   const p=materialCache?.placed.find(p=>p.materialKey===selectedMaterialKey);if(!p)return;
-  const candidate={...p,rotated:!p.rotated,packedW:p.packedH,packedH:p.packedW};
+  const rotation=((p.rotation??(p.rotated?1:0))+1)%4;
+  const candidate={...p,rotation,rotated:rotation%2===1,packedW:p.packedH,packedH:p.packedW};
   candidate.ox=Math.max(4,Math.min(state.materialWidth-4-candidate.packedW,p.ox+(p.packedW-candidate.packedW)/2));candidate.oy=Math.max(4,Math.min(state.materialHeight-4-candidate.packedH,p.oy+(p.packedH-candidate.packedH)/2));
   if(!materialPositionFits(candidate,materialCache.placed)){$('materialStatus').textContent='Move part before rotating.';return;}
   pushHistoryNow();Object.assign(p,candidate);saveMaterialLayout(materialCache);refreshMaterialView();refreshOpenSVG();
 }
 function moveMaterialPart(value){
+  if(materialNestingActive)cancelMaterialNesting();
   const p=materialCache?.placed.find(p=>p.materialKey===selectedMaterialKey);if(!p)return;
   const target=value==='new'?materialCache.sheets.length:Number(value);if(target===p.sheetIndex)return;
   const others=materialCache.placed.filter(q=>q.sheetIndex===target),xs=[4,...others.map(q=>q.ox+q.packedW+3)],ys=[4,...others.map(q=>q.oy+q.packedH+3)];let candidate=null;
@@ -12862,7 +12962,8 @@ function autoLayoutPanels(panels,gap=3,compact=true) {
     if(!best){sheets.push(newSheet(material));const page=sheets.length-1,rect=sheets[page].free[0];const rotated=p.bboxW>usableW||p.bboxH>usableH;best={page,rect,rotated,w:rotated?p.bboxH:p.bboxW,h:rotated?p.bboxW:p.bboxH};}
     const sheet=sheets[best.page],x=best.rect.x,y=best.rect.y,w=best.w,h=best.h;
     sheet.placed.push({...p,ox:x,oy:y,rotated:best.rotated,sheetIndex:best.page,packedW:w,packedH:h});
-    const used={x,y,w:Math.min(w+gap,sheetW-margin-x),h:Math.min(h+gap,sheetH-margin-y)},free=[];
+    const reserveX=Math.max(margin,x-gap),reserveY=Math.max(margin,y-gap);
+    const used={x:reserveX,y:reserveY,w:Math.min(sheetW-margin,x+w+gap)-reserveX,h:Math.min(sheetH-margin,y+h+gap)-reserveY},free=[];
     for(const r of sheet.free){
       if(used.x>=r.x+r.w-1e-8||used.x+used.w<=r.x+1e-8||used.y>=r.y+r.h-1e-8||used.y+used.h<=r.y+1e-8){free.push(r);continue;}
       if(used.x>r.x)free.push({x:r.x,y:r.y,w:used.x-r.x,h:r.h});
@@ -12875,7 +12976,11 @@ function autoLayoutPanels(panels,gap=3,compact=true) {
   return {sheets,placed:sheets.flatMap(s=>s.placed),oversized,totalW:sheetW,totalH:sheetH};
 }
 function svgPanelPoint(p,x,y) {
-  return p.rotated?[p.ox+y-p.minY,p.oy+x-p.minX]:[p.ox+x-p.minX,p.oy+p.maxY-y];
+  const u=x-p.minX,v=p.maxY-y,angle=p.rotation??(p.rotated?1:0);
+  if(angle===1)return [p.ox+p.bboxH-v,p.oy+u];
+  if(angle===2)return [p.ox+p.bboxW-u,p.oy+p.bboxH-v];
+  if(angle===3)return [p.ox+v,p.oy+p.bboxW-u];
+  return [p.ox+u,p.oy+v];
 }
 function svgSheetResult(showLabels,compact,solid,hingeGap) {
   const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,compact);
@@ -13728,6 +13833,7 @@ function updateHUD(d, panels) {
 
 // ---------- Actions ----------
 function rebuild() {
+  if(materialNestingActive)cancelMaterialNesting();
   syncRaiseUI();
   rebuild3D();
   if(state.workspaceMode==='material')refreshMaterialView();
@@ -13826,7 +13932,7 @@ function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.
 
 function resetAll() {
   pushHistoryNow();
-  materialCache=null;selectedMaterialKey=null;materialDrag=null;
+  materialCache=null;selectedMaterialKey=null;materialDrag=null;materialNestingRun++;materialNestingActive=false;
   Object.assign(state, {
     ...DEFAULTS,
     colWeights: [1],
