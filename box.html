@@ -8196,6 +8196,10 @@ and disclaimer.
     </div>
     <div class="tb-group">
       <button class="tb-btn" onclick="playAssembly()">▶ Assemble</button>
+      <label style="display:flex;align-items:center;gap:6px;white-space:nowrap" title="Exploded to assembled">
+        <input type="range" id="sldAssembly" min="0" max="100" value="100" step="1" oninput="onAssembly(this.value)" aria-label="Assembly" style="width:100px;margin:0">
+        <span class="tb-label" id="valAssembly" style="min-width:32px">100%</span>
+      </label>
       <button class="tb-btn" onclick="takeScreenshot()">📷 PNG</button>
     </div>
     <div class="tb-group tb-right">
@@ -8227,9 +8231,14 @@ and disclaimer.
           </div>
           
           
+          <div class="ctrl" id="letterControls" style="display:none">
+            <label class="ctrl-lbl" for="letterInput">Capital letter (A–Z)</label>
+            <input class="dim-inp" id="letterInput" type="text" maxlength="1" value="A" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-size:26px;text-transform:uppercase;text-align:center" oninput="setLetterBox(this)">
+            <div class="hint" id="letterInfo"></div>
+          </div>
           <div class="ctrl" id="shapedControls" style="display:none">
             <div id="snowmanEngravingControls" style="display:none;margin-bottom:8px"><label><input type="checkbox" id="snowmanEngraving" checked onchange="setSnowmanEngraving(this.checked)"> Engrave snowman details on lid</label></div>
-            <label><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
+            <label id="shapedTopOption"><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
             <div class="ctrl" style="margin-top:10px" id="shapedLidControls">
               <label id="shapedHandleOption"><input type="checkbox" id="shapedHandle" checked onchange="setShapedHandle(this.checked)"> Include lid handle</label>
               <div class="ctrl" style="margin-top:8px" id="shapedHandleControls">
@@ -8279,21 +8288,6 @@ and disclaimer.
       </div>
 
       
-      <div class="lb-panel" id="s-letter">
-        <div class="lb-panel-hdr" onclick="toggleSec('s-letter')">
-          <span class="title">Letter Box</span>
-          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-        <div class="lb-panel-body">
-          <label class="ctrl-lbl" for="letterInput">Capital letter (A–Z)</label>
-          <input class="dim-inp" id="letterInput" type="text" maxlength="1" value="A" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-size:26px;text-transform:uppercase;text-align:center" oninput="setLetterBox(this)">
-          <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="setBoxShape('letter')">Make letter box</button>
-          <div class="hint" style="margin-top:8px">Font: Lilita One.</div>
-          <div class="hint" id="letterInfo"></div>
-          <div class="hint">Glue inner and outer walls.</div>
-        </div>
-      </div>
-
       <div class="lb-panel" id="s-walls">
         <div class="lb-panel-hdr" onclick="toggleSec('s-walls')">
           <span class="title">Walls</span>
@@ -8641,36 +8635,18 @@ and disclaimer.
               </div>
               
             </div>
+          <div class="ctrl" id="drawerPullCtrl" style="margin-top:10px;display:none;">
+            <div class="ctrl-lbl"><strong>Drawer lift</strong><span class="ctrl-val" id="valDrawerPull">0%</span></div>
+            <input type="range" id="sldDrawerPull" min="0" max="100" value="0" step="1" oninput="onDrawerPull(this.value)">
+            <div style="display:flex;justify-content:space-between" class="hint"><span>In box</span><span>Lifted up</span></div>
+          </div>
             <div class="hint" id="drawerInfo" style="margin-top:8px;"></div>
           </div>
         </div>
       </div>
 
       
-      <div class="lb-panel" id="s-vis">
-        <div class="lb-panel-hdr" onclick="toggleSec('s-vis')">
-          <span class="title">3D View</span>
-          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-        <div class="lb-panel-body">
-          <div class="ctrl">
-            <div class="ctrl-lbl"><strong>Assembly</strong><span class="ctrl-val" id="valAssembly">100%</span></div>
-            <input type="range" id="sldAssembly" min="0" max="100" value="100" step="1" oninput="onAssembly(this.value)">
-            <div style="display:flex;justify-content:space-between" class="hint"><span>Exploded</span><span>Assembled</span></div>
-          </div>
-          <div class="ctrl" id="drawerPullCtrl" style="margin-top:10px;display:none;">
-            <div class="ctrl-lbl"><strong>Drawer lift</strong><span class="ctrl-val" id="valDrawerPull">0%</span></div>
-            <input type="range" id="sldDrawerPull" min="0" max="100" value="0" step="1" oninput="onDrawerPull(this.value)">
-            <div style="display:flex;justify-content:space-between" class="hint"><span>In box</span><span>Lifted up</span></div>
-          </div>
-        </div>
-      </div>
 
-      <div class="actions">
-        <button class="btn btn-download" onclick="showSVG()">⬇ Download SVG (laser cut)</button>
-        <button class="btn btn-secondary" onclick="downloadDXF()">⬇ Export DXF</button>
-        <button class="btn btn-ghost" onclick="resetAll()">Reset defaults</button>
-      </div>
     </aside>
 
     
@@ -9097,6 +9073,13 @@ function letterWallPath(points) {
     return {x:seg.a[0]+(seg.b[0]-seg.a[0])*t,z:seg.a[1]+(seg.b[1]-seg.a[1])*t,nx:nx/L,nz:nz/L};};
   return {total,segments,at};
 }
+function rectangularWallSlot(path,a,b,T,seam=0){
+  const center=path.at((a+b)/2+seam/2),start=path.at(a+seam/2),end=path.at(b+seam/2);
+  const dx=end.x-start.x,dz=end.z-start.z,length=Math.hypot(dx,dz);
+  const ux=length>1e-8?dx/length:-center.nz,uz=length>1e-8?dz/length:center.nx;
+  const half=(b-a)/2,thickness=T/2;
+  return [[-half,-thickness],[half,-thickness],[half,thickness],[-half,thickness]].map(([u,v])=>[center.x+ux*u-uz*v,center.z+uz*u+ux*v]);
+}
 function generateLetterPanels(d) {
   const glyph=LETTER_GLYPHS[state.letter || 'A'],T=d.T,H=d.oh;
   // Preserve the glyph's proportions while fitting the selected width/depth envelope.
@@ -9119,8 +9102,7 @@ function generateLetterPanels(d) {
       const tabCount=Math.max(2,Math.floor(width/24)),tabWidth=Math.min(6,Math.max(3,1.5*T));
       for(let i=0;i<tabCount;i++){
         const mid=(i+0.5)*width/tabCount,a=mid-tabWidth/2,b=mid+tabWidth/2;if(a<6||b>width-6)continue;
-        const left=[],right=[];for(let j=0;j<=12;j++){const q=localPath.at(a+(b-a)*j/12+seam/2);left.push([q.x-q.nx*T/2,q.z-q.nz*T/2]);right.push([q.x+q.nx*T/2,q.z+q.nz*T/2]);}
-        const slot=[...left,...right.reverse()];
+        const slot=rectangularWallSlot(localPath,a,b,T,seam);
         if(!slot.every(p=>letterInside(p,solid)))continue;
         tabs.push({a,b});slots.push(slot);
       }
@@ -9141,7 +9123,7 @@ function generateLetterPanels(d) {
     }
   };
   addPlates('bottom','bottom',solid,true);addPlates('top rim','top',rim,true);
-  if(state.shapedTop!==false) {
+  {
     addPlates('lid insert (glue under cap)','pull-insert',insert);
     addPlates('lid cap','pull-cap',solid);
     for(const p of defs.filter(p=>p.role==='pull-cap'))p.engrave=insert;
@@ -9185,6 +9167,8 @@ function updateShapeUI() {
   $('wallStyle').disabled=state.shape==='standard'&&state.sides!==4;
   $('wallStyle').value=state.wallStyle;
   $('letterInput').value=state.letter || 'A';
+  $('letterControls').style.display=state.shape==='letter'&&!frame?'':'none';
+  $('shapedTopOption').style.display=state.shape==='letter'?'none':'';
   $('snowmanEngravingControls').style.display=state.shape==='snowman'?'':'none';
   $('snowmanEngraving').checked=state.snowmanEngraving!==false;
   $('livingControls').style.display=living?'':'none';
@@ -9196,8 +9180,8 @@ function updateShapeUI() {
   $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
   $('shapedBoxHint').textContent=living?(state.shape==='snowman'?'3 flexible wall sections.':state.shape==='heart'?'2 flexible wall sections.':'Glue wall tabs and seams.'):'Glue wall seams.';
-  $('shapedTop').checked = state.shapedTop !== false;
-  $('shapedLidControls').style.display = state.shapedTop === false ? 'none' : '';
+  $('shapedTop').checked = state.shape==='letter'||state.shapedTop !== false;
+  $('shapedLidControls').style.display = state.shape!=='letter'&&state.shapedTop === false ? 'none' : '';
   $('shapedHandle').checked = state.shapedHandle !== false;
   $('shapedHandleOption').style.display = state.shape==='letter'?'none':'';
   $('shapedHandleControls').style.display = state.shape==='letter'||state.shapedHandle === false ? 'none' : '';
@@ -9895,7 +9879,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-letter', 's-walls', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer', 's-vis'];
+const LEFT_SECTIONS = ['s-dim', 's-walls', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -11708,20 +11692,16 @@ function generateLivingPanels(d) {
     const baseTabs=lanternTabs(span,T),chosen=baseTabs.length?baseTabs:[{a:span*0.3,b:span*0.7}];
     for(const t of chosen){const a=seg.start+margin+t.a-seam/2,b=seg.start+margin+t.b-seam/2;
       if(a<=T||b>=width-T||seams.some(x=>a<x+6&&b>x-6))continue;
-      tabs.push({a,b});const p=path.at(a+seam/2),q=path.at(b+seam/2);
-      holes.push([[p.x-p.nx*T/2,p.z-p.nz*T/2],[q.x-q.nx*T/2,q.z-q.nz*T/2],[q.x+q.nx*T/2,q.z+q.nz*T/2],[p.x+p.nx*T/2,p.z+p.nz*T/2]]);
+      tabs.push({a,b});holes.push(rectangularWallSlot(path,a,b,T,seam));
     }
   }
   if(heart) {
-    // Short curved tabs follow the neutral path; matching slots use the same samples.
+    // Keep tab slots straight and square even along curved walls.
     const count=Math.max(10,Math.ceil(width/24)),tabWidth=Math.min(6,Math.max(3,T*1.5));
     for(let i=0;i<count;i++){
       const mid=(i+0.5)*width/count,a=mid-tabWidth/2,b=mid+tabWidth/2;
       if(a<6||b>width-6||seams.some(x=>a<x+6&&b>x-6))continue;
-      tabs.push({a,b});const inner=[],outer=[];
-      const steps=Math.max(4,Math.ceil(tabWidth/0.5));
-      for(let j=0;j<=steps;j++){const q=path.at(a+(b-a)*j/steps+seam/2);inner.push([q.x-q.nx*T/2,q.z-q.nz*T/2]);outer.push([q.x+q.nx*T/2,q.z+q.nz*T/2]);}
-      holes.push([...inner,...outer.reverse()]);
+      tabs.push({a,b});holes.push(rectangularWallSlot(path,a,b,T,seam));
     }
   }
   const hingeZones=snowman?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:bodySplit-heartGeometry.split-12},{start:bodySplit+6,length:width-bodySplit-12}]:heart?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:width-heartGeometry.split-12}]:path.segments.filter(s=>s.type==='arc');
