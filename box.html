@@ -8372,6 +8372,8 @@ and disclaimer.
           <div class="ctrl" id="footBellyGrp">
             <div class="ctrl-lbl"><strong>Belly</strong><span class="ctrl-val" id="valFootBelly">0%</span></div>
             <input type="range" id="sldFootBelly" min="0" max="100" step="1" value="0" oninput="onFootBelly(this.value)">
+            <label class="ctrl-lbl" for="inFootScallops" style="margin-top:8px">Scallop count</label>
+            <input class="dim-inp" id="inFootScallops" type="number" min="1" max="12" step="1" value="1" onchange="onFootScallops(this.value)">
             </div>
         </div>
       </div>
@@ -8788,6 +8790,7 @@ const DEFAULTS = {
   footCutout: 0, // mm height of decorative cutout under the raised bottom (between corner feet)
   footWidth: 15, // mm width of each corner foot (independent of finger size)
   footRound: 0, // 0–100, corner radius of the foot cutout as a percent of the largest arc that fits
+  footScallops: 1,
   footBelly: 0, // 0–100, how far the middle of the cutout sags back down between the feet
 };
 const state = { ...DEFAULTS, colWeights: [1], rowWeights: [1] };
@@ -9346,6 +9349,10 @@ function onFootRound(v) {
   if ($('valFootRound')) $('valFootRound').textContent = Math.round(state.footRound) + '%';
   rebuild();
 }
+function onFootScallops(v) {
+  const count=Math.max(1,Math.min(12,Math.round(Number(v)||1)));
+  pushHistoryNow();state.footScallops=count;$('inFootScallops').value=count;rebuild();
+}
 function onFootBelly(v) {
   pushHistory();
   state.footBelly = Math.max(0, Math.min(100, parseFloat(v) || 0));
@@ -9415,6 +9422,8 @@ function syncRaiseUI() {
     $('sldFootRound').value = state.footRound || 0;
   }
   if ($('valFootRound')) $('valFootRound').textContent = roundOk ? Math.round(state.footRound || 0) + '%' : (cutOk ? '0%' : 'n/a');
+  $('inFootScallops').disabled=!roundOk;
+  $('inFootScallops').value=state.footScallops||1;
   if ($('footBellyGrp')) $('footBellyGrp').style.opacity = roundOk ? '1' : '0.35';
   if ($('sldFootBelly')) {
     $('sldFootBelly').disabled = !roundOk;
@@ -10582,14 +10591,15 @@ function addTopNotch(outline, topY, xc, nw, depth) {
  * Notch profile along the bottom edge, left to right.
  * radius rounds both inside corners. bellyPct (0–100) sags the middle back down.
  */
-function footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct) {
+function footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct, scallops=1) {
   const w = cutX1 - cutX0;
   const rMax = Math.min(height, w / 2);
   const r = Math.max(0, Math.min(radius || 0, rMax));
   const top = bottomY + height;
   const drop = height * Math.max(0, Math.min(100, bellyPct || 0)) / 100;
   const yFloor = bottomY + 0.4;
-  const n = Math.max(20, Math.round(w / 1.25));
+  const count=Math.max(1,Math.min(12,Math.round(scallops)||1));
+  const n = Math.max(20*count, Math.ceil(w / 1.25 / (2*count))*2*count);
   const pts = [[cutX0, bottomY]];
   for (let i = 0; i <= n; i++) {
     const t = i / n;
@@ -10603,7 +10613,7 @@ function footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct) {
       else if (x > rightC) dx = x - rightC;
       if (dx !== 0) y = (top - r) + Math.sqrt(Math.max(0, r * r - dx * dx));
     }
-    const sag = (1 - Math.cos(t * Math.PI * 2)) / 2;
+    const sag = (1 - Math.cos(t * Math.PI * 2 * count)) / 2;
     y = Math.max(yFloor, y - drop * sag);
     pts.push([x, y]);
   }
@@ -10627,7 +10637,7 @@ function insertOnBottomEdge(outline, bottomY, cutX0, cutX1, height, radius, bell
     if (Math.abs(p[1] - bottomY) < 1e-6 && Math.abs(n[1] - bottomY) < 1e-6 &&
         Math.min(p[0], n[0]) <= cutX0 + 1e-6 && Math.max(p[0], n[0]) >= cutX1 - 1e-6) {
       const goingRight = n[0] > p[0];
-      const mid = footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct);
+      const mid = footNotchPts(bottomY, cutX0, cutX1, height, radius, bellyPct, state.footScallops||1);
       if (!goingRight) mid.reverse();
       out.push(...mid);
       done = true;
