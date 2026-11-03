@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.82</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.83</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8147,7 +8147,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.82</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.83</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -8205,7 +8205,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <div id="snowmanEngravingControls" style="display:none;margin-bottom:8px"><label><input type="checkbox" id="snowmanEngraving" checked onchange="setSnowmanEngraving(this.checked)"> Engrave snowman details on lid</label></div>
             <label><input type="checkbox" id="shapedTop" checked onchange="setShapedTop(this.checked)"> Include removable top</label>
             <div class="ctrl" style="margin-top:10px" id="shapedLidControls">
-              <label><input type="checkbox" id="shapedHandle" checked onchange="setShapedHandle(this.checked)"> Include lid handle</label>
+              <label id="shapedHandleOption"><input type="checkbox" id="shapedHandle" checked onchange="setShapedHandle(this.checked)"> Include lid handle</label>
               <div class="ctrl" style="margin-top:8px" id="shapedHandleControls">
                 <label class="ctrl-lbl" for="shapedHandleSize">Handle size (radius) <span class="ctrl-val" id="shapedHandleSizeVal">18.0 mm</span></label>
                 <input type="range" id="shapedHandleSize" min="8" max="35" step="0.5" value="18" oninput="onShapedHandleSize(this.value)">
@@ -9068,28 +9068,7 @@ function generateLetterPanels(d) {
     addPlates('lid insert (glue under cap)','pull-insert',insert);
     addPlates('lid cap','pull-cap',solid);
     for(const p of defs.filter(p=>p.role==='pull-cap'))p.engrave=insert;
-    if(state.shapedHandle!==false) {
-      // Find a wide solid stroke for the handle instead of putting it inside a counter.
-      let location=null,R=0;
-      for(let row=1;row<40;row++){
-        const y=-d.od/2+d.od*row/40,xs=[];
-        for(const loop of solid)for(let i=0;i<loop.length;i++){const a=loop[i],b=loop[(i+1)%loop.length];if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]));}
-        xs.sort((a,b)=>a-b);
-        for(let i=0;i+1<xs.length;i+=2){const r=Math.min(state.shapedHandleSize,(xs[i+1]-xs[i]-4*T)/2,d.od*0.15),cx=(xs[i]+xs[i+1])/2;
-          if(r<=R||r<4)continue;
-          const band=Math.min(Math.max(2,T),r*0.4),inner=r-band;
-          const h1=[[-r,-T/2],[-inner,-T/2],[-inner,T/2],[-r,T/2]].map(([x,z])=>[cx+x,y+z]);
-          const h2=[[inner,-T/2],[r,-T/2],[r,T/2],[inner,T/2]].map(([x,z])=>[cx+x,y+z]);
-          if([...h1,...h2].every(p=>letterInside(p,solid))){R=r;location={cx,y,band,inner,holes:[h1,h2]};}
-        }
-      }
-      if(location){const {cx,y,band,inner}=location,pts=[[-R,0],[-R,T]];
-        for(let i=0;i<=48;i++){const a=Math.PI-i*Math.PI/48;pts.push([R*Math.cos(a),T+R*Math.sin(a)]);}pts.push([R,0],[inner,0],[inner,T]);
-        for(let i=0;i<=48;i++){const a=i*Math.PI/48;pts.push([inner*Math.cos(a),T+inner*Math.sin(a)]);}pts.push([-inner,0]);
-        const cap=defs.find(p=>p.role==='pull-cap'&&location.holes.every(h=>h.every(q=>letterInside(q,[p.outline,...(p.holes||[])]))));
-        if(cap){cap.holes.push(...location.holes);defs.push({name:'Letter '+state.letter+' lid handle',role:'pull-handle',outline:cleanPoly(pts).reverse(),letterHandle:[cx,y]});}
-      }
-    }
+
   }
   d.poly={verts:letterParts(solid)[0].outline};d.sides=4;
   if(!neutral.length||!storage.length)d.letterWarn='This letter is too small for the current material and rim width. Increase letter size or reduce material thickness.';
@@ -9143,7 +9122,8 @@ function updateShapeUI() {
   $('shapedTop').checked = state.shapedTop !== false;
   $('shapedLidControls').style.display = state.shapedTop === false ? 'none' : '';
   $('shapedHandle').checked = state.shapedHandle !== false;
-  $('shapedHandleControls').style.display = state.shapedHandle === false ? 'none' : '';
+  $('shapedHandleOption').style.display = state.shape==='letter'?'none':'';
+  $('shapedHandleControls').style.display = state.shape==='letter'||state.shapedHandle === false ? 'none' : '';
   $('shapedHandleSize').value = state.shapedHandleSize ?? 18;
   $('shapedHandleSizeVal').textContent = fmtLen(Math.min(state.shapedHandleSize ?? 18, Math.min(dims().ow,dims().od)*(state.shape === 'star' ? 0.16 : 0.22), state.shape === 'cross' ? Math.max(2,dims().ow/6-state.T-1) : Infinity), 1, 3);
   $('shapedLidFit').value = state.shapedLidFit ?? 0.4;
@@ -13227,7 +13207,6 @@ function rebuild3D() {
 
     let pl;
     if(p.flex) pl={o:new THREE.Vector3(),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),n:new THREE.Vector3(0,0,1)};
-    else if(p.letterHandle) pl={o:new THREE.Vector3(p.letterHandle[0],d.oh,p.letterHandle[1]-d.T/2),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),n:new THREE.Vector3(0,0,1)};
     else if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
     else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, layoutD);
     else if (
