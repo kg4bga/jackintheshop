@@ -8666,6 +8666,7 @@ and disclaimer.
           <button class="tb-btn" id="materialRotate" disabled onclick="rotateMaterialPart()">Rotate 90°</button>
           <label>Move to <select class="dim-inp" id="materialMove" disabled onchange="moveMaterialPart(this.value)"></select></label>
         </div>
+        <div class="material-tools"><button class="tb-btn" onclick="zoomMaterial(1/1.25)" aria-label="Zoom out">−</button><span id="materialZoomLabel">100%</span><button class="tb-btn" onclick="zoomMaterial(1.25)" aria-label="Zoom in">+</button><button class="tb-btn" onclick="fitMaterialView()">Fit sheet</button><span class="hint">Scroll to zoom · Right-drag to pan</span></div>
         <div class="hint" id="materialStatus">Drag parts to arrange.</div>
         <div id="materialStage"></div>
       </div>
@@ -9134,7 +9135,7 @@ function generateLetterPanels(d) {
   const panels=defs.map(def=>{
     const outline=def.outline,cut=offsetPoly(outline,state.kerf/2,4),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    return {...def,cut,holes:(def.holes||[]).map(h=>offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2,4)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
+    return {...def,svgYDown:!!def.poly&&(true),cut,holes:(def.holes||[]).map(h=>offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2,4)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   $('letterInfo').textContent=state.letter+' · '+outerWalls+' outer / '+innerWalls+' inner walls';
   $('livingInfo').textContent=panels.filter(p=>p.flex).reduce((n,p)=>n+p.openCuts.length,0)+' edge-reaching cuts';
@@ -11541,7 +11542,7 @@ function generateShapedPanels(d) {
     const outline=def.outline, cut=state.shape === 'heart' && def.poly ? heartCutOutline(outline,state.kerf) : offsetPoly(outline,state.kerf/2);
     const xs=cut.map(p=>p[0]), ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-    return {...def, cut, holes:(def.holes||[]).map(h=>h === opening ? h.map(p=>p.slice()) : offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),
+    return {...def,svgYDown:!!def.poly&&(state.shape==='snowman'), cut, holes:(def.holes||[]).map(h=>h === opening ? h.map(p=>p.slice()) : offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),
       slots:[], minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   return {panels,dims:d};
@@ -11756,7 +11757,7 @@ function generateLivingPanels(d) {
   const panels=defs.map(def=>{
     const outline=def.outline,cut=heart&&def.poly?heartCutOutline(outline,state.kerf):offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    return {...def,cut,holes:(def.holes||[]).map(h=>h===opening?h:offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
+    return {...def,svgYDown:!!def.poly&&(snowman),cut,holes:(def.holes||[]).map(h=>h===opening?h:offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   if(snowman) {
     const wallPanels=panels.filter(p=>p.flex),longest=Math.max(...wallPanels.map(p=>Math.max(p.bboxW,p.bboxH)));
@@ -12864,6 +12865,20 @@ function updateMaterialSelection(){
   $('materialMove').innerHTML=(materialCache?.sheets||[]).map((s,i)=>'<option value="'+i+'">Sheet '+(i+1)+'</option>').join('')+'<option value="new">New sheet</option>';
   if(p)$('materialMove').value=p.sheetIndex;
 }
+let materialCamera=null,materialPan=null;
+function applyMaterialCamera(){
+  if(!materialCamera)return;
+  const c=materialCamera,svg=$('materialCanvas');if(svg)svg.setAttribute('viewBox',[c.x,c.y,c.w,c.h].join(' '));
+  $('materialZoomLabel').textContent=Math.round(state.materialWidth/c.w*100)+'%';
+}
+function fitMaterialView(){materialCamera={x:0,y:0,w:state.materialWidth,h:state.materialHeight,sheetW:state.materialWidth,sheetH:state.materialHeight};applyMaterialCamera();}
+function zoomMaterial(factor,anchor=null){
+  if(materialDrag||materialPan)return;
+  if(!materialCamera)fitMaterialView();
+  const c=materialCamera,zoom=Math.max(0.25,Math.min(10,state.materialWidth/c.w*factor)),w=state.materialWidth/zoom,h=state.materialHeight/zoom;
+  const p=anchor||{x:c.x+c.w/2,y:c.y+c.h/2};
+  c.x=p.x-(p.x-c.x)*w/c.w;c.y=p.y-(p.y-c.y)*h/c.h;c.w=w;c.h=h;applyMaterialCamera();
+}
 function refreshMaterialView(){
   if(state.workspaceMode!=='material')return;
   syncWorkspaceUI();
@@ -12876,8 +12891,12 @@ function refreshMaterialView(){
   $('materialStage').innerHTML='<svg id="materialCanvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" aria-label="Material sheet layout"><defs><pattern id="materialGrid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#a78e65" stroke-width="0.12"/></pattern></defs><rect width="'+w+'" height="'+h+'" fill="#e2c799"/><rect width="'+w+'" height="'+h+'" fill="url(#materialGrid)"/><rect x="4" y="4" width="'+(w-8)+'" height="'+(h-8)+'" fill="none" stroke="#94774a" stroke-width="0.2" stroke-dasharray="2 2"/>'+(sheet?sheet.placed.map(materialPanelMarkup).join(''):'')+'</svg>';
   updateMaterialSelection();
   const svg=$('materialCanvas');if(!svg?.addEventListener)return;
+  if(!materialCamera||materialCamera.sheetW!==w||materialCamera.sheetH!==h)fitMaterialView();else applyMaterialCamera();
   const point=e=>new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoomMaterial(Math.exp(-Math.max(-100,Math.min(100,e.deltaY))*0.003),point(e));},{passive:false});
+  svg.addEventListener('contextmenu',e=>e.preventDefault());
   svg.addEventListener('pointerdown',e=>{
+    if(e.button===2||e.button===1){materialPan={pointer:e.pointerId,start:point(e),x:materialCamera.x,y:materialCamera.y};svg.setPointerCapture(e.pointerId);e.preventDefault();return;}
     if(e.button!=null&&e.button!==0)return;
     if(materialNestingActive)cancelMaterialNesting();
     const group=e.target.closest('[data-material-part]');if(!group)return;
@@ -12886,18 +12905,20 @@ function refreshMaterialView(){
     materialDrag={pointer:e.pointerId,group,p,start:point(e),x:p.ox,y:p.oy,next:null};group.classList.add('dragging');svg.setPointerCapture(e.pointerId);e.preventDefault();
   });
   svg.addEventListener('pointermove',e=>{
+    if(materialPan&&materialPan.pointer===e.pointerId){const q=point(e),pan=materialPan;materialCamera.x+=pan.start.x-q.x;materialCamera.y+=pan.start.y-q.y;applyMaterialCamera();return;}
     const drag=materialDrag;if(!drag||drag.pointer!==e.pointerId)return;const q=point(e);
     const x=Math.max(4,Math.min(state.materialWidth-4-drag.p.packedW,drag.x+q.x-drag.start.x)),y=Math.max(4,Math.min(state.materialHeight-4-drag.p.packedH,drag.y+q.y-drag.start.y));
     drag.next={...drag.p,ox:x,oy:y};drag.group.setAttribute('transform','translate('+(x-drag.x)+' '+(y-drag.y)+')');
   });
   svg.addEventListener('pointerup',e=>{
+    if(materialPan&&materialPan.pointer===e.pointerId){materialPan=null;if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);return;}
     const drag=materialDrag;if(!drag||drag.pointer!==e.pointerId)return;materialDrag=null;
     if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
     if(drag.next&&materialPositionFits(drag.next,layout.placed)){
       pushHistoryNow();Object.assign(drag.p,drag.next);saveMaterialLayout(layout);refreshMaterialView();refreshOpenSVG();$('materialStatus').textContent='Layout saved for export.';
     }else{drag.group.removeAttribute('transform');drag.group.classList.remove('dragging');if(drag.next)$('materialStatus').textContent='Parts overlap; move elsewhere.';}
   });
-  svg.addEventListener('pointercancel',()=>{if(materialDrag){materialDrag.group.removeAttribute('transform');materialDrag.group.classList.remove('dragging');materialDrag=null;}});
+  svg.addEventListener('pointercancel',()=>{materialPan=null;if(materialDrag){materialDrag.group.removeAttribute('transform');materialDrag.group.classList.remove('dragging');materialDrag=null;}});
 }
 function saveMaterialLayout(layout){
   const used=[...new Set(layout.placed.map(p=>p.sheetIndex))].sort((a,b)=>a-b);
@@ -12956,7 +12977,7 @@ function autoLayoutPanels(panels,gap=3,compact=true) {
   return {sheets,placed:sheets.flatMap(s=>s.placed),oversized,totalW:sheetW,totalH:sheetH};
 }
 function svgPanelPoint(p,x,y) {
-  const u=x-p.minX,v=p.maxY-y,angle=p.rotation??(p.rotated?1:0);
+  const u=x-p.minX,v=p.svgYDown?y-p.minY:p.maxY-y,angle=p.rotation??(p.rotated?1:0);
   if(angle===1)return [p.ox+p.bboxH-v,p.oy+u];
   if(angle===2)return [p.ox+p.bboxW-u,p.oy+p.bboxH-v];
   if(angle===3)return [p.ox+v,p.oy+p.bboxW-u];
