@@ -8708,7 +8708,7 @@ and disclaimer.
       </div>
       <div class="lb-panel open"><div class="lb-panel-hdr"><span class="title">Wood preview</span></div><div class="lb-panel-body">
         <label class="ctrl-lbl" for="woodSpecies">Wood grain</label><select class="dim-inp" id="woodSpecies" onchange="setWoodSpecies(this.value)"><option value="birch">Birch plywood</option><option value="maple">Maple</option><option value="oak">Oak</option><option value="walnut">Walnut</option><option value="cherry">Cherry</option><option value="pine">Pine</option></select>
-        <div class="ctrl" style="margin-top:10px"><label class="ctrl-lbl" for="woodGrainAngle">Grain direction <span class="ctrl-val" id="woodGrainAngleVal">0°</span></label><input type="range" id="woodGrainAngle" min="0" max="180" step="5" value="0" oninput="setWoodGrainAngle(this.value)"></div>
+        <div class="ctrl" style="margin-top:10px"><label class="ctrl-lbl" for="woodGrainAngle">Grain direction <span class="ctrl-val" id="woodGrainAngleVal">90°</span></label><input type="range" id="woodGrainAngle" min="0" max="180" step="5" value="90" oninput="setWoodGrainAngle(this.value)"></div>
         <div role="img" aria-label="Selected wood grain" style="height:100px;margin-top:10px;border:1px solid var(--border);border-radius:4px;overflow:hidden"><div id="woodSwatch" style="width:100%;height:100%;background-size:cover"></div></div><div class="hint" style="margin-top:6px">Preview finish.</div>
       </div></div>
     </aside>
@@ -8764,7 +8764,7 @@ const DEFAULTS = {
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
   wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
-  woodSpecies:'birch', woodGrainAngle:0,
+  woodSpecies:'birch', woodGrainAngle:90,
   workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
   letter:'A',
   snowmanEngraving:true,
@@ -13602,14 +13602,14 @@ function woodPreviewCanvas(species){
   }
   ctx.putImageData(image,0,0);const result={canvas,url:canvas.toDataURL('image/png'),texture:null};woodPreviewCache.set(species,result);return result;
 }
-function syncWoodPreview(){const species=WOOD_FINISHES[state.woodSpecies]?state.woodSpecies:'birch';$('woodSpecies').value=species;$('woodGrainAngle').value=state.woodGrainAngle||0;$('woodGrainAngleVal').textContent=(state.woodGrainAngle||0)+'°';$('woodSwatch').style.transform='rotate('+(state.woodGrainAngle||0)+'deg) scale(3)';$('woodSwatch').style.backgroundImage='url("'+woodPreviewCanvas(species).url+'")';}
+function syncWoodPreview(){const species=WOOD_FINISHES[state.woodSpecies]?state.woodSpecies:'birch';$('woodSpecies').value=species;$('woodGrainAngle').value=state.woodGrainAngle??90;$('woodGrainAngleVal').textContent=(state.woodGrainAngle??90)+'°';$('woodSwatch').style.transform='rotate('+(state.woodGrainAngle??90)+'deg) scale(3)';$('woodSwatch').style.backgroundImage='url("'+woodPreviewCanvas(species).url+'")';}
 function setWoodSpecies(species){if(!WOOD_FINISHES[species]||species===state.woodSpecies)return;pushHistoryNow();state.woodSpecies=species;syncWoodPreview();rebuild3D();}
 function setWoodGrainAngle(value){
-  const angle=Math.max(0,Math.min(180,Number(value)||0));if(angle===(state.woodGrainAngle||0))return;
+  const angle=Math.max(0,Math.min(180,Number(value)||0));if(angle===(state.woodGrainAngle??90))return;
   pushHistory();state.woodGrainAngle=angle;syncWoodPreview();
   for(const entry of woodPreviewCache.values())if(entry.texture){entry.texture.center.set(0.5,0.5);entry.texture.rotation=angle*Math.PI/180;}
 }
-function woodPreviewTexture(){const entry=woodPreviewCanvas(state.woodSpecies||'birch');if(!entry.texture){entry.texture=new THREE.CanvasTexture(entry.canvas);entry.texture.wrapS=entry.texture.wrapT=THREE.RepeatWrapping;entry.texture.encoding=THREE.sRGBEncoding;entry.texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());}entry.texture.center.set(0.5,0.5);entry.texture.rotation=(state.woodGrainAngle||0)*Math.PI/180;return entry.texture;}
+function woodPreviewTexture(){const entry=woodPreviewCanvas(state.woodSpecies||'birch');if(!entry.texture){entry.texture=new THREE.CanvasTexture(entry.canvas);entry.texture.wrapS=entry.texture.wrapT=THREE.RepeatWrapping;entry.texture.encoding=THREE.sRGBEncoding;entry.texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());}entry.texture.center.set(0.5,0.5);entry.texture.rotation=(state.woodGrainAngle??90)*Math.PI/180;return entry.texture;}
 
 function rebuild3D() {
   const { panels, dims: d } = generatePanels();
