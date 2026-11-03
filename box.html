@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.84</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.85</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8070,6 +8070,17 @@ and disclaimer.
       flex-shrink: 0;
     }
     .workspace-header strong { color: var(--text); margin-right: 8px; }
+    #materialView { position:absolute; inset:22px 0 0; z-index:10; background:var(--workspace); flex-direction:column; min-height:0; }
+    .material-tools { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:6px; background:var(--surface); border-bottom:1px solid var(--border); }
+    .material-tools label { display:flex; align-items:center; gap:4px; white-space:nowrap; font-size:11px; }
+    .material-tools input { width:70px; }
+    .material-tools select { width:auto; max-width:130px; }
+    #materialStatus { padding:3px 8px; margin:0; flex-shrink:0; }
+    #materialStage { flex:1; min-height:0; padding:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    #materialStage svg { width:100%; height:100%; touch-action:none; user-select:none; }
+    #materialStage [data-material-part] { cursor:grab; }
+    #materialStage [data-material-part].selected path { stroke:#0078d4; }
+    #materialStage [data-material-part].dragging { cursor:grabbing; }
     #threeCanvas { width: 100%; height: 100%; display: block; flex: 1; }
 
     /* HUD overlays */
@@ -8161,7 +8172,7 @@ and disclaimer.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.84</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.85</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -8175,6 +8186,7 @@ and disclaimer.
         <button class="active" id="unitMM" onclick="setUnit('mm')">mm</button>
         <button id="unitIN" onclick="setUnit('in')">in</button>
       </div>
+      <div class="unit-switch" style="margin-left:5px"><button id="view3D" class="active" onclick="setWorkspaceMode('3d')">3D</button><button id="viewMaterial" onclick="setWorkspaceMode('material')">Material</button></div>
     </div>
     <div class="tb-group">
       <button class="tb-btn" onclick="setView('persp', this)">Persp</button>
@@ -8668,6 +8680,18 @@ and disclaimer.
         <span>Finger-joint box preview · Drag to rotate · Scroll to zoom · Right-drag to pan</span>
       </div>
       <canvas id="threeCanvas"></canvas>
+      <div id="materialView" style="display:none">
+        <div class="material-tools">
+          <label>Sheet W <input class="dim-inp" type="number" id="materialWidth" onchange="setMaterialSize()"></label>
+          <label>H <input class="dim-inp" type="number" id="materialHeight" onchange="setMaterialSize()"></label><span id="materialUnit">mm</span>
+          <label>Sheet <select class="dim-inp" id="materialSheet" onchange="selectMaterialSheet(this.value)"></select></label>
+          <button class="tb-btn" onclick="autoArrangeMaterial()">Auto arrange</button>
+          <button class="tb-btn" id="materialRotate" disabled onclick="rotateMaterialPart()">Rotate 90°</button>
+          <label>Move to <select class="dim-inp" id="materialMove" disabled onchange="moveMaterialPart(this.value)"></select></label>
+        </div>
+        <div class="hint" id="materialStatus">Drag parts to arrange.</div>
+        <div id="materialStage"></div>
+      </div>
 
       <div class="hud hud-tl">
         <div class="hud-k">Interior volume</div>
@@ -8728,13 +8752,15 @@ and disclaimer.
       <div class="opt-row">
         <label><input type="checkbox" id="optLabels" checked onchange="refreshSVGPreview()"> Show labels (blue, engrave layer)</label>
         <label><input type="checkbox" id="optSolid" onchange="refreshSVGPreview()"> Solid panels (3D printing)</label>
+        <label>Sheet <select class="dim-inp" id="svgSheet" style="width:75px" onchange="refreshSVGPreview()"><option value="0">1</option></select></label>
         <span id="solidSVGOptions" style="display:none"><label>Hinge gap (mm) <input class="dim-inp" id="solidHingeGap" type="number" min="0.2" max="3" step="0.1" value="0.8" style="width:65px" onchange="refreshSVGPreview()"></label><span class="hint">Filled panels; no labels/engraving.</span></span>
-        <label><input type="checkbox" id="optNest" checked onchange="refreshSVGPreview()"> Compact layout</label>
+        <label><input type="checkbox" id="optNest" checked onchange="refreshSVGPreview()"> Optimize sheet layout</label>
         <span id="optInfo" style="color:var(--muted);margin-left:auto;font-family:var(--mono);font-size:11px"></span>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-        <button class="btn btn-download" onclick="downloadSVG()">⬇ Download SVG</button>
+        <button class="btn btn-download" id="btnDownloadSVG" onclick="downloadSVG()">⬇ Download this sheet</button>
+        <button class="btn btn-secondary" id="btnDownloadSVGAll" onclick="downloadSVGAll()">Download all sheets (ZIP)</button>
       </div>
     </div>
   </div>
@@ -8753,6 +8779,7 @@ const DEFAULTS = {
   generator: 'box', // 'box' | 'frame'
   W: 150, H: 50, D: 100,   // mm  (for frame: W/D = outer face size, H = frame depth)
   wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
+  workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
   letter:'A',
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
@@ -8987,6 +9014,31 @@ function onShapedLidLift(v) {
 function setSnowmanEngraving(on) {
   pushHistoryNow();state.snowmanEngraving=!!on;syncInputs();rebuild();
 }
+const SVG_SHEET_SIZE=304.8, SVG_SHEET_MARGIN=4, WALL_SECTION_LIMIT=292;
+function livingWallRanges(total,hardCorners=[]) {
+  const boundaries=[0,...hardCorners.filter(x=>x>0.01&&x<total-0.01),total].sort((a,b)=>a-b),unique=boundaries.filter((v,i)=>!i||v-boundaries[i-1]>0.01),ranges=[];
+  for(let i=0;i<unique.length-1;i++){
+    const a=unique[i],b=unique[i+1],count=Math.max(1,Math.ceil((b-a)/materialWallWidthLimit()));
+    for(let k=0;k<count;k++)ranges.push([a+(b-a)*k/count,a+(b-a)*(k+1)/count]);
+  }
+  return ranges;
+}
+// Find angular glyph vertices before the wall offset rounds their centerline.
+function livingHardCorners(sources,path,T,orientation) {
+  const breaks=[];
+  for(const loop of sources){if((signedPolyArea(loop)>0)!==orientation)continue;
+    for(let i=0;i<loop.length;i++){
+      const a=loop[(i+loop.length-1)%loop.length],p=loop[i],b=loop[(i+1)%loop.length],u=[p[0]-a[0],p[1]-a[1]],v=[b[0]-p[0],b[1]-p[1]],l1=Math.hypot(...u),l2=Math.hypot(...v);
+      if(!l1||!l2)continue;
+      const angle=Math.acos(Math.max(-1,Math.min(1,(u[0]*v[0]+u[1]*v[1])/(l1*l2))));if(angle<Math.PI/5)continue;
+      let nearest=Infinity,distance=0;
+      for(const seg of path.segments){const dx=seg.b[0]-seg.a[0],dy=seg.b[1]-seg.a[1],t=Math.max(0,Math.min(1,((p[0]-seg.a[0])*dx+(p[1]-seg.a[1])*dy)/(seg.length*seg.length))),d=Math.hypot(p[0]-seg.a[0]-t*dx,p[1]-seg.a[1]-t*dy);if(d<nearest){nearest=d;distance=seg.start+t*seg.length;}}
+      if(nearest<4*T+1)breaks.push(distance);
+    }
+  }
+  return breaks;
+}
+
 function fitLetterDimensions() {
   const glyph=LETTER_GLYPHS[state.letter || 'A'],ratio=glyph.h/glyph.w;
   state.D=Math.min(400,Math.max(20,state.W*ratio));
@@ -9057,10 +9109,11 @@ function generateLetterPanels(d) {
   d.letterArea=Math.abs(storage.reduce((sum,p)=>sum+signedPolyArea(p),0));d.living=true;d.letter=true;
   let outerWalls=0,innerWalls=0;
   for(let ringIndex=0;ringIndex<neutral.length;ringIndex++){
-    const contour=neutral[ringIndex],path=letterWallPath(contour),inner=signedPolyArea(contour)<0,count=Math.max(1,Math.ceil(path.total/270));
+    const contour=neutral[ringIndex],path=letterWallPath(contour),inner=signedPolyArea(contour)<0,ranges=livingWallRanges(path.total,livingHardCorners(solid,path,T,!inner)),count=ranges.length;
     if(inner)innerWalls+=count;else outerWalls+=count;
     for(let part=0;part<count;part++) {
-      const start=path.total*part/count,end=path.total*(part+1)/count,width=end-start-0.3,seam=0.3;
+      const [start,end]=ranges[part],width=end-start-0.3,seam=0.3;
+      if(width<=Math.max(0.5,2*state.kerf)){d.letterWarn='Letter too small for its sharp-corner wall sections. Increase letter size or reduce material thickness.';continue;}
       const localPath={total:width+seam,at:x=>path.at(start+x),segments:[]},tabs=[],openCuts=[];
       const tabCount=Math.max(2,Math.floor(width/24)),tabWidth=Math.min(6,Math.max(3,1.5*T));
       for(let i=0;i<tabCount;i++){
@@ -9071,11 +9124,11 @@ function generateLetterPanels(d) {
         tabs.push({a,b});slots.push(slot);
       }
       const columns=Math.max(1,Math.ceil((width-12)/state.livingPitch)),pitch=(width-12)/columns,amplitude=livingCutAmplitude(pitch),bridge=Math.max(state.livingBridge,2*state.kerf+0.5);let cut=0;
-      if(H-2*T-bridge>=2)for(let i=0;i<columns;i++){
+      if(H-2*T-bridge>=2&&width>12+state.livingPitch)for(let i=0;i<columns;i++){
         const x=6+(i+0.5)*pitch;if(tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude))continue;
         const bottom=cut%2===0;openCuts.push(livingHingeCut(x,bottom?T:T+bridge,bottom?H-T-bridge:H-T,pitch,T,cut++));
       }
-      defs.push({name:'Letter '+state.letter+' '+(inner?'inner':'outer')+' wall '+(ringIndex+1)+'-'+(part+1),role:'living-wrap',outline:tabbedWallOutline(width,H,T,null,null,tabs,tabs),openCuts,flex:{path:localPath,seam,tabs,width}});
+      defs.push({name:'Letter '+state.letter+' '+(inner?'inner':'outer')+' wall '+(ringIndex+1)+'-'+(part+1),role:'living-wrap',outline:tabs.length?tabbedWallOutline(width,H,T,null,null,tabs,tabs):[[0,T],[width,T],[width,H-T],[0,H-T]],openCuts,flex:{path:localPath,seam,tabs,width}});
     }
   }
   const insert=letterClipPaths(solid,-rimWidth-(state.shapedLidFit ?? 0.4));
@@ -9748,6 +9801,7 @@ function syncSelections() {
 
 function syncInputs() {
   syncSelections();
+  syncWorkspaceUI();
   const inch = state.unit === 'in';
   $('inW').value = numDisp(state.W);
   $('inH').value = numDisp(state.H);
@@ -11599,7 +11653,7 @@ function livingCutAmplitude(pitch) {
 }
 function livingHingeCut(x,a,b,pitch,T,column=0) {
   const design=state.livingDesign || 'straight';
-  if(design==='straight') return [[x,a],[x,b]];
+  if(design==='straight') return Object.assign([[x,a],[x,b]],{baseX:x,pitch,column});
   const amplitude=livingCutAmplitude(pitch),period=state.livingRepeat || 12;
   const paired=['diamond','oval','ladder','brick'].includes(design),sign=paired&&column%2 ? -1:1;
   const points=[],add=(y,shift)=>{
@@ -11632,7 +11686,7 @@ function livingHingeCut(x,a,b,pitch,T,column=0) {
     }
     for(const y of ys.sort((a,b)=>a-b))add(y,field(y));
   }
-  return points;
+  return Object.assign(points,{baseX:x,pitch,column});
 }
 
 function generateLivingPanels(d) {
@@ -11645,12 +11699,14 @@ function generateLivingPanels(d) {
   const path=heart?heartGeometry.path:livingPerimeter(ow-3*T,od-3*T,Math.max(0.2,radius-1.5*T));
   const seam=heart?0:0.4, width=path.total-seam, tabs=[],holes=[],openCuts=[];
   const bodySplit=snowman?(heartGeometry.split+path.total)/2:null;
+  const wallRanges=livingWallRanges(width,heart?(snowman?[heartGeometry.split,bodySplit]:[heartGeometry.split]):[]);
+  const seams=wallRanges.slice(0,-1).map(r=>r[1]);
   for(const seg of path.segments)if(seg.type==='line') {
     const margin=Math.min(2*T,seg.length*0.2),span=seg.length-2*margin;
     if(span<=1)continue;
     const baseTabs=lanternTabs(span,T),chosen=baseTabs.length?baseTabs:[{a:span*0.3,b:span*0.7}];
     for(const t of chosen){const a=seg.start+margin+t.a-seam/2,b=seg.start+margin+t.b-seam/2;
-      if(a<=T||b>=width-T)continue;
+      if(a<=T||b>=width-T||seams.some(x=>a<x+6&&b>x-6))continue;
       tabs.push({a,b});const p=path.at(a+seam/2),q=path.at(b+seam/2);
       holes.push([[p.x-p.nx*T/2,p.z-p.nz*T/2],[q.x-q.nx*T/2,q.z-q.nz*T/2],[q.x+q.nx*T/2,q.z+q.nz*T/2],[p.x+p.nx*T/2,p.z+p.nz*T/2]]);
     }
@@ -11660,7 +11716,7 @@ function generateLivingPanels(d) {
     const count=Math.max(10,Math.ceil(width/24)),tabWidth=Math.min(6,Math.max(3,T*1.5));
     for(let i=0;i<count;i++){
       const mid=(i+0.5)*width/count,a=mid-tabWidth/2,b=mid+tabWidth/2;
-      if(a<6||b>width-6||(heart && a<heartGeometry.split+6 && b>heartGeometry.split-6)||(snowman && a<bodySplit+6 && b>bodySplit-6))continue;
+      if(a<6||b>width-6||seams.some(x=>a<x+6&&b>x-6))continue;
       tabs.push({a,b});const inner=[],outer=[];
       const steps=Math.max(4,Math.ceil(tabWidth/0.5));
       for(let j=0;j<=steps;j++){const q=path.at(a+(b-a)*j/steps+seam/2);inner.push([q.x-q.nx*T/2,q.z-q.nz*T/2]);outer.push([q.x+q.nx*T/2,q.z+q.nz*T/2]);}
@@ -11669,13 +11725,14 @@ function generateLivingPanels(d) {
   }
   const hingeZones=snowman?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:bodySplit-heartGeometry.split-12},{start:bodySplit+6,length:width-bodySplit-12}]:heart?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:width-heartGeometry.split-12}]:path.segments.filter(s=>s.type==='arc');
   for(const seg of hingeZones) {
+    if(seg.length<=0)continue;
     const columns=Math.max(3,Math.ceil(seg.length/state.livingPitch));
     const pitch=seg.length/columns,amplitude=livingCutAmplitude(pitch);
     let edgeColumn=0;
     for(let col=0;col<columns;col++) {
       const x=seg.start+seg.length*(col+0.5)/columns-seam/2;
       // Every design reaches one wall edge; the opposite-end bridge remains solid.
-      if(tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude))continue;
+      if(seams.some(s=>Math.abs(x-s)<6+amplitude)||tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude))continue;
       const bottom=T,top=oh-T,bridge=Math.max(state.livingBridge,2*state.kerf+0.5);
       if(top-bottom-bridge<2)continue;
       const column=edgeColumn++,fromBottom=column%2===0;
@@ -11702,14 +11759,14 @@ function generateLivingPanels(d) {
       if(handle&&sourceCap){cap.holes=sourceCap.holes;defs.push({name:'Living lid handle',role:'pull-handle',outline:handle.outlineOverride});}
     }
   }
-  if(heart) {
+  if(heart||wallRanges.length>1) {
     defs.shift();
-    const ranges=snowman?[[0,heartGeometry.split,'Upper head',0],[heartGeometry.split,bodySplit,'Lower body right',0],[bodySplit,path.total,'Lower body left',0]]:[[0,heartGeometry.split,'Right',1],[heartGeometry.split,path.total,'Left',-1]];
+    const ranges=wallRanges.map(([start,end],i)=>[start,end,snowman?((start+end)/2<heartGeometry.split?'Upper head':'Lower body')+' '+(i+1):heart?((start+end)/2<heartGeometry.split?'Right':'Left')+' '+(i+1):'Section '+(i+1),heart&&!snowman?((start+end)/2<heartGeometry.split?1:-1):0]);
     for(const [start,end,label,side] of ranges) {
       const localTabs=tabs.filter(t=>t.a>=start&&t.b<=end).map(t=>({a:t.a-start,b:t.b-start}));
-      const localCuts=openCuts.filter(line=>line[0][0]>start&&line[0][0]<end).map(line=>line.map(([x,y])=>[x-start,y]));
+      const localCuts=openCuts.filter(line=>line[0][0]>start&&line[0][0]<end).map(line=>Object.assign(line.map(([x,y])=>[x-start,y]),{baseX:line.baseX-start,pitch:line.pitch,column:line.column}));
       const partPath={total:end-start,at:x=>path.at(start+Math.max(0,Math.min(end-start,x))),segments:[]};
-      defs.unshift({name:(snowman?'Snowman ':'Heart ')+label+' living-hinge wall'+(snowman?' (join at neck / bottom center)':' (join at notch and tip)'),role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side,snowmanHalf:snowman?(start===0?-1:1):0,seamZ:snowman?path.at(0).z:0}});
+      defs.unshift({name:(snowman?'Snowman ':heart?'Heart ':'Living wall ')+label+' living-hinge wall'+(snowman?' (join at neck / bottom center)':' (join at notch and tip)'),role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side,snowmanHalf:snowman?(end<=heartGeometry.split+0.01?-1:1):0,seamZ:snowman?path.at(0).z:0}});
     }
   }
   d.sides=4;d.poly={verts:outer};d.living=true;
@@ -11723,7 +11780,7 @@ function generateLivingPanels(d) {
   if(snowman) {
     const wallPanels=panels.filter(p=>p.flex),longest=Math.max(...wallPanels.map(p=>Math.max(p.bboxW,p.bboxH)));
     const fits=wallPanels.every(p=>p.bboxW<=304.8&&p.bboxH<=304.8);
-    $('livingInfo').textContent=fits?'Walls fit 12 × 12 in.':'Wall exceeds 12 × 12 in.';
+    $('livingInfo').textContent=fits?'Walls fit material sheet.':'Wall exceeds material sheet.';
   }
   return {panels,dims:d};
 }
@@ -11736,7 +11793,8 @@ function livingWallGeometry(p,d) {
   const point=(x,y,side)=>{const q=path.at(x+seam/2);const wx=q.x+q.nx*side*T/2;return [p.flex.heartHalf>0?Math.max(0,wx):p.flex.heartHalf<0?Math.min(0,wx):wx,y,p.flex.snowmanHalf<0?Math.min(p.flex.seamZ,q.z+q.nz*side*T/2):p.flex.snowmanHalf>0?Math.max(p.flex.seamZ,q.z+q.nz*side*T/2):q.z+q.nz*side*T/2];};
   const quad=(a,b,c,e)=>positions.push(...a,...b,...c,...a,...c,...e);
   for(let i=0;i<samples.length-1;i++) {
-    const a=samples[i],b=samples[i+1],hasTab=tabs.some(t=>(a+b)/2>=t.a&&(a+b)/2<=t.b),lo=hasTab?0:T,hi=hasTab?H:H-T;
+    const a=samples[i],b=samples[i+1],hasTab=tabs.some(t=>(a+b)/2>=t.a&&(a+b)/2<=t.b),lo=Math.max(hasTab?0:T,p.flex.yMin??0),hi=Math.min(hasTab?H:H-T,p.flex.yMax??H);
+    if(hi<=lo)continue;
     const A=point(a,lo,1),B=point(b,lo,1),C=point(b,hi,1),D=point(a,hi,1),E=point(a,lo,-1),F=point(b,lo,-1),G=point(b,hi,-1),I=point(a,hi,-1);
     quad(A,B,C,D);quad(F,E,I,G);quad(E,F,B,A);quad(D,C,G,I);
     if(i===0||tabs.some(t=>Math.abs(t.a-a)<1e-8||Math.abs(t.b-a)<1e-8))quad(E,A,D,I);
@@ -11747,7 +11805,38 @@ function livingWallGeometry(p,d) {
 
 // Generate in the existing back-hinge orientation, then rotate the full assembly.
 // Swapping plan dimensions first preserves the user's width and depth on side hinges.
-function generatePanels() {
+function splitTallLivingWalls(result) {
+  const {dims:d}=result,T=d.T,output=[];
+  for(const p of result.panels){
+    if(!p.flex||p.bboxH<=Math.min(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN){output.push(p);continue;}
+    const count=Math.ceil(d.oh/materialWallHeightLimit());
+    for(let band=0;band<count;band++){
+      const y0=d.oh*band/count,y1=d.oh*(band+1)/count,C=window.ClipperLib,S=1000,clip=new C.Clipper(),solution=[];
+      const ints=poly=>poly.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)}));
+      clip.AddPath(ints(p.outline),C.PolyType.ptSubject,true);clip.AddPath(ints([[-1,y0],[p.flex.width+1,y0],[p.flex.width+1,y1],[-1,y1]]),C.PolyType.ptClip,true);
+      clip.Execute(C.ClipType.ctIntersection,solution,C.PolyFillType.pftNonZero,C.PolyFillType.pftNonZero);
+      if(!solution.length)continue;
+      const outline=solution.sort((a,b)=>Math.abs(C.Clipper.Area(b))-Math.abs(C.Clipper.Area(a)))[0].map(q=>[q.X/S,q.Y/S-y0]);
+      const openCuts=[],low=band===0?T:0,high=band===count-1?y1-y0-T:y1-y0,bridge=Math.max(state.livingBridge,2*state.kerf+0.5);
+      for(let i=0;i<(p.openCuts||[]).length;i++){
+        const line=p.openCuts[i],x=line.baseX??(Math.min(...line.map(p=>p[0]))+Math.max(...line.map(p=>p[0])))/2,pitch=line.pitch??state.livingPitch,column=line.column??i,fromBottom=column%2===0;
+        if(high-low>bridge+2)openCuts.push(livingHingeCut(x,fromBottom?low:low+bridge,fromBottom?high-bridge:high,pitch,T,column));
+      }
+      const cut=offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+      output.push({...p,name:p.name+' · height band '+(band+1)+' (glue horizontal seam)',outline,cut,openCuts,flex:{...p.flex,yMin:y0,yMax:y1},minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)});
+    }
+  }
+  const walls=output.filter(p=>p.flex);
+  if(walls.length){
+    $('shapedBoxHint').textContent=walls.length+' flexible wall sections.';
+    if(!d.livingWarn)$('livingInfo').textContent='Walls fit material sheet.';
+    if(state.shape==='letter')$('letterInfo').textContent=state.letter+' · '+walls.filter(p=>p.name.includes('outer')).length+' outer / '+walls.filter(p=>p.name.includes('inner')).length+' inner walls';
+  }
+  return {...result,panels:output};
+}
+function generatePanels(){return splitTallLivingWalls(generatePanelsUnbounded());}
+
+function generatePanelsUnbounded() {
   if (!hingeActive() || !state.hingeSide || state.hingeSide === 'back') return generatePanelsBase();
   const side=state.hingeSide, actual=dims(), quarter=side==='left'||side==='right';
   const canonical=quarter ? {...actual,ow:actual.od,od:actual.ow,iw:actual.id,id:actual.iw} : {...actual};
@@ -12619,7 +12708,7 @@ function generatePanelsBase(d = dims()) {
 // ============================================================
 // Layout & export
 // ============================================================
-function layoutPanels(panels, gap = 4, compact = true) {
+function layoutPanelsLegacy(panels, gap = 4, compact = true) {
   const maxW = Math.max(...panels.map(p => p.bboxW));
   const area = panels.reduce((s, p) => s + (p.bboxW + gap) * (p.bboxH + gap), 0);
   const rowLimit = compact ? Math.max(maxW, Math.sqrt(area) * 1.3) : maxW;
@@ -12637,6 +12726,166 @@ function layoutPanels(panels, gap = 4, compact = true) {
   return { placed, totalW: maxX, totalH: y + rowH + gap };
 }
 
+/** Max-rectangle packing into fixed 12-inch sheets, with safe edge margins. */
+let materialCache=null, selectedMaterialKey=null, materialDrag=null;
+function materialWallWidthLimit(){return Math.min(WALL_SECTION_LIMIT,Math.max(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN-1);}
+function materialWallHeightLimit(){return Math.min(WALL_SECTION_LIMIT,Math.min(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN-1);}
+function materialLayoutSignature(panels){return state.materialWidth+'x'+state.materialHeight+'|'+panels.map(p=>p.materialKey).join(';');}
+function layoutPanels(panels,gap=3,compact=true){
+  const keyed=panels.map((p,i)=>({...p,materialKey:i+'|'+p.name+'|'+p.bboxW.toFixed(3)+'|'+p.bboxH.toFixed(3)}));
+  const layout=autoLayoutPanels(keyed,gap,compact);layout.signature=materialLayoutSignature(keyed);
+  const saved=state.materialPlacements||{};
+  if(state.materialLayoutSignature!==layout.signature||!layout.placed.length||!layout.placed.every(p=>saved[p.materialKey]))return layout;
+  const restored=layout.placed.map(p=>{
+    const entry=saved[p.materialKey],rotated=!!entry.rotated;
+    return {...p,ox:entry.x,oy:entry.y,rotated,sheetIndex:entry.sheet,packedW:rotated?p.bboxH:p.bboxW,packedH:rotated?p.bboxW:p.bboxH};
+  });
+  if(restored.some(p=>!Number.isFinite(p.ox+p.oy+p.sheetIndex)||p.sheetIndex<0||!Number.isInteger(p.sheetIndex)||!materialPositionFits(p,restored)))return layout;
+  const sheets=Array.from({length:Math.max(...restored.map(p=>p.sheetIndex))+1},()=>({material:'box',placed:[]}));
+  for(const p of restored){const sheet=sheets[p.sheetIndex];sheet.material=p.role==='slide-panel'?'lid':'box';sheet.placed.push(p);}
+  return {...layout,placed:restored,sheets};
+}
+function materialPositionFits(p,placed,gap=0.5){
+  const m=SVG_SHEET_MARGIN;
+  if(p.ox<m-1e-7||p.oy<m-1e-7||p.ox+p.packedW>state.materialWidth-m+1e-7||p.oy+p.packedH>state.materialHeight-m+1e-7)return false;
+  return !placed.some(q=>q.materialKey!==p.materialKey&&q.sheetIndex===p.sheetIndex&&(q.role==='slide-panel')!==(p.role==='slide-panel')||q.materialKey!==p.materialKey&&q.sheetIndex===p.sheetIndex&&p.ox<q.ox+q.packedW+gap-1e-7&&p.ox+p.packedW+gap>q.ox+1e-7&&p.oy<q.oy+q.packedH+gap-1e-7&&p.oy+p.packedH+gap>q.oy+1e-7);
+}
+function syncWorkspaceUI(){
+  const visible=state.workspaceMode==='material';
+  $('view3D').classList.toggle('active',!visible);$('viewMaterial').classList.toggle('active',visible);
+  $('materialView').style.display=visible?'flex':'none';$('threeCanvas').style.visibility=visible?'hidden':'';
+  document.querySelectorAll('#canvasArea > .hud, #canvasArea > .canvas-hint').forEach(el=>el.style.display=visible?'none':'');
+  for(const key of ['materialWidth','materialHeight']){const input=$(key);input.value=numDisp(state[key]);input.min=toDisp(50);input.max=toDisp(2440);input.step=state.unit==='in'?'0.01':'1';}
+  $('materialUnit').textContent=state.unit;
+}
+function setWorkspaceMode(mode){
+  if(!['3d','material'].includes(mode))return;
+  state.workspaceMode=mode;syncWorkspaceUI();
+  if(mode==='material')refreshMaterialView();
+  else if(window.dispatchEvent&&typeof Event!=='undefined')window.dispatchEvent(new Event('resize'));
+}
+function setMaterialSize(){
+  const width=fromDisp(Number($('materialWidth').value)),height=fromDisp(Number($('materialHeight').value));
+  if(!Number.isFinite(width+height)||width<50||height<50||width>2440||height>2440){$('materialStatus').textContent='Sheet size: 50–2440 mm.';return;}
+  pushHistoryNow();state.materialWidth=width;state.materialHeight=height;state.materialPage=0;state.materialPlacements={};state.materialLayoutSignature='';
+  selectedMaterialKey=null;syncWorkspaceUI();rebuild();
+}
+function selectMaterialSheet(value){state.materialPage=Math.max(0,Number(value)||0);selectedMaterialKey=null;refreshMaterialView();}
+function autoArrangeMaterial(){pushHistoryNow();state.materialPlacements={};state.materialLayoutSignature='';selectedMaterialKey=null;refreshMaterialView();refreshOpenSVG();}
+function refreshOpenSVG(){if($('svgModal').classList.contains('show'))refreshSVGPreview();}
+function escapeMaterialText(text){return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
+function materialPanelMarkup(p){
+  const holes=[...(p.holes||[]),...(p.slots||[]).map(([x,y,w,h])=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]])];
+  const contour=[p.cut,...holes].map(loop=>ptsToPath(loop.map(([x,y])=>svgPanelPoint(p,x,y)))).join(' ');
+  const cuts=(p.openCuts||[]).map(line=>ptsToPath(line.map(([x,y])=>svgPanelPoint(p,x,y)),false)).join(' ');
+  const engrave=(p.engrave||[]).map(line=>ptsToPath(line.map(([x,y])=>svgPanelPoint(p,x,y)),line.length>2)).join(' ');
+  const name=escapeMaterialText(p.name),key=escapeMaterialText(p.materialKey),font=Math.max(0.4,Math.min(1.8,p.packedW/(Math.max(1,p.name.length)*0.6)));
+  return '<g data-material-part="'+key+'" class="'+(selectedMaterialKey===p.materialKey?'selected':'')+'"><title>'+name+'</title><path d="'+contour+'" fill="#fff7e7" fill-opacity="0.8" fill-rule="evenodd" stroke="#b93b2e" stroke-width="0.22"/><path d="'+cuts+'" fill="none" stroke="#b93b2e" stroke-width="0.15" pointer-events="none"/><path d="'+engrave+'" fill="none" stroke="#315caf" stroke-width="0.15" pointer-events="none"/><text x="'+(p.ox+p.packedW/2)+'" y="'+(p.oy+p.packedH/2)+'" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="'+font+'" fill="#315caf" pointer-events="none">'+name+'</text></g>';
+}
+function updateMaterialSelection(){
+  const p=materialCache&&materialCache.placed.find(p=>p.materialKey===selectedMaterialKey);
+  $('materialRotate').disabled=!p;$('materialMove').disabled=!p;
+  $('materialMove').innerHTML=(materialCache?.sheets||[]).map((s,i)=>'<option value="'+i+'">Sheet '+(i+1)+'</option>').join('')+'<option value="new">New sheet</option>';
+  if(p)$('materialMove').value=p.sheetIndex;
+}
+function refreshMaterialView(){
+  if(state.workspaceMode!=='material')return;
+  syncWorkspaceUI();
+  const {panels}=generatePanels(),layout=layoutPanels(panels,3,true);materialCache=layout;
+  if(!layout.placed.some(p=>p.materialKey===selectedMaterialKey))selectedMaterialKey=null;
+  const page=Math.max(0,Math.min(state.materialPage,layout.sheets.length-1));state.materialPage=page;
+  $('materialSheet').innerHTML=layout.sheets.map((s,i)=>'<option value="'+i+'">'+(i+1)+' · '+(s.material==='lid'?'Lid':'Box')+'</option>').join('');$('materialSheet').value=page;
+  const sheet=layout.sheets[page],w=state.materialWidth,h=state.materialHeight;
+  $('materialStatus').textContent=layout.oversized.length?'Oversized: '+layout.oversized.map(p=>p.name).join(', '):'Drag parts; select to rotate.';
+  $('materialStage').innerHTML='<svg id="materialCanvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" aria-label="Material sheet layout"><defs><pattern id="materialGrid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#a78e65" stroke-width="0.12"/></pattern></defs><rect width="'+w+'" height="'+h+'" fill="#e2c799"/><rect width="'+w+'" height="'+h+'" fill="url(#materialGrid)"/><rect x="4" y="4" width="'+(w-8)+'" height="'+(h-8)+'" fill="none" stroke="#94774a" stroke-width="0.2" stroke-dasharray="2 2"/>'+(sheet?sheet.placed.map(materialPanelMarkup).join(''):'')+'</svg>';
+  updateMaterialSelection();
+  const svg=$('materialCanvas');if(!svg?.addEventListener)return;
+  const point=e=>new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  svg.addEventListener('pointerdown',e=>{
+    if(e.button!=null&&e.button!==0)return;
+    const group=e.target.closest('[data-material-part]');if(!group)return;
+    const key=group.getAttribute('data-material-part'),p=layout.placed.find(p=>p.materialKey===key);if(!p)return;
+    selectedMaterialKey=key;svg.querySelectorAll('[data-material-part]').forEach(g=>g.classList.toggle('selected',g===group));updateMaterialSelection();
+    materialDrag={pointer:e.pointerId,group,p,start:point(e),x:p.ox,y:p.oy,next:null};group.classList.add('dragging');svg.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  svg.addEventListener('pointermove',e=>{
+    const drag=materialDrag;if(!drag||drag.pointer!==e.pointerId)return;const q=point(e);
+    const x=Math.max(4,Math.min(state.materialWidth-4-drag.p.packedW,drag.x+q.x-drag.start.x)),y=Math.max(4,Math.min(state.materialHeight-4-drag.p.packedH,drag.y+q.y-drag.start.y));
+    drag.next={...drag.p,ox:x,oy:y};drag.group.setAttribute('transform','translate('+(x-drag.x)+' '+(y-drag.y)+')');
+  });
+  svg.addEventListener('pointerup',e=>{
+    const drag=materialDrag;if(!drag||drag.pointer!==e.pointerId)return;materialDrag=null;
+    if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
+    if(drag.next&&materialPositionFits(drag.next,layout.placed)){
+      pushHistoryNow();Object.assign(drag.p,drag.next);saveMaterialLayout(layout);refreshMaterialView();refreshOpenSVG();$('materialStatus').textContent='Layout saved for export.';
+    }else{drag.group.removeAttribute('transform');drag.group.classList.remove('dragging');if(drag.next)$('materialStatus').textContent='Parts overlap; move elsewhere.';}
+  });
+  svg.addEventListener('pointercancel',()=>{if(materialDrag){materialDrag.group.removeAttribute('transform');materialDrag.group.classList.remove('dragging');materialDrag=null;}});
+}
+function saveMaterialLayout(layout){
+  const used=[...new Set(layout.placed.map(p=>p.sheetIndex))].sort((a,b)=>a-b);
+  for(const p of layout.placed)p.sheetIndex=used.indexOf(p.sheetIndex);
+  state.materialLayoutSignature=layout.signature;
+  state.materialPlacements=Object.fromEntries(layout.placed.map(p=>[p.materialKey,{x:p.ox,y:p.oy,rotated:p.rotated,sheet:p.sheetIndex}]));
+  const selected=layout.placed.find(p=>p.materialKey===selectedMaterialKey);if(selected)state.materialPage=selected.sheetIndex;
+}
+function rotateMaterialPart(){
+  const p=materialCache?.placed.find(p=>p.materialKey===selectedMaterialKey);if(!p)return;
+  const candidate={...p,rotated:!p.rotated,packedW:p.packedH,packedH:p.packedW};
+  candidate.ox=Math.max(4,Math.min(state.materialWidth-4-candidate.packedW,p.ox+(p.packedW-candidate.packedW)/2));candidate.oy=Math.max(4,Math.min(state.materialHeight-4-candidate.packedH,p.oy+(p.packedH-candidate.packedH)/2));
+  if(!materialPositionFits(candidate,materialCache.placed)){$('materialStatus').textContent='Move part before rotating.';return;}
+  pushHistoryNow();Object.assign(p,candidate);saveMaterialLayout(materialCache);refreshMaterialView();refreshOpenSVG();
+}
+function moveMaterialPart(value){
+  const p=materialCache?.placed.find(p=>p.materialKey===selectedMaterialKey);if(!p)return;
+  const target=value==='new'?materialCache.sheets.length:Number(value);if(target===p.sheetIndex)return;
+  const others=materialCache.placed.filter(q=>q.sheetIndex===target),xs=[4,...others.map(q=>q.ox+q.packedW+3)],ys=[4,...others.map(q=>q.oy+q.packedH+3)];let candidate=null;
+  for(const x of xs)for(const y of ys){const q={...p,sheetIndex:target,ox:x,oy:y};if(!candidate&&materialPositionFits(q,materialCache.placed))candidate=q;}
+  if(!candidate){$('materialStatus').textContent='No space on that sheet.';updateMaterialSelection();return;}
+  pushHistoryNow();Object.assign(p,candidate);saveMaterialLayout(materialCache);refreshMaterialView();refreshOpenSVG();
+}
+
+function autoLayoutPanels(panels,gap=3,compact=true) {
+  const sheetW=state.materialWidth,sheetH=state.materialHeight,margin=SVG_SHEET_MARGIN,usableW=sheetW-2*margin,usableH=sheetH-2*margin,sheets=[],oversized=[];
+  const order=compact?[...panels].sort((a,b)=>Math.max(b.bboxW,b.bboxH)-Math.max(a.bboxW,a.bboxH)||b.bboxW*b.bboxH-a.bboxW*a.bboxH):panels;
+  const newSheet=material=>({material,placed:[],free:[{x:margin,y:margin,w:usableW,h:usableH}]});
+  for(const p of order){
+    const material=p.role==='slide-panel'?'lid':'box';
+    if(!((p.bboxW<=usableW+1e-7&&p.bboxH<=usableH+1e-7)||(p.bboxH<=usableW+1e-7&&p.bboxW<=usableH+1e-7))){oversized.push(p);continue;}
+    let best=null;
+    for(let page=0;page<sheets.length;page++)for(const rect of (sheets[page].material===material?sheets[page].free:[]))for(const rotated of [false,true]){
+      const w=rotated?p.bboxH:p.bboxW,h=rotated?p.bboxW:p.bboxH;
+      if(w>rect.w+1e-7||h>rect.h+1e-7)continue;
+      const score=Math.min(rect.w-w,rect.h-h)*100000+rect.w*rect.h-w*h;
+      if(!best||score<best.score)best={page,rect,rotated,w,h,score};
+    }
+    if(!best){sheets.push(newSheet(material));const page=sheets.length-1,rect=sheets[page].free[0];const rotated=p.bboxW>usableW||p.bboxH>usableH;best={page,rect,rotated,w:rotated?p.bboxH:p.bboxW,h:rotated?p.bboxW:p.bboxH};}
+    const sheet=sheets[best.page],x=best.rect.x,y=best.rect.y,w=best.w,h=best.h;
+    sheet.placed.push({...p,ox:x,oy:y,rotated:best.rotated,sheetIndex:best.page,packedW:w,packedH:h});
+    const used={x,y,w:Math.min(w+gap,sheetW-margin-x),h:Math.min(h+gap,sheetH-margin-y)},free=[];
+    for(const r of sheet.free){
+      if(used.x>=r.x+r.w-1e-8||used.x+used.w<=r.x+1e-8||used.y>=r.y+r.h-1e-8||used.y+used.h<=r.y+1e-8){free.push(r);continue;}
+      if(used.x>r.x)free.push({x:r.x,y:r.y,w:used.x-r.x,h:r.h});
+      if(used.x+used.w<r.x+r.w)free.push({x:used.x+used.w,y:r.y,w:r.x+r.w-used.x-used.w,h:r.h});
+      if(used.y>r.y)free.push({x:r.x,y:r.y,w:r.w,h:used.y-r.y});
+      if(used.y+used.h<r.y+r.h)free.push({x:r.x,y:used.y+used.h,w:r.w,h:r.y+r.h-used.y-used.h});
+    }
+    sheet.free=free.filter((r,i)=>r.w>0.1&&r.h>0.1&&!free.some((q,j)=>i!==j&&q.x<=r.x+1e-8&&q.y<=r.y+1e-8&&q.x+q.w>=r.x+r.w-1e-8&&q.y+q.h>=r.y+r.h-1e-8&&(j<i||q.w*q.h>r.w*r.h+1e-8)));
+  }
+  return {sheets,placed:sheets.flatMap(s=>s.placed),oversized,totalW:sheetW,totalH:sheetH};
+}
+function svgPanelPoint(p,x,y) {
+  return p.rotated?[p.ox+y-p.minY,p.oy+x-p.minX]:[p.ox+x-p.minX,p.oy+p.maxY-y];
+}
+function svgSheetResult(showLabels,compact,solid,hingeGap) {
+  const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,compact);
+  if(layout.oversized.length)return {svg:'',svgs:[],totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length,error:'Parts exceed the material sheet: '+layout.oversized.map(p=>p.name).join(', ')+'. Reduce box dimensions.'};
+  const svgs=layout.sheets.map(sheet=>solid?renderSolidSVGPage(sheet.placed,d,hingeGap):renderLaserSVGPage(sheet.placed,showLabels));
+  return {svg:svgs[0]||'',svgs,sheetCount:svgs.length,sheets:layout.sheets,totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length};
+}
+function buildSolidSVG(compact=true,hingeGap=0.8){return svgSheetResult(false,compact,true,hingeGap);}
+function buildSVG(showLabels=true,compact=true,solid=false,hingeGap=0.8){return svgSheetResult(showLabels,compact,solid,hingeGap);}
+
 function ptsToPath(pts, close = true) {
   if (!pts || !pts.length) return '';
   const d = 'M' + pts.map(p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`).join(' L');
@@ -12644,8 +12893,8 @@ function ptsToPath(pts, close = true) {
 }
 
 /** Filled SVG uses real compound contours, not thick outline strokes. */
-function buildSolidSVG(compact=true,hingeGap=0.8) {
-  const {panels,dims:d}=generatePanels(),{placed,totalW,totalH}=layoutPanels(panels,4,compact);
+function renderSolidSVGPage(placed,d,hingeGap) {
+  const totalW=state.materialWidth,totalH=state.materialHeight;
   const C=window.ClipperLib,S=1000;
   const paths=points=>points.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)}));
   const positive=points=>signedPolyArea(points)>0?points:points.slice().reverse();
@@ -12660,13 +12909,13 @@ function buildSolidSVG(compact=true,hingeGap=0.8) {
       for(const contour of solution)voids.push(positive(contour.map(q=>[q.X/S,q.Y/S])));
     }
     const solid=letterDifference([positive(p.cut)],voids);
-    const compound=solid.map(contour=>ptsToPath(contour.map(([x,y])=>[x-p.minX+p.ox,p.maxY-y+p.oy]))).join(' ');
+    const compound=solid.map(contour=>ptsToPath(contour.map(([x,y])=>svgPanelPoint(p,x,y)))).join(' ');
     const name=p.name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
     const element='    <path id="panel-'+(index+1)+'" data-name="'+name+'" data-thickness-mm="'+(p.materialThickness??d.T).toFixed(3)+'" d="'+compound+'" fill="#000000" fill-rule="evenodd" stroke="none"/>\n';
     if(p.role==='slide-panel')lid+=element;else body+=element;
   }
   const svg='<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="'+totalW.toFixed(3)+'mm" height="'+totalH.toFixed(3)+'mm" viewBox="0 0 '+totalW.toFixed(3)+' '+totalH.toFixed(3)+'">\n<g id="solid-panels">\n'+body+'</g>\n'+(lid?'<g id="LID_CUT">\n'+lid+'</g>\n':'')+'</svg>';
-  return {svg,totalW,totalH,count:panels.length};
+  return svg;
 }
 function currentSVGExport() {
   const solid=$('optSolid').checked;
@@ -12674,44 +12923,42 @@ function currentSVGExport() {
   return buildSVG($('optLabels').checked,$('optNest').checked,solid,gap);
 }
 
-function buildSVG(showLabels = true, compact = true, solid = false, hingeGap = 0.8) {
-  if(solid)return buildSolidSVG(compact,hingeGap);
-  const { panels } = generatePanels();
-  const { placed, totalW, totalH } = layoutPanels(panels, 4, compact);
+function renderLaserSVGPage(placed,showLabels) {
+  const totalW=state.materialWidth,totalH=state.materialHeight;
 
   let paths = '', lidPaths = '', labels = '', engraves = '';
   for (const p of placed) {
     // SVG is Y-down: flip each panel so it matches the 3D model orientation
-    const shifted = p.cut.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+    const shifted = p.cut.map(([x, y]) => svgPanelPoint(p,x,y));
     const outlinePath=`    <path d="${ptsToPath(shifted)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
     if(p.role==='slide-panel')lidPaths+=outlinePath;else paths+=outlinePath;
     for(const line of (p.openCuts || [])) {
-      const shifted=line.map(([x,y])=>[x-p.minX+p.ox,p.maxY-y+p.oy]);
+      const shifted=line.map(([x,y])=>svgPanelPoint(p,x,y));
       paths += '    <path d="'+ptsToPath(shifted,false)+'" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n';
     }
     // Cross-lap holes on dividers
     for (const h of (p.holes || [])) {
-      const hs = h.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      const hs = h.map(([x, y]) => svgPanelPoint(p,x,y));
       paths += `    <path d="${ptsToPath(hs)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
     }
     // Wall slots for dividers
     for (const [sx, sy, sw, sh] of (p.slots || [])) {
       const rect = [
         [sx, sy], [sx + sw, sy], [sx + sw, sy + sh], [sx, sy + sh],
-      ].map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      ].map(([x, y]) => svgPanelPoint(p,x,y));
       paths += `    <path d="${ptsToPath(rect)}" fill="none" stroke="#ff0000" stroke-width="0.1"/>\n`;
     }
     // Engrave layer (blue): alignment marks, e.g. pull-off insert outline on the cap
     for (const e of (p.engrave || [])) {
       if (!e || e.length < 2) continue;
-      const es = e.map(([x, y]) => [x - p.minX + p.ox, (p.maxY - y) + p.oy]);
+      const es = e.map(([x, y]) => svgPanelPoint(p,x,y));
       // 2-point paths (center cross arms) stay open; 3+ points close as outlines
       const isOpen = e.length === 2;
       engraves += `    <path d="${ptsToPath(es, !isOpen)}" fill="none" stroke="#0000ff" stroke-width="0.1"/>\n`;
     }
     if (showLabels) {
-      const fs = Math.max(3, Math.min(8, Math.min(p.bboxW, p.bboxH) / 6));
-      labels += `    <text x="${(p.ox + p.bboxW / 2).toFixed(2)}" y="${(p.oy + p.bboxH / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
+      const fs = Math.max(0.4,Math.min(1.8,(p.packedW||p.bboxW)/(Math.max(1,p.name.length)*0.6)));
+      labels += `    <text x="${(p.ox + (p.rotated?p.bboxH:p.bboxW) / 2).toFixed(2)}" y="${(p.oy + (p.rotated?p.bboxW:p.bboxH) / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
     }
   }
 
@@ -12727,13 +12974,13 @@ ${engraves}  </g>
   <g id="labels">
 ${labels}  </g>
 </svg>`;
-  return { svg, totalW, totalH, count: panels.length };
+  return svg;
 }
 
 // ---------- DXF (simple R12, mm) ----------
 function buildDXF() {
   const { panels } = generatePanels();
-  const { placed } = layoutPanels(panels, 5, true);
+  const { placed } = layoutPanelsLegacy(panels, 5, true);
   let entities = '';
   const addPoly = (pts, layer = 'CUT', closed = true) => {
     const n = pts.length;
@@ -12828,7 +13075,7 @@ function initThree() {
   (function animate() {
     requestAnimationFrame(animate);
     if (controls) controls.update();
-    if (renderer && scene && camera) renderer.render(scene, camera);
+    if (renderer && scene && camera && state.workspaceMode!=='material') renderer.render(scene, camera);
   })();
   return true;
 }
@@ -13318,7 +13565,7 @@ function rebuild3D() {
 
     if(p.flex) {
       const vertices=[];
-      for(const line of p.openCuts)for(let i=0;i<line.length-1;i++)for(const [x,y] of [line[i],line[i+1]]){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y,q.z+q.nz*(d.T/2+0.02));}
+      for(const line of p.openCuts)for(let i=0;i<line.length-1;i++)for(const [x,y] of [line[i],line[i+1]]){const q=p.flex.path.at(x+p.flex.seam/2);vertices.push(q.x+q.nx*(d.T/2+0.02),y+(p.flex.yMin||0),q.z+q.nz*(d.T/2+0.02));}
       const slitGeo=new THREE.BufferGeometry();slitGeo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
       mesh.add(new THREE.LineSegments(slitGeo,new THREE.LineBasicMaterial({color:0x5b3020})));
     }
@@ -13483,6 +13730,7 @@ function updateHUD(d, panels) {
 function rebuild() {
   syncRaiseUI();
   rebuild3D();
+  if(state.workspaceMode==='material')refreshMaterialView();
   if ($('svgModal').classList.contains('show')) refreshSVGPreview();
 }
 
@@ -13530,9 +13778,12 @@ function closeModal() { $('svgModal').classList.remove('show'); }
 function refreshSVGPreview() {
   $('optLabels').disabled=$('optSolid').checked;
   $('solidSVGOptions').style.display=$('optSolid').checked?'':'none';
-  const { svg, totalW, totalH, count } = currentSVGExport();
-  $('svgPreviewArea').innerHTML = svg.replace(/^<\?xml[^>]*>\s*/, '');
-  $('optInfo').textContent = `${count} pieces · ${fmtLen(totalW, 0, 2)} × ${fmtLen(totalH, 0, 2)}`;
+  const result=currentSVGExport(),select=$('svgSheet'),page=Math.max(0,Math.min(Number(select.value)||0,(result.svgs||[]).length-1));
+  select.innerHTML=(result.svgs||[]).map((_,i)=>'<option value="'+i+'">'+(i+1)+'</option>').join('');select.value=page;
+  $('btnDownloadSVG').disabled=!!result.error;$('btnDownloadSVGAll').disabled=!!result.error;
+  if(result.error){$('svgPreviewArea').textContent=result.error;$('optInfo').textContent='Oversized parts';return;}
+  $('svgPreviewArea').innerHTML=(result.svgs[page]||'').replace(/^<\?xml[^>]*>\s*/,'');
+  $('optInfo').textContent='Sheet '+(page+1)+' / '+result.sheetCount+' · '+fmtLen(state.materialWidth,0,2)+' × '+fmtLen(state.materialHeight,0,2)+' · '+(result.sheets[page].material==='lid'?'Lid material':'Box material');
 }
 
 function fileBase() {
@@ -13549,13 +13800,33 @@ function download(data, type, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function downloadSVG() {
-  const { svg } = currentSVGExport();
-  download(svg, 'image/svg+xml', fileBase() + ($('optSolid').checked?'_solid':'') + '.svg');
+  const result=currentSVGExport();if(result.error)return;
+  const page=Math.max(0,Math.min(Number($('svgSheet').value)||0,result.svgs.length-1));
+  download(result.svgs[page],'image/svg+xml',fileBase()+($('optSolid').checked?'_solid':'')+'_sheet-'+String(page+1).padStart(2,'0')+'.svg');
+}
+function zipSVGFiles(entries) {
+  const encoder=new TextEncoder(),chunks=[],central=[];let offset=0,centralSize=0;
+  const table=Array.from({length:256},(_,n)=>{let crc=n;for(let k=0;k<8;k++)crc=crc&1?0xedb88320^(crc>>>1):crc>>>1;return crc>>>0;});
+  const crc32=data=>{let crc=0xffffffff;for(const byte of data)crc=table[(crc^byte)&255]^(crc>>>8);return (crc^0xffffffff)>>>0;};
+  for(const entry of entries){
+    const name=encoder.encode(entry.name),data=encoder.encode(entry.svg),crc=crc32(data),header=new Uint8Array(30+name.length),v=new DataView(header.buffer);
+    v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);header.set(name,30);chunks.push(header,data);
+    const record=new Uint8Array(46+name.length),r=new DataView(record.buffer);r.setUint32(0,0x02014b50,true);r.setUint16(4,20,true);r.setUint16(6,20,true);r.setUint16(8,0x0800,true);r.setUint32(16,crc,true);r.setUint32(20,data.length,true);r.setUint32(24,data.length,true);r.setUint16(28,name.length,true);r.setUint32(42,offset,true);record.set(name,46);central.push(record);centralSize+=record.length;offset+=header.length+data.length;
+  }
+  const end=new Uint8Array(22),e=new DataView(end.buffer);e.setUint32(0,0x06054b50,true);e.setUint16(8,entries.length,true);e.setUint16(10,entries.length,true);e.setUint32(12,centralSize,true);e.setUint32(16,offset,true);
+  const result=new Uint8Array(offset+centralSize+end.length);let cursor=0;for(const bytes of [...chunks,...central,end]){result.set(bytes,cursor);cursor+=bytes.length;}return result;
+}
+function downloadSVGAll() {
+  const result=currentSVGExport();if(result.error)return;
+  const base=fileBase()+($('optSolid').checked?'_solid':'');
+  const files=result.svgs.map((svg,i)=>({name:base+'_sheet-'+String(i+1).padStart(2,'0')+'.svg',svg}));
+  download(zipSVGFiles(files),'application/zip',base+'_sheets.zip');
 }
 function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
   pushHistoryNow();
+  materialCache=null;selectedMaterialKey=null;materialDrag=null;
   Object.assign(state, {
     ...DEFAULTS,
     colWeights: [1],
