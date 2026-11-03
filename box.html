@@ -8727,6 +8727,8 @@ and disclaimer.
       <div class="modal-body" id="svgPreviewArea"></div>
       <div class="opt-row">
         <label><input type="checkbox" id="optLabels" checked onchange="refreshSVGPreview()"> Show labels (blue, engrave layer)</label>
+        <label><input type="checkbox" id="optSolid" onchange="refreshSVGPreview()"> Solid panels (3D printing)</label>
+        <span id="solidSVGOptions" style="display:none"><label>Hinge gap (mm) <input class="dim-inp" id="solidHingeGap" type="number" min="0.2" max="3" step="0.1" value="0.8" style="width:65px" onchange="refreshSVGPreview()"></label><span class="hint">Filled panels; no labels/engraving.</span></span>
         <label><input type="checkbox" id="optNest" checked onchange="refreshSVGPreview()"> Compact layout</label>
         <span id="optInfo" style="color:var(--muted);margin-left:auto;font-family:var(--mono);font-size:11px"></span>
       </div>
@@ -12641,7 +12643,39 @@ function ptsToPath(pts, close = true) {
   return close ? d + ' Z' : d;
 }
 
-function buildSVG(showLabels = true, compact = true) {
+/** Filled SVG uses real compound contours, not thick outline strokes. */
+function buildSolidSVG(compact=true,hingeGap=0.8) {
+  const {panels,dims:d}=generatePanels(),{placed,totalW,totalH}=layoutPanels(panels,4,compact);
+  const C=window.ClipperLib,S=1000;
+  const paths=points=>points.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)}));
+  const positive=points=>signedPolyArea(points)>0?points:points.slice().reverse();
+  let body='',lid='';
+  for(let index=0;index<placed.length;index++){
+    const p=placed[index],voids=(p.holes||[]).map(positive);
+    for(const [x,y,w,h] of (p.slots||[]))voids.push([[x,y],[x+w,y],[x+w,y+h],[x,y+h]]);
+    if(p.openCuts&&p.openCuts.length){
+      const offset=new C.ClipperOffset(2,0.05*S),solution=[];
+      for(const line of p.openCuts)offset.AddPath(paths(line),C.JoinType.jtRound,C.EndType.etOpenSquare);
+      offset.Execute(solution,hingeGap*S/2);
+      for(const contour of solution)voids.push(positive(contour.map(q=>[q.X/S,q.Y/S])));
+    }
+    const solid=letterDifference([positive(p.cut)],voids);
+    const compound=solid.map(contour=>ptsToPath(contour.map(([x,y])=>[x-p.minX+p.ox,p.maxY-y+p.oy]))).join(' ');
+    const name=p.name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+    const element='    <path id="panel-'+(index+1)+'" data-name="'+name+'" data-thickness-mm="'+(p.materialThickness??d.T).toFixed(3)+'" d="'+compound+'" fill="#000000" fill-rule="evenodd" stroke="none"/>\n';
+    if(p.role==='slide-panel')lid+=element;else body+=element;
+  }
+  const svg='<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="'+totalW.toFixed(3)+'mm" height="'+totalH.toFixed(3)+'mm" viewBox="0 0 '+totalW.toFixed(3)+' '+totalH.toFixed(3)+'">\n<g id="solid-panels">\n'+body+'</g>\n'+(lid?'<g id="LID_CUT">\n'+lid+'</g>\n':'')+'</svg>';
+  return {svg,totalW,totalH,count:panels.length};
+}
+function currentSVGExport() {
+  const solid=$('optSolid').checked;
+  const gap=Math.max(0.2,Math.min(3,Number($('solidHingeGap').value)||0.8));
+  return buildSVG($('optLabels').checked,$('optNest').checked,solid,gap);
+}
+
+function buildSVG(showLabels = true, compact = true, solid = false, hingeGap = 0.8) {
+  if(solid)return buildSolidSVG(compact,hingeGap);
   const { panels } = generatePanels();
   const { placed, totalW, totalH } = layoutPanels(panels, 4, compact);
 
@@ -13494,7 +13528,9 @@ function showSVG() { refreshSVGPreview(); $('svgModal').classList.add('show'); }
 function closeModal() { $('svgModal').classList.remove('show'); }
 
 function refreshSVGPreview() {
-  const { svg, totalW, totalH, count } = buildSVG($('optLabels').checked, $('optNest').checked);
+  $('optLabels').disabled=$('optSolid').checked;
+  $('solidSVGOptions').style.display=$('optSolid').checked?'':'none';
+  const { svg, totalW, totalH, count } = currentSVGExport();
   $('svgPreviewArea').innerHTML = svg.replace(/^<\?xml[^>]*>\s*/, '');
   $('optInfo').textContent = `${count} pieces · ${fmtLen(totalW, 0, 2)} × ${fmtLen(totalH, 0, 2)}`;
 }
@@ -13513,8 +13549,8 @@ function download(data, type, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function downloadSVG() {
-  const { svg } = buildSVG($('optLabels').checked, $('optNest').checked);
-  download(svg, 'image/svg+xml', fileBase() + '.svg');
+  const { svg } = currentSVGExport();
+  download(svg, 'image/svg+xml', fileBase() + ($('optSolid').checked?'_solid':'') + '.svg');
 }
 function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
