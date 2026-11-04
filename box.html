@@ -9102,6 +9102,21 @@ function rectangularWallSlot(path,a,b,T,seam=0){
   const half=(b-a)/2,thickness=T/2;
   return [[-half,-thickness],[half,-thickness],[half,thickness],[-half,thickness]].map(([u,v])=>[center.x+ux*u-uz*v,center.z+uz*u+ux*v]);
 }
+// Round the wall centerline before joining short corner strips to adjacent walls.
+// Opening the contour rounds convex corners while retaining its outer envelope.
+function letterRoundedNeutral(solid,T) {
+  const original=letterClipPaths(solid,-1.5*T),area=paths=>Math.abs(paths.reduce((n,p)=>n+signedPolyArea(p),0));
+  for(let radius=3*T;radius>=T;radius/=1.5){
+    const rounded=letterClipPaths(letterClipPaths(original,-radius),radius);
+    if(rounded.length===original.length&&rounded.filter(p=>signedPolyArea(p)>0).length===original.filter(p=>signedPolyArea(p)>0).length&&area(rounded)>=area(original)*0.85){rounded.rounded=true;return rounded;}
+  }
+  return original;
+}
+// Begin on the longest straight run; balanced sheet sections avoid tiny closing strips.
+function letterSectionPath(contour) {
+  const path=letterWallPath(contour),longest=path.segments.reduce((a,b)=>a.length>b.length?a:b),origin=longest.start+longest.length/2;
+  return {...path,at:x=>path.at(origin+x),segments:path.segments.map(seg=>({...seg,start:((seg.start-origin)%path.total+path.total)%path.total}))};
+}
 function generateLetterPanels(d) {
   const glyph=LETTER_GLYPHS[state.letter || 'A'],T=d.T,H=d.oh;
   // Preserve the glyph's proportions while fitting the selected width/depth envelope.
@@ -9110,29 +9125,56 @@ function generateLetterPanels(d) {
     const test=raw[j];let inside=false;const point=p[0];for(let k=0,l=test.length-1;k<test.length;l=k++){const a=test[k],b=test[l];if((a[1]>point[1])!==(b[1]>point[1])&&point[0]<(b[0]-a[0])*(point[1]-a[1])/(b[1]-a[1])+a[0])inside=!inside;}if(inside)depth++;
   }return (signedPolyArea(p)>0)===(depth%2===0)?p:p.slice().reverse();});
   const solid=letterClipPaths(contours),rimWidth=Math.max(3*T+1,6),storage=letterClipPaths(solid,-rimWidth),rim=letterDifference(solid,storage);
-  const neutral=letterClipPaths(solid,-1.5*T),defs=[],slots=[];
+  const neutral=letterRoundedNeutral(solid,T),defs=[],slots=[];
   d.ow=glyph.w*scale;d.od=glyph.h*scale;d.iw=Math.max(0,d.ow-2*T);d.id=Math.max(0,d.od-2*T);
   d.letterArea=Math.abs(storage.reduce((sum,p)=>sum+signedPolyArea(p),0));d.living=true;d.letter=true;
   let outerWalls=0,innerWalls=0;
   for(let ringIndex=0;ringIndex<neutral.length;ringIndex++){
-    const contour=neutral[ringIndex],path=letterWallPath(contour),inner=signedPolyArea(contour)<0,ranges=livingWallRanges(path.total,livingHardCorners(solid,path,T,!inner)),count=ranges.length;
+    const contour=neutral[ringIndex],path=letterSectionPath(contour),inner=signedPolyArea(contour)<0,hardCorners=neutral.rounded?[]:livingHardCorners(solid,path,T,!inner),ranges=livingWallRanges(path.total,hardCorners),count=ranges.length;
     if(inner)innerWalls+=count;else outerWalls+=count;
     for(let part=0;part<count;part++) {
       const [start,end]=ranges[part],width=end-start-0.3,seam=0.3;
       if(width<=Math.max(0.5,2*state.kerf)){d.letterWarn='Letter too small for its sharp-corner wall sections. Increase letter size or reduce material thickness.';continue;}
       const localPath={total:width+seam,at:x=>path.at(start+x),segments:[]},tabs=[],openCuts=[];
       const tabCount=Math.max(2,Math.floor(width/24)),tabWidth=Math.min(6,Math.max(3,1.5*T));
-      for(let i=0;i<tabCount;i++){
-        const mid=(i+0.5)*width/tabCount,a=mid-tabWidth/2,b=mid+tabWidth/2;if(a<6||b>width-6)continue;
-        if(!letterBendClear(path,start+a+seam/2,start+b+seam/2,Math.max(3,state.livingPitch*1.5)))continue;
+      const addTab=(mid,w,curved=false)=>{
+        const a=mid-w/2,b=mid+w/2,margin=Math.min(6,Math.max(T,width*0.15));
+        if(a<margin||b>width-margin||tabs.some(t=>a<t.b+3&&b>t.a-3))return false;
+        if(!curved&&!letterBendClear(path,start+a+seam/2,start+b+seam/2,Math.max(3,state.livingPitch*1.5)))return false;
+        if(curved){
+          // A short finger must remain nearly straight so its rectangular plate slot fits.
+          const p=localPath.at(a+seam/2),q=localPath.at(b+seam/2),dx=q.x-p.x,dz=q.z-p.z,L=Math.hypot(dx,dz);
+          if(L<0.98*w)return false;
+          for(let i=1;i<8;i++){const v=localPath.at(a+seam/2+w*i/8);if(Math.abs(dx*(v.z-p.z)-dz*(v.x-p.x))/L>Math.max(0.1,state.kerf))return false;}
+        }
         const slot=rectangularWallSlot(localPath,a,b,T,seam);
-        if(!slot.every(p=>letterInside(p,solid)))continue;
-        tabs.push({a,b});slots.push(slot);
+        if(!slot.every(p=>letterInside(p,solid)&&letterInside(p,rim)))return false;
+        tabs.push({a,b});slots.push(slot);return true;
+      };
+      for(let i=0;i<tabCount;i++){
+        const target=(i+0.5)*width/tabCount,span=width/tabCount;
+        let placed=false;
+        for(let offset=0;offset<span*0.45&&!placed;offset+=1)for(const sign of offset?[1,-1]:[1]){
+          if(addTab(target+sign*offset,tabWidth)){placed=true;break;}
+        }
+        // Curved sections still need plate connections: use narrow fingers between hinge lanes.
+        if(!placed)for(const w of [Math.min(3,T),Math.min(2,T)]){
+          for(let offset=0;offset<span*0.45&&!placed;offset+=0.5)for(const sign of offset?[1,-1]:[1]){
+            if(addTab(target+sign*offset,w,true)){placed=true;break;}
+          }
+          if(placed)break;
+        }
       }
-      const columns=Math.max(1,Math.ceil((width-12)/state.livingPitch)),pitch=(width-12)/columns,amplitude=livingCutAmplitude(pitch),bridge=Math.max(state.livingBridge,2*state.kerf+0.5);let cut=0;
-      if(H-2*T-bridge>=2&&width>12+state.livingPitch)for(let i=0;i<columns;i++){
-        const x=6+(i+0.5)*pitch;if(tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude))continue;
-        const bottom=cut%2===0;openCuts.push(livingHingeCut(x,bottom?T:T+bridge,bottom?H-T-bridge:H-T,pitch,T,cut++));
+      tabs.sort((a,b)=>a.a-b.a);
+      if(tabs.length<2)d.letterWarn='A wall section cannot fit two top and bottom attachment fingers at this size. Increase letter size or reduce material thickness.';
+      const endMargin=Math.min(6,Math.max(2*state.kerf+0.5,Math.min(T,width/6)));
+      const span=width-2*endMargin,columns=Math.max(1,Math.ceil(span/state.livingPitch)),pitch=span/columns,amplitude=livingCutAmplitude(pitch),bridge=Math.max(state.livingBridge,2*state.kerf+0.5);let cut=0;
+      if(H-2*T-bridge>=2&&span>0)for(let i=0;i<columns;i++){
+        const x=endMargin+(i+0.5)*pitch,atTab=tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude);
+        // Under plate fingers, retain both edge rails and use an internal flex slit.
+        // Skipping the entire lane would leave a rigid patch across the bend.
+        const bottom=cut%2===0,low=atTab?T+bridge:bottom?T:T+bridge,high=atTab?H-T-bridge:bottom?H-T-bridge:H-T;
+        if(high-low>=2)openCuts.push(livingHingeCut(x,low,high,pitch,T,cut++));
       }
       defs.push({name:'Letter '+state.letter+' '+(inner?'inner':'outer')+' wall '+(ringIndex+1)+'-'+(part+1),role:'living-wrap',outline:tabs.length?tabbedWallOutline(width,H,T,null,null,tabs,tabs):[[0,T],[width,T],[width,H-T],[0,H-T]],openCuts,flex:{path:localPath,seam,tabs,width}});
     }
@@ -9160,7 +9202,7 @@ function generateLetterPanels(d) {
     return {...def,svgYDown:!!def.poly&&(true),cut,holes:(def.holes||[]).map(h=>offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2,4)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   $('letterInfo').textContent=state.letter+' · '+outerWalls+' outer / '+innerWalls+' inner walls';
-  $('livingInfo').textContent=panels.filter(p=>p.flex).reduce((n,p)=>n+p.openCuts.length,0)+' edge-reaching cuts';
+  $('livingInfo').textContent=panels.filter(p=>p.flex).reduce((n,p)=>n+p.openCuts.length,0)+' hinge cuts';
   return {panels,dims:d};
 }
 
