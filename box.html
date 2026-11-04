@@ -7892,6 +7892,15 @@ and disclaimer.
       border-right: none;
       padding-right: 2px;
     }
+    .coffee-link {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      height: 28px; padding: 0 9px; margin-right: 5px; flex-shrink: 0;
+      background: #ffdd00; border: 1px solid #d6b900; border-radius: var(--radius);
+      color: #1a1a1a; font-family: inherit; font-size: 12px; font-weight: 600;
+      text-decoration: none; white-space: nowrap; transition: background 0.12s;
+    }
+    .coffee-link:hover { background: #ffe64d; }
+    .coffee-link:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     .theme-toggle {
       display: flex; align-items: center; justify-content: center;
       height: 28px; width: 32px; padding: 0;
@@ -8203,6 +8212,7 @@ and disclaimer.
       <button class="tb-btn" onclick="takeScreenshot()">📷 PNG</button>
     </div>
     <div class="tb-group tb-right">
+      <a class="coffee-link" href="https://buymeacoffee.com/jackintheshop" target="_blank" rel="noopener noreferrer" title="Support Jack In The Shop (opens in a new tab)"><span aria-hidden="true">☕</span> Buy me a coffee</a>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Switch to dark mode" aria-label="Toggle theme">
         <span class="icon-moon">🌙</span>
         <span class="icon-sun">☀️</span>
