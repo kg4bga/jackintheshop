@@ -8180,6 +8180,7 @@ and disclaimer.
     #letterLargeMap { background:white; overflow:auto; }
     #letterLargeMap svg { min-width:600px; }
     @media(max-width:900px){ .toolbar { max-width:100vw; overflow-x:auto; } .toolbar .tb-group { flex-shrink:0; } }
+    #drawerControls .hint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
   </style>
 </head>
 <body>
@@ -8263,6 +8264,19 @@ and disclaimer.
           </div>
           
           
+          <div class="ctrl" id="stackingControls">
+            <label><input type="checkbox" id="stackable" onchange="setStackable(this.checked)"> Stackable box</label>
+            <div id="stackClearanceRow" style="display:none;margin-top:8px"><label class="ctrl-lbl" for="stackClearance">Stacking clearance per side (mm)</label><input class="dim-inp" id="stackClearance" type="number" min="0.1" max="1.5" step="0.1" value="0.3" onchange="setStackClearance(this.value)"></div>
+            <div id="stackHandleControls" style="display:none;margin-top:8px">
+              <label><input type="checkbox" id="stackHandles" onchange="setStackHandles(this.checked)"> Side carry handles</label>
+              <div id="stackHandleSizes" style="display:none;margin-top:8px">
+                <label class="ctrl-lbl" for="stackHandleWidth">Handle opening width (mm)</label><input class="dim-inp" id="stackHandleWidth" type="number" min="30" max="120" step="1" value="60" onchange="setStackHandleSize('stackHandleWidth',this.value)">
+                <label class="ctrl-lbl" for="stackHandleHeight">Handle opening height (mm)</label><input class="dim-inp" id="stackHandleHeight" type="number" min="12" max="35" step="1" value="18" onchange="setStackHandleSize('stackHandleHeight',this.value)">
+              </div>
+              <div class="hint" id="stackHandleInfo" aria-live="polite" style="white-space:normal;overflow:visible"></div>
+            </div>
+            <div class="hint" id="stackingInfo" aria-live="polite" style="white-space:normal;overflow:visible"></div>
+          </div>
           <div class="ctrl" id="letterControls" style="display:none">
             <label class="ctrl-lbl" for="letterInput">Capital letter (A–Z)</label>
             <input class="dim-inp" id="letterInput" type="text" maxlength="1" value="A" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-size:26px;text-transform:uppercase;text-align:center" oninput="setLetterBox(this)">
@@ -8653,10 +8667,11 @@ and disclaimer.
         <div class="lb-panel-body">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
             <input type="checkbox" id="chkDrawer" onchange="onDrawer(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
-            <span><strong>Compartment drawers</strong> — lift-out trays</span>
+            <span><strong>Enable drawers</strong></span>
           </label>
-          <div class="hint" style="margin-top:4px">One drawer per compartment.</div>
+          <div class="hint" id="drawerModeHint" style="margin-top:4px;white-space:normal">Lift-out trays use one drawer per compartment.</div>
           <div id="drawerControls" style="display:none;margin-top:8px;">
+            <div class="ctrl"><label class="ctrl-lbl" for="drawerMode">Drawer style</label><select id="drawerMode" class="dim-inp" onchange="setDrawerMode(this.value)"><option value="lift">Lift-out compartment trays</option><option value="front" id="drawerFrontOption">Front-opening drawer · closed top</option></select></div>
             <div class="ctrl">
               <div class="ctrl-lbl"><strong>Drawer interior height</strong><span class="ctrl-val" id="valDrawerH">25.0 mm</span></div>
               <input type="range" id="sldDrawerH" min="3" max="80" step="any" value="25" oninput="onDrawerH(this.value)">
@@ -8670,15 +8685,20 @@ and disclaimer.
             <div class="ctrl">
               <label class="ctrl-lbl" for="drawerHoleShape">Finger hole shape</label>
               <select class="dim-inp" id="drawerHoleShape" onchange="setDrawerHoleShape(this.value)">
-                <option value="round">Round</option><option value="slot">Rounded slot</option>
+                <option value="round">Round</option><option value="slot">Rounded slot</option><option value="cutaway">Top cutaway notch</option>
               </select>
             </div>
             <div class="ctrl">
               <label class="ctrl-lbl" for="drawerHoleSize"><span id="drawerHoleSizeLabel">Finger hole diameter</span><span class="ctrl-val" id="drawerHoleSizeVal">16.0 mm</span></label>
               <input type="range" id="drawerHoleSize" min="6" max="40" step="0.5" value="16" oninput="onDrawerHoleSize(this.value)">
-              <div class="hint">Slot height = half width.</div>
+              <div class="hint" id="drawerHoleSizeHint">Slot height = half width.</div>
             </div>
-            <div class="ctrl" style="margin-top:8px;">
+            <div class="ctrl" id="drawerHoleTopGapRow" style="display:none">
+              <label class="ctrl-lbl" for="drawerHoleTopGap">Distance below top edge <span class="ctrl-val" id="drawerHoleTopGapVal"></span></label>
+              <input type="range" id="drawerHoleTopGap" min="0" max="30" step="0.1" oninput="onDrawerHoleTopGap(this.value)">
+              <div class="hint" id="drawerHoleTopGapHint"></div>
+            </div>
+            <div class="ctrl" id="drawerOpenEndControls" style="margin-top:8px;">
               <div class="ctrl-lbl"><strong>Open end</strong></div>
               <div class="seg" style="margin-top:4px;">
                 <button type="button" id="drOpenF" class="active" onclick="onDrawerOpen('front')">Front</button>
@@ -8689,9 +8709,9 @@ and disclaimer.
               
             </div>
           <div class="ctrl" id="drawerPullCtrl" style="margin-top:10px;display:none;">
-            <div class="ctrl-lbl"><strong>Drawer lift</strong><span class="ctrl-val" id="valDrawerPull">0%</span></div>
+            <div class="ctrl-lbl"><strong id="drawerMotionLabel">Drawer lift</strong><span class="ctrl-val" id="valDrawerPull">0%</span></div>
             <input type="range" id="sldDrawerPull" min="0" max="100" value="0" step="1" oninput="onDrawerPull(this.value)">
-            <div style="display:flex;justify-content:space-between" class="hint"><span>In box</span><span>Lifted up</span></div>
+            <div style="display:flex;justify-content:space-between" class="hint"><span>In box</span><span id="drawerMotionEnd">Lifted up</span></div>
           </div>
             <div class="hint" id="drawerInfo" style="margin-top:8px;"></div>
           </div>
@@ -8829,8 +8849,8 @@ const DEFAULTS = {
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHeight: null,
   colWeights: [1], rowWeights: [1],
-  drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
-  drawerHoleShape: 'round', drawerHoleSize: 16,
+  drawer: false, drawerMode:'lift', drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
+  drawerHoleShape: 'round', drawerHoleSize: 16, drawerHoleTopGap:null,
   notePreset: 'none',
   noteCutawaySize: 50,
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
@@ -8845,6 +8865,7 @@ const DEFAULTS = {
   hingeTabOver: 8, // hinged lid: how far the finger tab sticks out past the front wall (mm)
   hingeClear: 0.3, // hinged lid: running clearance between lid and walls (mm)
   hingeOpen: 0, // hinged lid: 0 = closed, 1 = fully open (view-only)
+  stackable:false, stackClearance:0.3, stackHandles:false, stackHandleWidth:60, stackHandleHeight:18,
   bottomRaise: 0, // mm the bottom panel (and its finger joints) sits above the lower edge of the walls
   footCutout: 0, // mm height of decorative cutout under the raised bottom (between corner feet)
   footWidth: 15, // mm width of each corner foot (independent of finger size)
@@ -10045,7 +10066,7 @@ function updateLabels() {
   if ($('infoMode')) $('infoMode').textContent = state.mode === 'inside' ? 'Interior' : 'Exterior';
   if ($('infoLid')) {
     const lidNames = { none: 'None', flat: 'Flat top', slip: 'Slip-on', pull: 'Pull-off', slide: 'Slide-in', hinge: 'Hinged (' + (state.hingeSide || 'back') + ')'  };
-    $('infoLid').textContent = lidNames[state.lid] || 'None';
+    $('infoLid').textContent = frontDrawerActive()?'Fixed closed top':lidNames[state.lid] || 'None';
   }
   if ($('valSlideBorder')) $('valSlideBorder').textContent = fmtLen(state.slideBorder || 15, 1, 2);
   if ($('sldSlideBorder')) {
@@ -10210,14 +10231,33 @@ function onDrawerH(v) {
   if ($('valDrawerH')) $('valDrawerH').textContent = fmtLen(state.drawerH, 1, 2);
   rebuild();
 }
+function onDrawerHoleTopGap(value){
+  const gap=Number(value);if(!Number.isFinite(gap))return;
+  pushHistory();state.drawerHoleTopGap=Math.max(0,gap);rebuild();
+}
+function syncDrawerPullGap(minimum,maximum,gap,notch){
+  const slider=$('drawerHoleTopGap');
+  slider.min=notch?0:minimum;slider.max=notch?0:maximum;slider.step='0.1';slider.value=gap;slider.disabled=notch||maximum-minimum<0.01;
+  $('drawerHoleTopGapVal').textContent=fmtLen(gap,1,2);
+  $('drawerHoleTopGapHint').textContent=notch?'The cutaway opens through the top edge. Adjust its width to change the notch depth.':'Gap from the top of the opening to the drawer edge. Limited to preserve material above and below the pull.';
+}
+function drawerCapNotch(w,h,side,width){
+  const to=side==='front'?([x,y])=>[x,h-y]:side==='left'?([x,y])=>[y,w-x]:side==='right'?([x,y])=>[y,x]:p=>p;
+  const from=side==='front'?([x,y])=>[x,h-y]:side==='left'?([x,y])=>[w-y,x]:side==='right'?([x,y])=>[y,x]:p=>p;
+  const span=['left','right'].includes(side)?h:w,top=['left','right'].includes(side)?w:h,r=width/2,cx=span/2;
+  const outline=[[0,0],[w,0],[w,h],[0,h]].map(to);
+  return insertOnTopEdge(outline,top,cx-r,cx+r,()=>arcPts(cx,top,r,Math.PI,2*Math.PI,32)).outline.map(from);
+}
+
 function syncDrawerHoleUI() {
   $('drawerHoleShape').value=state.drawerHoleShape || 'round';
   $('drawerHoleSize').value=state.drawerHoleSize ?? 16;
   $('drawerHoleSizeVal').textContent=fmtLen(state.drawerHoleSize ?? 16,1,3);
-  $('drawerHoleSizeLabel').textContent=state.drawerHoleShape === 'slot' ? 'Finger slot width' : 'Finger hole diameter';
+  $('drawerHoleSizeLabel').textContent=state.drawerHoleShape==='cutaway'?'Notch width':state.drawerHoleShape === 'slot' ? 'Finger slot width' : 'Finger hole diameter';
+  $('drawerHoleSizeHint').textContent=state.drawerHoleShape==='cutaway'?'Semicircular cutaway; depth is half the width.':state.drawerHoleShape==='slot'?'Slot height = half width.':'Round finger opening.';
 }
 function setDrawerHoleShape(shape) {
-  if (!['round','slot'].includes(shape) || shape===state.drawerHoleShape) return;
+  if (!['round','slot','cutaway'].includes(shape) || shape===state.drawerHoleShape) return;
   pushHistoryNow(); state.drawerHoleShape=shape;
   syncDrawerHoleUI(); rebuild();
 }
@@ -10300,6 +10340,7 @@ function enforceFrameHeight() {
 /** Interior / exterior dimensions (mm). */
 /** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
 function raiseApplicable() {
+  if(frontDrawerActive())return false;
   if (shapedBoxActive() || livingActive()) return false;
   // Raised bottoms + decorative feet work on rectangles, frames, and hexagons.
   // Flat-top with wall joints off (true lantern / V-groove walls) is excluded.
@@ -10316,7 +10357,7 @@ function bottomRaise() {
 function dims() {
   const T = state.T;
   // Flat and hinged lids both occupy one thickness at the top, so the interior height stays what you typed.
-  const lidT = (shapedBoxActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
+  const lidT = (frontDrawerActive() || shapedBoxActive() || state.lid === 'flat' || hingeActive()) ? 2 * T : T;
   const minI = Math.max(2, 2 * T);
   // Raised bottom: Interior mode keeps the interior height (walls grow); Exterior mode keeps the overall height.
   let rz = bottomRaise();
@@ -10328,7 +10369,7 @@ function dims() {
   // oh = ih + lidT, so the interior floor is that minimum minus one thickness.
   const minIh = state.generator === 'frame'
     ? Math.max(0.5, frameMinOutside(T) - lidT)
-    : state.lid==='slide'&&state.shape==='standard'&&state.sides===4&&!livingActive() ? Math.max(minI,2*T+slideLidThickness()+3.5) : minI;
+    : !frontDrawerActive()&&state.lid==='slide'&&state.shape==='standard'&&state.sides===4&&!livingActive() ? Math.max(minI,2*T+slideLidThickness()+3.5) : minI;
   const warn = iw < minI || ih < minIh || id < minI;
   iw = Math.max(iw, minI); ih = Math.max(ih, minIh); id = Math.max(id, minI);
   return { iw, ih, id, ow: iw + 2 * T, oh: ih + lidT + rz, od: id + 2 * T, T, warn, raise: rz, thinRaise: rz > 0 && rz < T };
@@ -10785,7 +10826,7 @@ function arcPts(cx, cy, r, a0, a1, steps = 8) {
 }
 
 function hingeActive() {
-  return !shapedBoxActive() && !livingActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
+  return !frontDrawerActive() && !shapedBoxActive() && !livingActive() && state.lid === 'hinge' && (state.sides || 4) === 4 && state.generator !== 'frame';
 }
 
 /** All hinge-lid dimensions in one place (mm). Needs dims() output. */
@@ -12125,7 +12166,169 @@ function splitTallLivingWalls(result) {
   }
   return {...result,panels:output};
 }
-function generatePanels(){const result=splitTallLivingWalls(generatePanelsUnbounded());if(state.shape==='letter')finalizeLetterAssembly(result);return result;}
+// Glue-on rings register identical open boxes without altering their wall joints.
+function frontDrawerSupported(){return state.generator==='box'&&state.shape==='standard'&&state.sides===4&&state.wallStyle==='panels';}
+function frontDrawerActive(){return !!state.drawer&&state.drawerMode==='front'&&frontDrawerSupported();}
+function setDrawerMode(mode){if(!['lift','front'].includes(mode))return;pushHistoryNow();state.drawerMode=mode;state.drawerPull=0;syncInputs();rebuild();}
+function syncDrawerModeUI(){
+  const front=frontDrawerActive();
+  $('drawerMode').value=state.drawerMode||'lift';
+  $('drawerFrontOption').disabled=!frontDrawerSupported();
+  $('drawerModeHint').textContent=front?'One open-top drawer slides through the front of a closed cabinet. Stack modules to build a chest. Lid, divider and feet settings are held aside in this mode.':!frontDrawerSupported()?'Front-opening drawers require a rectangular box with panel walls.':'Lift-out trays use one drawer per compartment.';
+  $('drawerOpenEndControls').style.display=front?'none':'';
+  $('drawerHoleTopGapRow').style.display=front?'':'none';
+  $('drawerMotionLabel').textContent=front?'Drawer extension':'Drawer lift';
+  $('drawerMotionEnd').textContent=front?'Pulled forward':'Lifted up';
+  const normal=state.generator!=='frame'&&!shapedBoxActive();
+  for(const id of ['s-lid','s-feet'])$(id).style.display=normal&&!front?'':'none';
+  $('s-div').style.display=!shapedBoxActive()&&!front?'':'none';
+  $('infoLid').textContent=front?'Fixed closed top':({none:'None',flat:'Flat top',slip:'Slip-on',pull:'Pull-off',slide:'Slide-in',hinge:'Hinged ('+(state.hingeSide||'back')+')'}[state.lid]||'None');
+}
+function chestKerf(points,delta){
+  const C=window.ClipperLib,S=10000,co=new C.ClipperOffset(4,0.01*S),out=[];
+  const p=signedPolyArea(points)>0?points:points.slice().reverse();
+  co.AddPath(p.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)})),C.JoinType.jtMiter,C.EndType.etClosedPolygon);co.Execute(out,delta*S);
+  return out.length===1?out[0].map(q=>[q.X/S,q.Y/S]):null;
+}
+function generateFrontDrawerPanels(d){
+  // Reuse the closed finger-jointed shell, without changing saved tray/lid settings.
+  const keys=['drawer','lid','flatOverhang','wallJoints','bottomRaise','footCutout','divCols','divRows','colWeights','rowWeights','drawerMode'],saved=Object.fromEntries(keys.map(k=>[k,state[k]]));
+  let result;
+  try{
+    Object.assign(state,{drawer:false,drawerMode:'lift',lid:'flat',flatOverhang:0,wallJoints:true,bottomRaise:0,footCutout:0,divCols:1,divRows:1,colWeights:[1],rowWeights:[1]});
+    result=generatePanelsBase(d);
+  }finally{Object.assign(state,saved);}
+  d=result.dims;d.frontDrawer=true;
+  const T=d.T,clear=Math.max(0.1,state.drawerClear??0.5),minimum=6+2*Math.max(T,2),maximum=d.oh-5*T-clear;
+  const drIh=Math.max(minimum,Math.min(maximum,state.drawerH??25)),drOh=drIh+T,openingW=d.ow-6*T,drW=openingW-2*clear,drD=d.od-T-clear,runnerW=Math.max(2*T,8);
+  $('sldDrawerH').min=minimum;$('sldDrawerH').max=Math.max(minimum,maximum);$('sldDrawerH').value=drIh;$('sldDrawerH').disabled=maximum<minimum;
+  $('valDrawerH').textContent=fmtLen(drIh,1,2);$('drawerHeightHint').textContent=fmtLen(minimum,1,2)+'–'+fmtLen(Math.max(minimum,maximum),1,2)+' interior height; open drawer top.';
+  const fail=message=>{d.frontDrawerError=message;$('drawerInfo').textContent=message;return result;};
+  if(maximum<minimum||drW<Math.max(6*T,20)||d.id<Math.max(6*T,20)||runnerW>=drW/2)return fail('Increase cabinet width, depth or height to fit the front drawer and its joints.');
+  if(clear<=state.kerf)return fail('Drawer clearance must exceed kerf for the front opening.');
+  const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]],opening=rect(3*T,2*T,openingW,drOh+clear),front=result.panels.find(p=>p.role==='front');
+  const aperture=chestKerf(opening,-state.kerf/2);
+  if(!aperture)return fail('Front opening collapses under kerf compensation. Increase cabinet size.');
+  front.nominalHoles=[...(front.nominalHoles||front.holes||[]),opening];front.holes.push(aperture);front.area-=polyArea(opening);front.name='Cabinet front frame';
+  const J=(ownEven,ownCorners)=>({ownEven,ownCorners}),plate=[J(false,false),J(false,false),J(false,false),J(false,false)],fb=[J(true,true),J(true,true),null,J(true,true)],lr=[J(true,false),J(false,false),null,J(false,false)];
+  const margin=Math.max(T,2),notch=state.drawerHoleShape==='cutaway',slot=state.drawerHoleShape==='slot',maxHoleH=drIh-2*margin,maxHoleW=drW-2*(T+margin),requested=state.drawerHoleSize??16;
+  const holeW=Math.min(requested,maxHoleW,notch?2*(drIh-margin):slot?2*maxHoleH:maxHoleH),holeH=(slot||notch)?holeW/2:holeW,cx=drW/2;
+  const maxGap=drIh-margin-holeH,gap=notch?0:Math.max(margin,Math.min(maxGap,state.drawerHoleTopGap??(drIh-holeH)/2)),cy=drOh-gap-holeH/2;
+  syncDrawerPullGap(margin,maxGap,gap,notch);
+  if(holeW<6||holeH<3)return fail('Increase drawer size to fit its front finger pull.');
+  const pullHole=slot?cleanPoly([...arcPts(cx+(holeW-holeH)/2,cy,holeH/2,-Math.PI/2,Math.PI/2,32),...arcPts(cx-(holeW-holeH)/2,cy,holeH/2,Math.PI/2,3*Math.PI/2,32)]):circlePoly(cx,cy,holeW/2,64);
+  const add=(name,role,w,h,specs,holes=[],extra={})=>{
+    const outline=extra.outlineOverride||(specs?panelOutline(w,h,specs,T):rect(0,0,w,h)),cut=chestKerf(outline,state.kerf/2),cuts=holes.map(p=>chestKerf(p,-state.kerf/2));
+    if(!cut||cuts.some(h=>!h)){d.frontDrawerError='A drawer feature collapses under kerf compensation. Increase dimensions or reduce kerf.';return;}
+    const xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
+    result.panels.push({name,role,outline,cut,nominalHoles:holes,holes:cuts,slots:[],minX:Math.min(...xs),minY:Math.min(...ys),maxY:Math.max(...ys),bboxW:Math.max(...xs)-Math.min(...xs),bboxH:Math.max(...ys)-Math.min(...ys),area:polyArea(outline)-holes.reduce((n,p)=>n+polyArea(p),0),trayIndex:0,...extra});
+  };
+  add('Drawer bottom','dr-bottom',drW,drD,plate);
+  const faceOutline=panelOutline(drW,drOh,fb,T),cutaway=notch?insertOnTopEdge(faceOutline,drOh,cx-holeW/2,cx+holeW/2,()=>arcPts(cx,drOh,holeW/2,Math.PI,2*Math.PI,32)):null;
+  if(notch&&!cutaway.ok)return fail('Notch cannot fit the drawer top edge. Reduce its width.');
+  add(notch?'Drawer front with top cutaway':'Drawer front with finger pull','dr-front',drW,drOh,fb,notch?[]:[pullHole],{outlineOverride:notch?cutaway.outline:faceOutline,drawerPullGeometry:{shape:state.drawerHoleShape,width:holeW,height:holeH,topGap:gap}});
+  add('Drawer back','dr-back',drW,drOh,fb);
+  add('Drawer left','dr-left',drD,drOh,lr);
+  add('Drawer right','dr-right',drD,drOh,lr);
+  // Runners rest on the cabinet floor. Guide strips keep the drawer aligned with the opening.
+  for(const side of [-1,1]){
+    const x=side<0?-openingW/2-T:openingW/2+T-runnerW;
+    add((side<0?'Left':'Right')+' runner (glue on cabinet floor)','chest-runner',runnerW,d.id,null,[],{chestPlacement:{o:[x,T,d.od/2-T],u:[1,0,0],v:[0,0,-1],n:[0,1,0]}});
+    add((side<0?'Left':'Right')+' guide (glue on runner outside edge)','chest-guide',d.id,2*T,null,[],{chestPlacement:{o:[side<0?-openingW/2:openingW/2+T,2*T,-d.od/2+T],u:[0,0,1],v:[0,1,0],n:[-1,0,0]}});
+  }
+  d.drawer={front:true,clear,trays:[{drW,drD,drOh,drIh,wx:0,wy:2*T,wz:d.od/2-drD/2,label:'D1'}],opening:{x:3*T,y:2*T,w:openingW,h:drOh+clear},runnerW,travel:drD+T};
+  $('drawerInfo').textContent=d.frontDrawerError||'1 front-opening drawer · '+fmtLen(drW,1,2)+' × '+fmtLen(drD,1,2)+' outside footprint. Glue runners and guides in place; dry-fit before gluing the cabinet top. Fully removable; no captive stop.';
+  return result;
+}
+function placementChest(p){const q=p.chestPlacement,V=a=>new THREE.Vector3(...a);return {o:V(q.o),u:V(q.u),v:V(q.v),n:V(q.n)};}
+
+function stackingStatus(d=dims()) {
+  if(state.generator!=='box'||state.shape!=='standard'||state.sides!==4||state.wallStyle!=='panels')return 'Choose a rectangular box with panel walls.';
+  if(state.lid!=='none'&&!frontDrawerActive())return 'Choose No lid or a front-opening drawer to use stacking rings.';
+  if(state.drawer&&!frontDrawerActive())return 'Choose Front-opening drawer or turn off lift-out trays to use stacking rings.';
+  if(!frontDrawerActive()&&(d.raise>0||state.footCutout>0))return 'Set bottom raise and foot cutout to zero to use stacking rings.';
+  const fit=state.stackClearance??0.3,band=Math.max(2*d.T,6);
+  if(Math.min(d.ow,d.od)-4*d.T-2*fit-2*band<Math.max(4,2*d.T))return 'Increase width and depth to leave a strong locating ring.';
+  if(d.T<=state.kerf)return 'Material thickness must exceed kerf.';
+  return '';
+}
+function setStackable(on){pushHistoryNow();state.stackable=!!on;rebuild();}
+function setStackClearance(value){const n=Number(value);if(!Number.isFinite(n))return;pushHistory();state.stackClearance=Math.max(0.1,Math.min(1.5,n));rebuild();}
+function syncStackingUI(d=dims()) {
+  const reason=stackingStatus(d),active=state.stackable&&!reason;
+  $('stackable').checked=!!state.stackable;
+  // A previously selected option can always be turned off after changing shape.
+  $('stackable').disabled=!!reason&&!state.stackable;
+  $('stackClearance').value=state.stackClearance??0.3;
+  $('stackClearanceRow').style.display=active?'':'none';
+  $('stackingInfo').textContent=reason?(state.stackable?'Stacking inactive: ':'')+reason:active?
+    'Adds 2 rings. Glue the rim centered on '+(frontDrawerActive()?'the closed cabinet top':'the wall tops')+'; glue the locating ring centered under the base. Match outside width, depth, thickness and clearance across boxes. Overall height: '+fmtLen(d.oh+2*d.T,1,2)+'. Each additional box adds '+fmtLen(d.oh+d.T,1,2)+'.':
+    'Add a top rim and a matching underside locating ring for stacking open boxes.';
+}
+function addStackingPanels(result){
+  const d=result.dims;syncStackingUI(d);
+  if(!state.stackable||stackingStatus(d))return result;
+  const T=d.T,fit=state.stackClearance??0.3,band=Math.max(2*T,6),openingW=d.ow-4*T,openingD=d.od-4*T;
+  const rect=(w,h)=>[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+  const ring=(name,role,w,h,iw,ih)=>{
+    const outline=rect(w,h),hole=rect(iw,ih),cut=rect(w+state.kerf,h+state.kerf);
+    return {name,role,outline,cut,holes:[rect(iw-state.kerf,ih-state.kerf)],nominalHoles:[hole],slots:[],minX:-(w+state.kerf)/2,minY:-(h+state.kerf)/2,maxY:(h+state.kerf)/2,bboxW:w+state.kerf,bboxH:h+state.kerf,area:w*h-iw*ih,materialThickness:T,stacking:true};
+  };
+  result.panels.push(ring('Stacking top rim (glue on wall tops)','stack-rim',d.ow,d.od,openingW,openingD));
+  result.panels.push(ring('Stacking locating ring (glue under base)','stack-locator',openingW-2*fit,openingD-2*fit,openingW-2*fit-2*band,openingD-2*fit-2*band));
+  d.stacking={clearance:fit,rimOpening:[openingW,openingD],locator:[openingW-2*fit,openingD-2*fit],overallHeight:d.oh+2*T,stackPitch:d.oh+T};
+  return result;
+}
+function placementStacking(p,d){
+  return {o:new THREE.Vector3(0,p.role==='stack-rim'?d.oh: -d.T,0),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,0,-1),n:new THREE.Vector3(0,1,0)};
+}
+
+function setStackHandles(on){pushHistoryNow();state.stackHandles=!!on;rebuild();}
+function setStackHandleSize(key,value){
+  const limits={stackHandleWidth:[30,120],stackHandleHeight:[12,35]},n=Number(value);
+  if(!limits[key]||!Number.isFinite(n))return;
+  pushHistory();state[key]=Math.max(limits[key][0],Math.min(limits[key][1],n));rebuild();
+}
+function addStackHandles(result){
+  const d=result.dims,active=!!d.stacking&&!d.frontDrawer;
+  $('stackHandleControls').style.display=active?'':'none';
+  $('stackHandles').checked=!!state.stackHandles;
+  $('stackHandleSizes').style.display=state.stackHandles?'':'none';
+  const width=state.stackHandleWidth??60,height=state.stackHandleHeight??18;
+  $('stackHandleWidth').value=width;$('stackHandleHeight').value=height;
+  const info=$('stackHandleInfo');
+  info.textContent='Rounded handholds on the left and right walls, below the stacking rim.';
+  if(!active||!state.stackHandles)return result;
+  const margin=Math.max(3*d.T,12),cy=d.oh-margin-height/2,sidePanels=result.panels.filter(p=>p.role==='left'||p.role==='right'),pending=[];
+  const fail=message=>{d.stackHandleWarning=message;info.textContent='Handles omitted: '+message;return result;};
+  if(width<height)return fail('Opening width must be at least its height.');
+  if(cy-height/2<d.T+margin)return fail('Increase box height or reduce handle height to keep material above the base joints.');
+  for(const p of sidePanels){
+    const xs=p.outline.map(q=>q[0]),left=Math.min(...xs),right=Math.max(...xs),cx=(left+right)/2;
+    if(width>right-left-2*margin)return fail('Increase box depth or reduce handle width to keep material beside the corner joints.');
+    const bounds={x0:cx-width/2,x1:cx+width/2,y0:cy-height/2,y1:cy+height/2};
+    const existing=[...(p.holes||[]),...(p.slots||[]).map(([x,y,w,h])=>[[x,y],[x+w,y+h]])];
+    const gap=Math.max(d.T,2*state.kerf+0.6);
+    if(existing.some(h=>{const xx=h.map(q=>q[0]),yy=h.map(q=>q[1]);return Math.min(...xx)<bounds.x1+gap&&Math.max(...xx)>bounds.x0-gap&&Math.min(...yy)<bounds.y1+gap&&Math.max(...yy)>bounds.y0-gap;}))return fail('A divider joint overlaps the handle area. Reduce divider height or change the handle size.');
+    const r=height/2,half=width/2-r,hole=[];
+    for(let i=0;i<=24;i++){const a=-Math.PI/2+i*Math.PI/24;hole.push([cx+half+r*Math.cos(a),cy+r*Math.sin(a)]);}
+    for(let i=0;i<=24;i++){const a=Math.PI/2+i*Math.PI/24;hole.push([cx-half+r*Math.cos(a),cy+r*Math.sin(a)]);}
+    const C=window.ClipperLib,S=10000,offset=new C.ClipperOffset(4,0.01*S),cut=[];
+    offset.AddPath(hole.map(([x,y])=>({X:Math.round(x*S),Y:Math.round(y*S)})),C.JoinType.jtRound,C.EndType.etClosedPolygon);
+    offset.Execute(cut,-state.kerf*S/2);
+    if(cut.length!==1)return fail('The opening is too small for the selected kerf.');
+    pending.push({p,hole,cut:cut[0].map(q=>[q.X/S,q.Y/S])});
+  }
+  if(pending.length!==2)return fail('Two side walls are required.');
+  for(const {p,hole,cut} of pending){
+    p.nominalHoles=[...(p.nominalHoles||p.holes||[]),hole];
+    p.holes=[...(p.holes||[]),cut];p.area-=polyArea(hole);p.handhold={width,height,nominal:hole,cut};
+  }
+  info.textContent='Two '+fmtLen(width,0,2)+' × '+fmtLen(height,0,2)+' handholds. Top grip band: '+fmtLen(margin,0,2)+'. Lift one box at a time.';
+  return result;
+}
+
+function generatePanels(){const result=addStackHandles(addStackingPanels(splitTallLivingWalls(frontDrawerActive()?generateFrontDrawerPanels(dims()):generatePanelsUnbounded())));syncDrawerModeUI();if(state.shape==='letter')finalizeLetterAssembly(result);return result;}
 
 function generatePanelsUnbounded() {
   if (!hingeActive() || !state.hingeSide || state.hingeSide === 'back') return generatePanelsBase();
@@ -12803,7 +13006,8 @@ function generatePanelsBase(d = dims()) {
         } else pullHole=circlePoly(hx,hy,width/2,64);
 
         defs.push({ name: `${label} Bottom`, role: 'dr-bottom', w: drW, h: drD, specs: drPlate, trayIndex: trays.length });
-        defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: [null,null,null,null], holes: [pullHole], trayIndex: trays.length });
+        const cutaway=state.drawerHoleShape==='cutaway',edgeSpan=(openL||openR)?drD:drW,inward=(openL||openR)?drW:drD,notchW=Math.min(requested,edgeSpan-2*margin,2*(inward-margin));
+        defs.push({ name: `${label} Top`, role: 'dr-top', w: drW, h: drD, specs: [null,null,null,null], holes:cutaway?[]:[pullHole],outlineOverride:cutaway?drawerCapNotch(drW,drD,openEnd,notchW):undefined, trayIndex: trays.length });
         if (!openF) defs.push({ name: `${label} Front`, role: 'dr-front', w: drW, h: drWallH, specs: drFb, trayIndex: trays.length });
         if (!openB) defs.push({ name: `${label} Back`, role: 'dr-back', w: drW, h: drWallH, specs: drFb, trayIndex: trays.length });
         if (!openL) defs.push({ name: `${label} Left`, role: 'dr-left', w: drD, h: drWallH, specs: drLeft, trayIndex: trays.length });
@@ -13324,6 +13528,7 @@ function svgPanelPoint(p,x,y) {
 }
 function svgSheetResult(showLabels,compact,solid,hingeGap) {
   const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,compact);
+  if(d.frontDrawerError)return {svg:'',svgs:[],error:d.frontDrawerError};
   if(layout.oversized.length)return {svg:'',svgs:[],totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length,error:'Parts exceed the material sheet: '+layout.oversized.map(p=>p.name).join(', ')+'. Reduce box dimensions.'};
   if(state.shape==='letter'&&d.letterValidation?.length)return {svg:'',svgs:[],error:d.letterValidation.join(' ')};
   const svgs=layout.sheets.map(sheet=>solid?renderSolidSVGPage(sheet.placed,d,hingeGap):renderLaserSVGPage(sheet.placed,showLabels));
@@ -13968,7 +14173,7 @@ function rebuild3D() {
     const pad = 0.05;
     const useHoles = [];
     // Existing panel holes (plate slots, pull holes, hinge, etc.) — keep original shape
-    for (const h of (p.holes || [])) {
+    for (const h of (p.nominalHoles || p.holes || [])) {
       if (!h || h.length < 3) continue;
       useHoles.push(h);
     }
@@ -14007,6 +14212,8 @@ function rebuild3D() {
 
     let pl;
     if(p.flex) pl={o:new THREE.Vector3(),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),n:new THREE.Vector3(0,0,1)};
+    else if (p.chestPlacement) pl=placementChest(p);
+    else if (p.stacking) pl=placementStacking(p,layoutD);
     else if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
     else if (p.role === 'dr-bottom' || p.role === 'dr-top' || p.role === 'dr-front' || p.role === 'dr-back' || p.role === 'dr-left' || p.role === 'dr-right') pl = placementTray(p, layoutD);
     else if (
@@ -14022,6 +14229,7 @@ function rebuild3D() {
     const m = new THREE.Matrix4().makeBasis(pl.u, pl.v, pl.n);
     m.setPosition(pl.o);
     m.premultiply(hingeRotation);
+    if(d.stacking)m.elements[13]+=d.T;
     geo.applyMatrix4(m);
     geo.computeVertexNormals();
 
@@ -14056,7 +14264,7 @@ function rebuild3D() {
       const detailGeo=new THREE.BufferGeometry();detailGeo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
       mesh.add(new THREE.LineSegments(detailGeo,new THREE.LineBasicMaterial({color:0x234877})));
     }
-    let dir = EXPLODE_DIR[p.role] || [0, 0.5, 0];
+    let dir = p.role==='stack-locator'?[0,-0.5,0]:p.role==='stack-rim'?[0,1,0]:EXPLODE_DIR[p.role] || [0, 0.5, 0];
     // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
     if ((p.role === 'poly-side' || p.role === 'lid-poly-side') && (d.poly || p.nSides)) {
       // Explode each side outward from center
@@ -14075,7 +14283,7 @@ function rebuild3D() {
       const travel = tr
         ? Math.max(30, (tr.drOh || 25) + (d.oh || 50) * 0.35)
         : 50;
-      pull = [0, travel, 0];
+      pull = d.drawer.front ? [0,0,d.drawer.travel] : [0, travel, 0];
     }
     // Slide-in lid panel: slides straight out through the open (entry) side.
     // Full travel = far enough that the whole panel clears the box.
@@ -14157,7 +14365,7 @@ function updateHUD(d, panels) {
 
   const dec = inch ? 2 : 1;
   $('iExtW').textContent = toDisp(d.ow).toFixed(dec);
-  $('iExtH').textContent = toDisp(d.oh).toFixed(dec);
+  $('iExtH').textContent = toDisp(d.stacking?.overallHeight ?? d.oh).toFixed(dec);
   $('iExtD').textContent = toDisp(d.od).toFixed(dec);
   $('iVol').textContent = inch ? (vol / 16387.064).toFixed(1) + ' in³' : (vol / 1e6).toFixed(2) + ' L';
 
@@ -14265,7 +14473,7 @@ function refreshSVGPreview() {
 
 function fileBase() {
   const d = dims();
-  const prefix = state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : state.shape==='sticky' ? 'jackintheshop_sticky_notes' : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
+  const prefix = frontDrawerActive() ? 'jackintheshop_drawer_module' : state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : state.shape==='sticky' ? 'jackintheshop_sticky_notes' : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
   return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
@@ -14299,7 +14507,7 @@ function downloadSVGAll() {
   const files=result.svgs.map((svg,i)=>({name:base+'_sheet-'+String(i+1).padStart(2,'0')+'.svg',svg}));
   download(zipSVGFiles(files),'application/zip',base+'_sheets.zip');
 }
-function downloadDXF() { if(state.shape==='letter'){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
+function downloadDXF() { if(state.shape==='letter'||frontDrawerActive()){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
   pushHistoryNow();
