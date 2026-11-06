@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-
-	<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PPWV3HF3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
-
-	
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
@@ -8183,9 +8174,16 @@ and disclaimer.
       .main { flex-direction: column; }
       .dim-row { grid-template-columns: 1fr 1fr; }
     }
+    #letterControls .hint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+    #letterMapDialog { margin:auto; padding:16px; width:min(95vw,1000px); max-height:94vh; overflow:auto; color:var(--text); background:var(--surface); border:1px solid var(--border); }
+    #letterMapDialog::backdrop { background:#0008; }
+    #letterLargeMap { background:white; overflow:auto; }
+    #letterLargeMap svg { min-width:600px; }
+    @media(max-width:900px){ .toolbar { max-width:100vw; overflow-x:auto; } .toolbar .tb-group { flex-shrink:0; } }
   </style>
 </head>
 <body>
+  <dialog id="letterMapDialog"><button class="btn btn-secondary" onclick="document.getElementById('letterMapDialog').close()">Close map</button><p>Click a section to select it. Close this map to change its classification in the letter controls.</p><div id="letterLargeMap"></div></dialog>
   
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
@@ -8246,7 +8244,22 @@ and disclaimer.
           </div>
           <div class="ctrl" id="shapeControls">
             <label class="ctrl-lbl" for="boxShape">Box shape</label>
-            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option><option value="snowman">Snowman</option><option value="letter">Letter</option></select>
+            <select class="dim-inp" id="boxShape" onchange="setBoxShape(this.value)"><option value="standard">Rectangle / polygon</option><option value="sticky">Sticky note holder</option><option value="heart">Heart</option><option value="cross">Cross</option><option value="star">Star</option><option value="snowman">Snowman</option><option value="letter">Letter</option></select>
+          </div>
+          <div class="ctrl" id="notePresetControls" style="display:none">
+            <label class="ctrl-lbl" for="notePreset">Sticky-note box</label>
+            <select class="dim-inp" id="notePreset">
+              <option value="open">Open pad holder</option>
+              <option value="covered">Covered refill box</option>
+              <option value="popup">Pop-up dispenser (3×3)</option>
+            </select>
+            <button class="tb-btn" style="width:100%;margin-top:6px" onclick="applyNotePreset()">Apply sticky-note setup</button>
+            <div class="hint" id="notePresetHint" style="margin-top:5px">Sized for a 3 × 3 in pad with 3 mm clearance per side (about 3.5 in outside at 3 mm material).</div>
+          </div>
+          <div class="ctrl" id="noteCutawayControls" style="display:none">
+            <label class="ctrl-lbl" for="noteCutawaySize">Front panel cut-away <span class="ctrl-val" id="noteCutawaySizeVal">54 × 20 mm</span></label>
+            <input type="range" id="noteCutawaySize" min="0" max="100" step="1" value="50" oninput="onNoteCutaway(this.value)">
+            <div class="hint" style="margin-top:4px">Adjusts the width and depth of the rounded opening. Foot cutouts remain independently adjustable.</div>
           </div>
           
           
@@ -8254,6 +8267,26 @@ and disclaimer.
             <label class="ctrl-lbl" for="letterInput">Capital letter (A–Z)</label>
             <input class="dim-inp" id="letterInput" type="text" maxlength="1" value="A" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-size:26px;text-transform:uppercase;text-align:center" oninput="setLetterBox(this)">
             <div class="hint" id="letterInfo"></div>
+            <label class="ctrl-lbl" for="letterWallMode">Wall construction mode</label>
+            <select id="letterWallMode" class="dim-inp" onchange="setLetterOption('letterWallMode',this.value)">
+              <option value="auto">Automatic hybrid walls</option><option value="living">Living hinges only</option><option value="manual">Manual wall selection</option>
+            </select>
+            <label style="display:block"><input id="letterMinimize" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Minimize wall pieces</label>
+            <label style="display:block"><input id="letterNumbers" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Show wall piece numbers</label>
+            <label style="display:block"><input id="letterArrows" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Show starting points and arrows</label>
+            <label style="display:block"><input id="letterEngrave" type="checkbox" onchange="setLetterOption(this.id,this.checked)"> Include engraved assembly labels</label>
+            <div class="hint">Engrave labeled strips on their inside face. Fully hinged strips use the separate guide.</div>
+            <div class="hint" id="letterSummary" aria-live="polite"></div>
+            <div class="hint" id="letterWarnings" role="alert" style="color:#b45309"></div>
+            <details open><summary>Wall editor and assembly map</summary>
+              <button class="btn btn-secondary" type="button" onclick="openLetterMap()">Open larger map</button>
+              <div class="hint">Blue: solid · Orange: hinge · Gray dashes: Auto. Click a strip or outline section.</div>
+              <div id="letterAssemblyView" style="overflow:auto;max-height:600px;background:white"></div>
+              <div class="hint" id="letterSelectedInfo" aria-live="polite"></div>
+              <label for="letterSectionChoice">Selected section</label>
+              <select class="dim-inp" id="letterSectionChoice" disabled onchange="setLetterSection(this.value)"><option value="auto">Auto</option><option value="solid">Solid</option><option value="hinge">Living Hinge</option></select>
+            </details>
+            <button class="btn btn-secondary" type="button" onclick="exportLetterGuide()">Export assembly guide (SVG)</button>
           </div>
           <div class="ctrl" id="shapedControls" style="display:none">
             <div id="snowmanEngravingControls" style="display:none;margin-bottom:8px"><label><input type="checkbox" id="snowmanEngraving" checked onchange="setSnowmanEngraving(this.checked)"> Engrave snowman details on lid</label></div>
@@ -8275,7 +8308,7 @@ and disclaimer.
           </div>
           
          
-          <div class="ctrl">
+          <div class="ctrl" id="widthGrp">
             <div class="ctrl-lbl"><strong id="lblW">Width (mm)</strong><span class="ctrl-val" id="valW">150.0 mm</span></div>
             <input type="range" id="sldW" min="20" max="400" step="0.5" value="150" oninput="onDimSlider('W', this.value)">
             <input class="dim-inp" id="inW" type="number" step="0.5" style="margin-top:4px" oninput="onDimInput('W', this.value)">
@@ -8785,7 +8818,7 @@ const DEFAULTS = {
   wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
   woodSpecies:'birch', woodGrainAngle:90,
   workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
-  letter:'A',
+  letter:'A', letterWallMode:'auto', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false, letterOverrides:{},
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
@@ -8799,6 +8832,8 @@ const DEFAULTS = {
   colWeights: [1], rowWeights: [1],
   drawer: false, drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerHoleShape: 'round', drawerHoleSize: 16,
+  notePreset: 'none',
+  noteCutawaySize: 50,
   drawerPull: 0, // 0 = closed, 1 = fully pulled out
   slidePull: 0, // slide-in lid panel: 0 = closed, 1 = fully slid out (view-only)
   slipLift: 0, // slip-on lid: 0 = on the box, 1 = fully lifted off (view-only)
@@ -8981,9 +9016,15 @@ function setGenerator(g) {
 }
 
 function setBoxShape(shape) {
-  if (!['standard', 'heart', 'cross', 'star', 'snowman', 'letter'].includes(shape) || shape === state.shape) return;
+  if (!['standard', 'sticky', 'heart', 'cross', 'star', 'snowman', 'letter'].includes(shape) || shape === state.shape) return;
   pushHistoryNow();
   state.shape = shape;
+  if (shape === 'sticky') {
+    state.generator = 'box'; state.wallStyle = 'panels'; state.sides = 4;
+    syncInputs();
+    applyNotePreset(true);
+    return;
+  }
   if (shape === 'cross') state.D = state.W * 1.5;
   if (shape === 'star') state.D = state.W;
   if (shape === 'snowman') state.D = state.W*1.6;
@@ -9126,7 +9167,126 @@ function letterSectionPath(contour) {
   const path=letterWallPath(contour),longest=path.segments.reduce((a,b)=>a.length>b.length?a:b),origin=longest.start+longest.length/2;
   return {...path,at:x=>path.at(origin+x),segments:path.segments.map(seg=>({...seg,start:((seg.start-origin)%path.total+path.total)%path.total}))};
 }
+// Letter walls use one arc-length coordinate for cuts, slots, editing and assembly.
+let letterAssembly=null, letterSelectedWall=0, letterSelectedSection=null, letterKerfErrors=[];
+function letterKerfContour(points,delta){
+  const C=window.ClipperLib,scale=10000,offset=new C.ClipperOffset(4,0.01*scale),out=[];
+  const positive=signedPolyArea(points)>0?points:points.slice().reverse();
+  offset.AddPath(positive.map(([x,y])=>({X:Math.round(x*scale),Y:Math.round(y*scale)})),C.JoinType.jtMiter,C.EndType.etClosedPolygon);
+  offset.Execute(out,delta*scale);
+  if(out.length!==1){letterKerfErrors.push('Letter feature collapses under kerf compensation. Increase letter size or reduce kerf.');return positive.map(p=>p.slice());}
+  return out[0].map(p=>[p.X/scale,p.Y/scale]);
+}
+function letterSections(path,T,ring) {
+  const pad=Math.max(T,state.livingPitch*1.5),zones=[];
+  path.segments.forEach((s,i,all)=>{
+    const p=all[(i+all.length-1)%all.length];
+    const dot=((p.b[0]-p.a[0])*(s.b[0]-s.a[0])+(p.b[1]-p.a[1])*(s.b[1]-s.a[1]))/(p.length*s.length);
+    if(Math.acos(Math.max(-1,Math.min(1,dot)))<0.001)return;
+    for(const shift of [-path.total,0,path.total]){
+      const a=Math.max(0,s.start+shift-pad),b=Math.min(path.total,s.start+shift+pad);
+      if(b>a)zones.push([a,b]);
+    }
+  });
+  zones.sort((a,b)=>a[0]-b[0]);const merged=[];
+  for(const z of zones){const last=merged.at(-1);if(last&&z[0]<=last[1]+state.livingPitch)last[1]=Math.max(last[1],z[1]);else merged.push(z.slice());}
+  const sections=[];let cursor=0;
+  const add=(a,b,bend)=>{if(b-a>1e-6)sections.push({a,b,bend,id:ring+':'+sections.length});};
+  for(const [a,b] of merged){add(cursor,a,false);add(a,b,true);cursor=b;}add(cursor,path.total,false);
+  const key=[state.letter,state.W,state.D,T,state.livingPitch].join('|');
+  for(const s of sections){s.key=key+'|'+s.id;s.choice=(state.letterOverrides||{})[s.key]||'auto';s.hinge=state.letterWallMode==='living'||(state.letterWallMode==='manual'&&s.choice!=='auto'?s.choice==='hinge':s.bend);}
+  return sections;
+}
+function letterOptimizedRanges(path,hard,sections,T){
+  // Keep the minimum bed-constrained piece count; prefer a straight seam when feasible.
+  const limit=Math.max(10,Math.max(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN-state.kerf-0.2),ends=[0,...hard.filter(x=>x>0.01&&x<path.total-0.01).sort((a,b)=>a-b),path.total],out=[];
+  for(let i=1;i<ends.length;i++){
+    const a=ends[i-1],b=ends[i],count=Math.ceil((b-a)/limit);let from=a;
+    for(let k=1;k<count;k++){
+      const lo=Math.max(from+Math.max(4*T,8),b-(count-k)*limit),hi=Math.min(from+limit,b-(count-k)*Math.max(4*T,8)),ideal=a+(b-a)*k/count;
+      const candidates=sections.filter(s=>!s.bend&&s.b-s.a>4*T).map(s=>Math.max(lo,s.a+2*T)<=Math.min(hi,s.b-2*T)?Math.max(Math.max(lo,s.a+2*T),Math.min(ideal,Math.min(hi,s.b-2*T))):null).filter(x=>x!==null);
+      const cut=candidates.sort((x,y)=>Math.abs(x-ideal)-Math.abs(y-ideal))[0]??Math.max(b-(count-k)*limit,Math.min(from+limit,ideal));
+      out.push([from,cut]);from=cut;
+    }out.push([from,b]);
+  }return out;
+}
+function setLetterOption(key,value){pushHistoryNow();state[key]=value;rebuild();}
+function selectLetterSection(id,wall){letterSelectedSection=id;letterSelectedWall=wall;renderLetterAssembly();}
+function setLetterSection(choice){
+  const s=letterAssembly?.sections.find(s=>s.key===letterSelectedSection);if(!s)return;
+  pushHistoryNow();state.letterOverrides={...(state.letterOverrides||{}),[s.key]:choice};state.letterWallMode='manual';rebuild();
+}
+function letterSample(path,a,b){const n=Math.max(2,Math.ceil((b-a)/1.5));return Array.from({length:n+1},(_,i)=>{const p=path.at(a+(b-a)*i/n);return [p.x,p.z];});}
+function finalizeLetterAssembly(result){
+  const walls=result.panels.filter(p=>p.assembly);if(!walls.length)return;
+  walls.forEach((p,i)=>{p.assembly={...p.assembly,id:'W'+(i+1)};p.name=p.assembly.id+' '+p.name;});
+  const sections=[...new Map(walls.flatMap(p=>p.assembly.sections).map(s=>[s.key,s])).values()];
+  letterAssembly={walls,sections,dims:result.dims};
+  result.dims.letterValidation=[...new Set(result.dims.letterKerfErrors||[])];
+  if(sections.some(s=>s.bend&&!s.hinge))result.dims.letterValidation.push('Solid selection crosses a bend. Change it to Living Hinge or Auto before exporting.');
+  for(const p of walls){
+    if(!p.cut.every(q=>q.every(Number.isFinite)))result.dims.letterValidation.push(p.assembly.id+': invalid cut coordinates.');
+    if(p.assembly.sections.some(s=>s.hinge&&s.b>p.assembly.start&&s.a<p.assembly.end)&&!p.openCuts.length)result.dims.letterValidation.push(p.assembly.id+': no room for hinge cuts. Increase wall height or adjust hinge spacing.');
+  }
+  for(const p of walls){
+    const a=p.assembly,T=result.dims.T,lo=p.minY+Math.max(T,2),hi=p.maxY-Math.max(T,2);
+    // Place text only in a solid rectangle clear of every slit and critical edge.
+    p.assemblyLabel=null;
+    if(hi-lo<3)continue;
+    for(const s of a.sections){
+      if(s.hinge)continue;const left=Math.max(3,s.a-a.start-0.15+2),right=Math.min(p.flex.width-3,s.b-a.start-0.15-2);
+      if(right-left>=12){p.assemblyLabel={text:a.id+' >',x:(left+right)/2,y:(lo+hi)/2};break;}
+    }
+  }
+  renderLetterAssembly();
+}
+function letterAssemblySVG(print=false){
+  if(!letterAssembly)return '';
+  const {walls,dims:d}=letterAssembly,W=Math.max(d.ow+30,...walls.map(p=>p.flex.width+30)),top=d.od+40,H=top+walls.length*30+45;
+  let body='<rect width="100%" height="100%" fill="white"/><g font-family="sans-serif" fill="#222"><text x="10" y="10" font-size="5">Letter '+state.letter+' — assembly guide (mm)</text>';
+  const pathText=(points)=>ptsToPath(points,false);
+  walls.forEach((p,i)=>{
+    const a=p.assembly,selected=!print&&i===letterSelectedWall,offX=d.ow/2+15,offY=d.od/2+25,transform=points=>points.map(([x,y])=>[x+offX,y+offY]);
+    for(const s of a.sections){
+      const from=Math.max(a.start,s.a),to=Math.min(a.end,s.b);if(to<=from)continue;
+      const color=s.hinge?'#e87916':'#2563eb',click=print?'':` tabindex="0" role="button" aria-label="${a.id} ${s.hinge?'hinge':'solid'} section" onclick="selectLetterSection('${s.key}',${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectLetterSection('${s.key}',${i})}"`;
+      body+=`<path d="${pathText(transform(letterSample(a.path,from,to)))}" fill="none" stroke="${color}" stroke-width="${selected?2:1}"${click}/>`;
+      if(!print)body+=`<path d="${pathText(transform(letterSample(a.path,from,to)))}" fill="none" stroke="transparent" stroke-width="5"${click}/>`;
+      if(!print&&s.choice==='auto')body+=`<path d="${pathText(transform(letterSample(a.path,from,to)))}" fill="none" stroke="#888" stroke-width="0.35" stroke-dasharray="1 2" pointer-events="none"/>`;
+      const start=a.path.at(from);body+=`<circle cx="${start.x+offX}" cy="${start.z+offY}" r="0.7" fill="#222" pointer-events="none"/>`;
+      body+=`<rect x="${15+from-a.start}" y="${top+i*30}" width="${to-from}" height="8" fill="${color}" stroke="${selected?'#111':'white'}" stroke-width="0.4"${click}/>`;
+    }
+    const start=a.path.at(a.start),end=a.path.at(a.end),next=a.path.at(a.start+Math.min(8,(a.end-a.start)/3));
+    if(print||state.letterNumbers!==false)body+=`<text x="${start.x+offX+2}" y="${start.z+offY-2}" font-size="3.5">${a.id} A</text>`;
+    if(print||state.letterArrows!==false){const dx=next.x-start.x,dy=next.z-start.z,L=Math.hypot(dx,dy)||1;body+=`<path d="M${start.x+offX},${start.z+offY} L${next.x+offX},${next.z+offY} l${-3*dx/L+1.5*dy/L},${-3*dy/L-1.5*dx/L} m${3*dx/L-1.5*dy/L},${3*dy/L+1.5*dx/L} l${-3*dx/L-1.5*dy/L},${-3*dy/L+1.5*dx/L}" fill="none" stroke="#111" stroke-width="0.6"/><circle cx="${end.x+offX}" cy="${end.z+offY}" r="1.2" fill="white" stroke="#111"/><text x="${end.x+offX+2}" y="${end.z+offY+4}" font-size="3">${a.id} B</text>`;}
+    body+=`<text x="15" y="${top+i*30-3}" font-size="3.5">${print||state.letterNumbers!==false?a.id+' — ':''}A → B · ${p.flex.width.toFixed(2)} mm · height ${(p.flex.yMax!=null?p.flex.yMax-p.flex.yMin:d.oh).toFixed(2)} mm · ${a.inner?'inner':'outer'} loop ${a.ring+1}</text><text x="15" y="${top+i*30+13}" font-size="3">Perimeter ${a.start.toFixed(2)}–${a.end.toFixed(2)}; 0.30 mm seam allowance${p.flex.yMin!=null?'; height band '+p.flex.yMin.toFixed(1)+'–'+p.flex.yMax.toFixed(1):''}</text>`;
+  });
+  body+=`<text x="10" y="${H-23}" font-size="3.5">Blue: solid. Orange: hinge. Gray dashes: Auto. A: start; B: finish.</text><text x="10" y="${H-16}" font-size="3.5">View from above. Keep the bottom fingers down; follow each loop's arrow.</text><text x="10" y="${H-9}" font-size="3.5">Dry-fit and test material first. Glue wall seams. Guide is not a cutting file.</text></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}" style="max-width:100%;height:auto">${body}</svg>`;
+}
+function renderLetterAssembly(){
+  if(!letterAssembly||!$('letterAssemblyView'))return;
+  const {walls,sections,dims:d}=letterAssembly;
+  $('letterWallMode').value=state.letterWallMode||'auto';
+  for(const key of ['letterNumbers','letterArrows','letterEngrave','letterMinimize'])$(key).checked=state[key]??key!=='letterEngrave';
+  $('letterSummary').textContent=`${state.letter} · ${walls.length} wall pieces · ${sections.filter(s=>!s.hinge).length} solid sections · ${sections.filter(s=>s.hinge).length} hinge regions · Labels ${state.letterEngrave?'enabled':'disabled'}`;
+  const warnings=[];
+  if(sections.some(s=>s.bend&&!s.hinge))warnings.push('Solid override crosses a bend. Use Living Hinge or Auto; this section cannot follow the outline rigidly.');
+  if(d.letterWarn)warnings.push(d.letterWarn);
+  warnings.push(...(d.letterValidation||[]).filter(w=>!w.startsWith('Solid selection')));
+  if(state.letterEngrave&&walls.some(p=>!p.assemblyLabel))warnings.push('Some strips have no safe solid label area. Their references are in the assembly guide; engraving is omitted.');
+  $('letterWarnings').textContent=warnings.join(' ');
+  $('letterAssemblyView').innerHTML=letterAssemblySVG();
+  if($('letterMapDialog')?.open)$('letterLargeMap').innerHTML=letterAssemblySVG();
+  const s=sections.find(s=>s.key===letterSelectedSection),p=walls[letterSelectedWall];
+  $('letterSectionChoice').disabled=!s;$('letterSectionChoice').value=s?.choice||'auto';
+  $('letterSelectedInfo').textContent=p?`${p.assembly.id}: ${p.flex.width.toFixed(2)} mm; ${p.assembly.sections.filter(s=>s.hinge&&s.b>p.assembly.start&&s.a<p.assembly.end).length} hinge regions. ${s?'Selected section: '+(s.b-s.a).toFixed(2)+' mm.':'Select a colored section to edit.'}`:'';
+}
+function openLetterMap(){ $('letterLargeMap').innerHTML=letterAssemblySVG();$('letterMapDialog').showModal(); }
+function exportLetterGuide(){generatePanels();download(letterAssemblySVG(true),'image/svg+xml','letter-'+state.letter+'-assembly.svg');}
+
 function generateLetterPanels(d) {
+  letterKerfErrors=[];
   const glyph=LETTER_GLYPHS[state.letter || 'A'],T=d.T,H=d.oh;
   // Preserve the glyph's proportions while fitting the selected width/depth envelope.
   const scale=Math.min(d.ow/glyph.w,d.od/glyph.h),raw=glyph.contours.map(c=>cleanPoly(c.map(([x,y])=>[x*scale,y*scale])));
@@ -9139,7 +9299,7 @@ function generateLetterPanels(d) {
   d.letterArea=Math.abs(storage.reduce((sum,p)=>sum+signedPolyArea(p),0));d.living=true;d.letter=true;
   let outerWalls=0,innerWalls=0;
   for(let ringIndex=0;ringIndex<neutral.length;ringIndex++){
-    const contour=neutral[ringIndex],path=letterSectionPath(contour),inner=signedPolyArea(contour)<0,hardCorners=neutral.rounded?[]:livingHardCorners(solid,path,T,!inner),ranges=livingWallRanges(path.total,hardCorners),count=ranges.length;
+    const contour=neutral[ringIndex],path=letterSectionPath(contour),inner=signedPolyArea(contour)<0,hardCorners=neutral.rounded?[]:livingHardCorners(solid,path,T,!inner),sections=letterSections(path,T,ringIndex),ranges=state.letterMinimize!==false&&state.letterWallMode!=='living'?letterOptimizedRanges(path,hardCorners,sections,T):livingWallRanges(path.total,hardCorners),count=ranges.length;
     if(inner)innerWalls+=count;else outerWalls+=count;
     for(let part=0;part<count;part++) {
       const [start,end]=ranges[part],width=end-start-0.3,seam=0.3;
@@ -9177,15 +9337,17 @@ function generateLetterPanels(d) {
       tabs.sort((a,b)=>a.a-b.a);
       if(tabs.length<2)d.letterWarn='A wall section cannot fit two top and bottom attachment fingers at this size. Increase letter size or reduce material thickness.';
       const endMargin=Math.min(6,Math.max(2*state.kerf+0.5,Math.min(T,width/6)));
-      const span=width-2*endMargin,columns=Math.max(1,Math.ceil(span/state.livingPitch)),pitch=span/columns,amplitude=livingCutAmplitude(pitch),bridge=Math.max(state.livingBridge,2*state.kerf+0.5);let cut=0;
+      const span=width-2*endMargin,columns=Math.max(1,Math.floor(span/Math.max(state.livingPitch,2*state.kerf+0.6))),pitch=span/columns,amplitude=livingCutAmplitude(pitch),bridge=Math.max(state.livingBridge,2*state.kerf+0.5);let cut=0;
       if(H-2*T-bridge>=2&&span>0)for(let i=0;i<columns;i++){
         const x=endMargin+(i+0.5)*pitch,atTab=tabs.some(t=>x>=t.a-0.5-amplitude&&x<=t.b+0.5+amplitude);
+        const distance=start+x+seam/2;
+        if(!sections.some(s=>s.hinge&&distance-amplitude>=s.a&&distance+amplitude<=s.b))continue;
         // Under plate fingers, retain both edge rails and use an internal flex slit.
         // Skipping the entire lane would leave a rigid patch across the bend.
         const bottom=cut%2===0,low=atTab?T+bridge:bottom?T:T+bridge,high=atTab?H-T-bridge:bottom?H-T-bridge:H-T;
         if(high-low>=2)openCuts.push(livingHingeCut(x,low,high,pitch,T,cut++));
       }
-      defs.push({name:'Letter '+state.letter+' '+(inner?'inner':'outer')+' wall '+(ringIndex+1)+'-'+(part+1),role:'living-wrap',outline:tabs.length?tabbedWallOutline(width,H,T,null,null,tabs,tabs):[[0,T],[width,T],[width,H-T],[0,H-T]],openCuts,flex:{path:localPath,seam,tabs,width}});
+      defs.push({name:'Letter '+state.letter+' '+(inner?'inner':'outer')+' wall '+(ringIndex+1)+'-'+(part+1),role:'living-wrap',assembly:{ring:ringIndex,inner,start,end,path,sections},outline:tabs.length?tabbedWallOutline(width,H,T,null,null,tabs,tabs):[[0,T],[width,T],[width,H-T],[0,H-T]],openCuts,flex:{path:localPath,seam,tabs,width}});
     }
   }
   const insert=letterClipPaths(solid,-rimWidth-(state.shapedLidFit ?? 0.4));
@@ -9206,10 +9368,11 @@ function generateLetterPanels(d) {
   d.poly={verts:letterParts(solid)[0].outline};d.sides=4;
   if(!neutral.length||!storage.length)d.letterWarn='This letter is too small for the current material and rim width. Increase letter size or reduce material thickness.';
   const panels=defs.map(def=>{
-    const outline=def.outline,cut=offsetPoly(outline,state.kerf/2,4),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
+    const outline=def.outline,cut=letterKerfContour(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    return {...def,svgYDown:!!def.poly&&(true),cut,holes:(def.holes||[]).map(h=>offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2,4)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
+    return {...def,svgYDown:!!def.poly&&(true),cut,holes:(def.holes||[]).map(h=>letterKerfContour(h,-state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
+  d.letterKerfErrors=letterKerfErrors.slice();
   $('letterInfo').textContent=state.letter+' · '+outerWalls+' outer / '+innerWalls+' inner walls';
   $('livingInfo').textContent=panels.filter(p=>p.flex).reduce((n,p)=>n+p.openCuts.length,0)+' hinge cuts';
   return {panels,dims:d};
@@ -9266,8 +9429,12 @@ function updateShapeUI() {
   $('shapedLidLift').value = Math.round((state.pullLift || 0)*100);
   $('shapedLidLiftVal').textContent = Math.round((state.pullLift || 0)*100)+'%';
   $('shapeControls').style.display = frame ? 'none' : '';
+  $('notePresetControls').style.display = state.shape === 'sticky' && !frame ? '' : 'none';
+  $('noteCutawayControls').style.display = state.shape === 'sticky' && !frame ? '' : 'none';
+  $('widthGrp').style.display = state.shape === 'sticky' && !frame ? 'none' : '';
+  $('depthGrp').style.display = state.shape === 'sticky' && !frame ? 'none' : '';
   $('shapedControls').style.display = shaped ? '' : 'none';
-  $('wallCountControls').style.display = frame || shaped ? 'none' : '';
+  $('wallCountControls').style.display = frame || shaped || state.shape === 'sticky' ? 'none' : '';
   ['s-lid', 's-drawer', 's-feet'].forEach(id => { $(id).style.display = frame || shaped ? 'none' : ''; });
   $('s-div').style.display = shaped ? 'none' : '';
   $('fingerLengthControls').style.display = shaped ? 'none' : '';
@@ -9277,7 +9444,7 @@ function updateShapeUI() {
 }
 function updateGeneratorUI() {
   const isFrame = state.generator === 'frame';
-  if ($('wallCountControls')) $('wallCountControls').style.display = isFrame ? 'none' : '';
+  if ($('wallCountControls')) $('wallCountControls').style.display = isFrame || state.shape === 'sticky' ? 'none' : '';
   if ($('sidesHint')) $('sidesHint').style.display = isFrame ? 'none' : '';
   if ($('frameControls')) $('frameControls').style.display = isFrame ? '' : 'none';
   // Hide lid / drawer in frame mode. Dividers stay available.
@@ -9306,6 +9473,45 @@ function setLid(l) {
   state.lid = l;
   syncLidControls();
   rebuild();
+}
+
+function applyNotePreset(skipHistory = false) {
+  const style = $('notePreset').value;
+  const padW = 76.2, padD = 76.2; // common 3 × 3 in sticky-note pad
+  const T = state.T || 3;
+  const lid = style === 'covered' ? 'slip' : style === 'popup' ? 'slide' : 'none';
+  if (!skipHistory) pushHistoryNow();
+  Object.assign(state, {
+    generator: 'box', shape: 'standard', sides: 4, wallStyle: 'panels',
+    drawer: false, divCols: 1, divRows: 1, colWeights: [1], rowWeights: [1],
+    notePreset: style, lid,
+    W: padW + 6 + (state.mode === 'inside' ? 0 : 2 * T),
+    D: padD + 6 + (state.mode === 'inside' ? 0 : 2 * T),
+    H: (style === 'open' ? 20 : style === 'covered' ? 35 : 32) + (state.mode === 'inside' ? 0 : T),
+    lidH: 12, slideDir: 'front', slideBorder: 8, slideThickness: null,
+    slidePull: 0, slipLift: 0, pullLift: 0, hingeOpen: 0, assembly: 1,
+  });
+  $('notePresetHint').textContent = style === 'popup'
+    ? 'Uses a 52 × 9 mm top slot. Requires 3 × 3 in accordion-style pop-up refills; ordinary pads will not feed one sheet at a time.'
+    : 'Sized for a 3 × 3 in pad with 3 mm clearance per side (about 3.5 in outside at 3 mm material).';
+  syncInputs();
+  updateGeneratorUI();
+  rebuild();
+}
+
+function onNoteCutaway(value) {
+  const n = Math.max(0, Math.min(100, Number(value)));
+  if (!Number.isFinite(n)) return;
+  pushHistory();
+  state.noteCutawaySize = n;
+  if ($('noteCutawaySizeVal')) $('noteCutawaySizeVal').textContent = noteCutawayDimensions().label;
+  rebuild();
+}
+
+function noteCutawayDimensions() {
+  const size = Math.max(0, Math.min(100, Number(state.noteCutawaySize ?? 50)));
+  return { width: 34 + 0.46 * size, depth: 10 + 0.2 * size,
+    label: `${fmtLen(34 + 0.46 * size, 0, 1)} × ${fmtLen(10 + 0.2 * size, 0, 1)}` };
 }
 
 function onPullClear(v) {
@@ -9868,6 +10074,9 @@ function syncInputs() {
   syncWoodPreview();
   syncSelections();
   syncWorkspaceUI();
+  if ($('notePreset')) $('notePreset').value = state.notePreset === 'none' ? 'open' : state.notePreset;
+  if ($('noteCutawaySize')) $('noteCutawaySize').value = state.noteCutawaySize ?? 50;
+  if ($('noteCutawaySizeVal')) $('noteCutawaySizeVal').textContent = noteCutawayDimensions().label;
   const inch = state.unit === 'in';
   $('inW').value = numDisp(state.W);
   $('inH').value = numDisp(state.H);
@@ -11897,7 +12106,7 @@ function splitTallLivingWalls(result) {
   }
   return {...result,panels:output};
 }
-function generatePanels(){return splitTallLivingWalls(generatePanelsUnbounded());}
+function generatePanels(){const result=splitTallLivingWalls(generatePanelsUnbounded());if(state.shape==='letter')finalizeLetterAssembly(result);return result;}
 
 function generatePanelsUnbounded() {
   if (!hingeActive() || !state.hingeSide || state.hingeSide === 'back') return generatePanelsBase();
@@ -12694,6 +12903,13 @@ function generatePanelsBase(d = dims()) {
 
     // Hinged lid: ring + pivot hole on the Left/Right walls, finger-tab notch in the Front wall
     let extraHoles = [];
+    if (def.role === 'slide-panel' && state.notePreset === 'popup') {
+      const slotW = Math.min(52, def.w - 2 * T), slotH = 9;
+      if (slotW > 10 && def.h > slotH + 10) {
+        const x0 = (def.w - slotW) / 2, y0 = (def.h - slotH) / 2;
+        extraHoles.push([[x0, y0], [x0 + slotW, y0], [x0 + slotW, y0 + slotH], [x0, y0 + slotH]]);
+      }
+    }
     if (hinge && d.hinge) {
       const g = d.hinge;
       if (def.role === 'left' || def.role === 'right') {
@@ -12705,6 +12921,29 @@ function generatePanelsBase(d = dims()) {
       } else if (def.role === 'front') {
         const nt = addTopNotch(outline, def.h, def.w / 2, g.notchW, T);
         if (nt.ok) outline = nt.outline;
+      }
+    }
+
+    // Sticky-note access notch: a smooth semicircular scoop into the front wall.
+    // Apply it before the existing bottom-edge foot relief so both features remain usable.
+    if (state.shape === 'sticky' && def.role === 'front') {
+      const topY = def.h;
+      const maxWidth = Math.max(0, def.w - 2 * T);
+      const notchSize = noteCutawayDimensions();
+      const notchW = Math.min(maxWidth, notchSize.width);
+      const notchD = Math.min(Math.max(1, def.h - T - 0.5), notchSize.depth);
+      if (notchW >= 10 && notchD >= 1) {
+        const x0 = (def.w - notchW) / 2, x1 = x0 + notchW;
+        const notch = insertOnTopEdge(outline, topY, x0, x1, () => {
+          const points = [];
+          const steps = 32;
+          for (let i = 0; i <= steps; i++) {
+            const a = Math.PI + Math.PI * i / steps;
+            points.push([(x0 + x1) / 2 + notchW / 2 * Math.cos(a), topY + notchD * Math.sin(a)]);
+          }
+          return points;
+        });
+        if (notch.ok) outline = notch.outline;
       }
     }
 
@@ -12982,7 +13221,7 @@ function refreshMaterialView(){
     if(materialNestingActive)cancelMaterialNesting();
     const group=e.target.closest('[data-material-part]');if(!group)return;
     const key=group.getAttribute('data-material-part'),p=layout.placed.find(p=>p.materialKey===key);if(!p)return;
-    selectedMaterialKey=key;svg.querySelectorAll('[data-material-part]').forEach(g=>g.classList.toggle('selected',g===group));updateMaterialSelection();
+    selectedMaterialKey=key;if(p.assembly){letterSelectedWall=letterAssembly.walls.findIndex(w=>w.assembly.id===p.assembly.id);renderLetterAssembly();}svg.querySelectorAll('[data-material-part]').forEach(g=>g.classList.toggle('selected',g===group));updateMaterialSelection();
     materialDrag={pointer:e.pointerId,group,p,start:point(e),x:p.ox,y:p.oy,next:null};group.classList.add('dragging');svg.setPointerCapture(e.pointerId);e.preventDefault();
   });
   svg.addEventListener('pointermove',e=>{
@@ -13067,6 +13306,7 @@ function svgPanelPoint(p,x,y) {
 function svgSheetResult(showLabels,compact,solid,hingeGap) {
   const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,compact);
   if(layout.oversized.length)return {svg:'',svgs:[],totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length,error:'Parts exceed the material sheet: '+layout.oversized.map(p=>p.name).join(', ')+'. Reduce box dimensions.'};
+  if(state.shape==='letter'&&d.letterValidation?.length)return {svg:'',svgs:[],error:d.letterValidation.join(' ')};
   const svgs=layout.sheets.map(sheet=>solid?renderSolidSVGPage(sheet.placed,d,hingeGap):renderLaserSVGPage(sheet.placed,showLabels));
   return {svg:svgs[0]||'',svgs,sheetCount:svgs.length,sheets:layout.sheets,totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length};
 }
@@ -13143,7 +13383,11 @@ function renderLaserSVGPage(placed,showLabels) {
       const isOpen = e.length === 2;
       engraves += `    <path d="${ptsToPath(es, !isOpen)}" fill="none" stroke="#0000ff" stroke-width="0.1"/>\n`;
     }
-    if (showLabels) {
+    if(state.letterEngrave&&p.assemblyLabel){
+      const label=p.assemblyLabel,[x,y]=svgPanelPoint(p,label.x,label.y);
+      engraves+=`<g id="assembly-${p.assembly.id}" data-operation="engrave"><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="2" fill="#0000ff" transform="rotate(${90*(p.rotation??(p.rotated?1:0))} ${x} ${y})">${label.text.replace('>','&gt;')}</text></g>`;
+    }
+    if (showLabels && !p.assembly) {
       const fs = Math.max(0.4,Math.min(1.8,(p.packedW||p.bboxW)/(Math.max(1,p.name.length)*0.6)));
       labels += `    <text x="${(p.ox + (p.rotated?p.bboxH:p.bboxW) / 2).toFixed(2)}" y="${(p.oy + (p.rotated?p.bboxW:p.bboxH) / 2).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs.toFixed(1)}" fill="#0000ff" font-family="sans-serif">${p.name}</text>\n`;
     }
@@ -13995,14 +14239,14 @@ function refreshSVGPreview() {
   const result=currentSVGExport(),select=$('svgSheet'),page=Math.max(0,Math.min(Number(select.value)||0,(result.svgs||[]).length-1));
   select.innerHTML=(result.svgs||[]).map((_,i)=>'<option value="'+i+'">'+(i+1)+'</option>').join('');select.value=page;
   $('btnDownloadSVG').disabled=!!result.error;$('btnDownloadSVGAll').disabled=!!result.error;
-  if(result.error){$('svgPreviewArea').textContent=result.error;$('optInfo').textContent='Oversized parts';return;}
+  if(result.error){$('svgPreviewArea').textContent=result.error;$('optInfo').textContent='Export needs attention';return;}
   $('svgPreviewArea').innerHTML=(result.svgs[page]||'').replace(/^<\?xml[^>]*>\s*/,'');
   $('optInfo').textContent='Sheet '+(page+1)+' / '+result.sheetCount+' · '+fmtLen(state.materialWidth,0,2)+' × '+fmtLen(state.materialHeight,0,2)+' · '+(result.sheets[page].material==='lid'?'Lid material':'Box material');
 }
 
 function fileBase() {
   const d = dims();
-  const prefix = state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
+  const prefix = state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : state.shape==='sticky' ? 'jackintheshop_sticky_notes' : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
   return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
@@ -14036,7 +14280,7 @@ function downloadSVGAll() {
   const files=result.svgs.map((svg,i)=>({name:base+'_sheet-'+String(i+1).padStart(2,'0')+'.svg',svg}));
   download(zipSVGFiles(files),'application/zip',base+'_sheets.zip');
 }
-function downloadDXF() { download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
+function downloadDXF() { if(state.shape==='letter'){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
   pushHistoryNow();
