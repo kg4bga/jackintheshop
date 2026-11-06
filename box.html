@@ -8183,7 +8183,7 @@ and disclaimer.
   </style>
 </head>
 <body>
-  <dialog id="letterMapDialog"><button class="btn btn-secondary" onclick="document.getElementById('letterMapDialog').close()">Close map</button><p>Click a section to select it. Close this map to change its classification in the letter controls.</p><div id="letterLargeMap"></div></dialog>
+  <dialog id="letterMapDialog"><button class="btn btn-secondary" onclick="document.getElementById('letterMapDialog').close()">Close map</button><p>Click a section to highlight its matching wall strip.</p><div id="letterLargeMap"></div></dialog>
   
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
@@ -8267,10 +8267,8 @@ and disclaimer.
             <label class="ctrl-lbl" for="letterInput">Capital letter (A–Z)</label>
             <input class="dim-inp" id="letterInput" type="text" maxlength="1" value="A" autocapitalize="characters" autocomplete="off" spellcheck="false" style="font-size:26px;text-transform:uppercase;text-align:center" oninput="setLetterBox(this)">
             <div class="hint" id="letterInfo"></div>
-            <label class="ctrl-lbl" for="letterWallMode">Wall construction mode</label>
-            <select id="letterWallMode" class="dim-inp" onchange="setLetterOption('letterWallMode',this.value)">
-              <option value="auto">Automatic hybrid walls</option><option value="living">Living hinges only</option><option value="manual">Manual wall selection</option>
-            </select>
+            <div class="hint">Automatic hybrid walls</div>
+            <div id="letterHingeControls"></div>
             <label style="display:block"><input id="letterMinimize" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Minimize wall pieces</label>
             <label style="display:block"><input id="letterNumbers" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Show wall piece numbers</label>
             <label style="display:block"><input id="letterArrows" type="checkbox" checked onchange="setLetterOption(this.id,this.checked)"> Show starting points and arrows</label>
@@ -8278,13 +8276,11 @@ and disclaimer.
             <div class="hint">Engrave labeled strips on their inside face. Fully hinged strips use the separate guide.</div>
             <div class="hint" id="letterSummary" aria-live="polite"></div>
             <div class="hint" id="letterWarnings" role="alert" style="color:#b45309"></div>
-            <details open><summary>Wall editor and assembly map</summary>
+            <details open><summary>Wall assembly map</summary>
               <button class="btn btn-secondary" type="button" onclick="openLetterMap()">Open larger map</button>
               <div class="hint">Blue: solid · Orange: hinge · Gray dashes: Auto. Click a strip or outline section.</div>
               <div id="letterAssemblyView" style="overflow:auto;max-height:600px;background:white"></div>
               <div class="hint" id="letterSelectedInfo" aria-live="polite"></div>
-              <label for="letterSectionChoice">Selected section</label>
-              <select class="dim-inp" id="letterSectionChoice" disabled onchange="setLetterSection(this.value)"><option value="auto">Auto</option><option value="solid">Solid</option><option value="hinge">Living Hinge</option></select>
             </details>
             <button class="btn btn-secondary" type="button" onclick="exportLetterGuide()">Export assembly guide (SVG)</button>
           </div>
@@ -8356,6 +8352,7 @@ and disclaimer.
             <select class="dim-inp" id="wallStyle" onchange="setWallStyle(this.value)"><option value="panels">Panel walls</option><option value="living">Living hinge wrap</option></select>
             <div class="hint">Rectangle, heart, or snowman.</div>
           </div>
+          <div id="livingControlsHome"></div>
           <div id="livingControls" style="display:none">
             <div class="ctrl">
               <label class="ctrl-lbl" for="livingDesign">Living hinge design</label>
@@ -8370,7 +8367,9 @@ and disclaimer.
                 <option value="meander">Square meander</option>
                 <option value="brick">Brick steps</option>
               </select>
-              <div class="hint">Edge-reaching cuts; test first.</div>
+              <div id="livingPatternPreview" aria-label="Hinge cut pattern sample" style="margin-top:8px"></div>
+              <div class="hint" id="livingPatternDescription" style="white-space:normal"></div>
+              <div class="hint" style="white-space:normal">Pattern sample. On letter walls, cuts are applied only to hinge regions. Test flexibility on scrap.</div>
             </div>
             <div class="ctrl"><label class="ctrl-lbl" for="livingRadius" id="livingRadiusLabel">Corner radius (mm)</label><input class="dim-inp" type="number" id="livingRadius" min="8" max="60" step="0.5" onchange="setLivingSetting('livingRadius',this.value)"></div>
             <div class="ctrl"><label class="ctrl-lbl" for="livingPitch">Cut spacing (mm)</label><input class="dim-inp" type="number" id="livingPitch" min="1" max="5" step="0.1" onchange="setLivingSetting('livingPitch',this.value)"></div>
@@ -8818,7 +8817,7 @@ const DEFAULTS = {
   wallStyle:'panels', livingDesign:'straight', livingRadius:15, livingPitch:2, livingRepeat:12, livingBridge:2,
   woodSpecies:'birch', woodGrainAngle:90,
   workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
-  letter:'A', letterWallMode:'auto', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false, letterOverrides:{},
+  letter:'A', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false,
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
@@ -9194,7 +9193,7 @@ function letterSections(path,T,ring) {
   const add=(a,b,bend)=>{if(b-a>1e-6)sections.push({a,b,bend,id:ring+':'+sections.length});};
   for(const [a,b] of merged){add(cursor,a,false);add(a,b,true);cursor=b;}add(cursor,path.total,false);
   const key=[state.letter,state.W,state.D,T,state.livingPitch].join('|');
-  for(const s of sections){s.key=key+'|'+s.id;s.choice=(state.letterOverrides||{})[s.key]||'auto';s.hinge=state.letterWallMode==='living'||(state.letterWallMode==='manual'&&s.choice!=='auto'?s.choice==='hinge':s.bend);}
+  for(const s of sections){s.key=key+'|'+s.id;s.choice='auto';s.hinge=s.bend;}
   return sections;
 }
 function letterOptimizedRanges(path,hard,sections,T){
@@ -9212,10 +9211,6 @@ function letterOptimizedRanges(path,hard,sections,T){
 }
 function setLetterOption(key,value){pushHistoryNow();state[key]=value;rebuild();}
 function selectLetterSection(id,wall){letterSelectedSection=id;letterSelectedWall=wall;renderLetterAssembly();}
-function setLetterSection(choice){
-  const s=letterAssembly?.sections.find(s=>s.key===letterSelectedSection);if(!s)return;
-  pushHistoryNow();state.letterOverrides={...(state.letterOverrides||{}),[s.key]:choice};state.letterWallMode='manual';rebuild();
-}
 function letterSample(path,a,b){const n=Math.max(2,Math.ceil((b-a)/1.5));return Array.from({length:n+1},(_,i)=>{const p=path.at(a+(b-a)*i/n);return [p.x,p.z];});}
 function finalizeLetterAssembly(result){
   const walls=result.panels.filter(p=>p.assembly);if(!walls.length)return;
@@ -9267,7 +9262,6 @@ function letterAssemblySVG(print=false){
 function renderLetterAssembly(){
   if(!letterAssembly||!$('letterAssemblyView'))return;
   const {walls,sections,dims:d}=letterAssembly;
-  $('letterWallMode').value=state.letterWallMode||'auto';
   for(const key of ['letterNumbers','letterArrows','letterEngrave','letterMinimize'])$(key).checked=state[key]??key!=='letterEngrave';
   $('letterSummary').textContent=`${state.letter} · ${walls.length} wall pieces · ${sections.filter(s=>!s.hinge).length} solid sections · ${sections.filter(s=>s.hinge).length} hinge regions · Labels ${state.letterEngrave?'enabled':'disabled'}`;
   const warnings=[];
@@ -9279,8 +9273,7 @@ function renderLetterAssembly(){
   $('letterAssemblyView').innerHTML=letterAssemblySVG();
   if($('letterMapDialog')?.open)$('letterLargeMap').innerHTML=letterAssemblySVG();
   const s=sections.find(s=>s.key===letterSelectedSection),p=walls[letterSelectedWall];
-  $('letterSectionChoice').disabled=!s;$('letterSectionChoice').value=s?.choice||'auto';
-  $('letterSelectedInfo').textContent=p?`${p.assembly.id}: ${p.flex.width.toFixed(2)} mm; ${p.assembly.sections.filter(s=>s.hinge&&s.b>p.assembly.start&&s.a<p.assembly.end).length} hinge regions. ${s?'Selected section: '+(s.b-s.a).toFixed(2)+' mm.':'Select a colored section to edit.'}`:'';
+  $('letterSelectedInfo').textContent=p?`${p.assembly.id}: ${p.flex.width.toFixed(2)} mm; ${p.assembly.sections.filter(s=>s.hinge&&s.b>p.assembly.start&&s.a<p.assembly.end).length} hinge regions. ${s?'Selected section: '+(s.b-s.a).toFixed(2)+' mm.':'Select a colored section for details.'}`:'';
 }
 function openLetterMap(){ $('letterLargeMap').innerHTML=letterAssemblySVG();$('letterMapDialog').showModal(); }
 function exportLetterGuide(){generatePanels();download(letterAssemblySVG(true),'image/svg+xml','letter-'+state.letter+'-assembly.svg');}
@@ -9299,15 +9292,16 @@ function generateLetterPanels(d) {
   d.letterArea=Math.abs(storage.reduce((sum,p)=>sum+signedPolyArea(p),0));d.living=true;d.letter=true;
   let outerWalls=0,innerWalls=0;
   for(let ringIndex=0;ringIndex<neutral.length;ringIndex++){
-    const contour=neutral[ringIndex],path=letterSectionPath(contour),inner=signedPolyArea(contour)<0,hardCorners=neutral.rounded?[]:livingHardCorners(solid,path,T,!inner),sections=letterSections(path,T,ringIndex),ranges=state.letterMinimize!==false&&state.letterWallMode!=='living'?letterOptimizedRanges(path,hardCorners,sections,T):livingWallRanges(path.total,hardCorners),count=ranges.length;
+    const contour=neutral[ringIndex],path=letterSectionPath(contour),inner=signedPolyArea(contour)<0,hardCorners=neutral.rounded?[]:livingHardCorners(solid,path,T,!inner),sections=letterSections(path,T,ringIndex),ranges=state.letterMinimize!==false?letterOptimizedRanges(path,hardCorners,sections,T):livingWallRanges(path.total,hardCorners),count=ranges.length;
     if(inner)innerWalls+=count;else outerWalls+=count;
     for(let part=0;part<count;part++) {
       const [start,end]=ranges[part],width=end-start-0.3,seam=0.3;
       if(width<=Math.max(0.5,2*state.kerf)){d.letterWarn='Letter too small for its sharp-corner wall sections. Increase letter size or reduce material thickness.';continue;}
       const localPath={total:width+seam,at:x=>path.at(start+x),segments:[]},tabs=[],openCuts=[];
       const tabCount=Math.max(2,Math.floor(width/24)),tabWidth=Math.min(6,Math.max(3,1.5*T));
-      const addTab=(mid,w,curved=false)=>{
-        const a=mid-w/2,b=mid+w/2,margin=Math.min(6,Math.max(T,width*0.15));
+      const endInset=Math.max(T/2,state.kerf+0.6);
+      const addTab=(mid,w,curved=false,atEnd=false)=>{
+        const a=mid-w/2,b=mid+w/2,margin=atEnd?endInset-1e-8:Math.min(6,Math.max(T,width*0.15));
         if(a<margin||b>width-margin||tabs.some(t=>a<t.b+3&&b>t.a-3))return false;
         if(!curved&&!letterBendClear(path,start+a+seam/2,start+b+seam/2,Math.max(3,state.livingPitch*1.5)))return false;
         if(curved){
@@ -9320,6 +9314,17 @@ function generateLetterPanels(d) {
         if(!slot.every(p=>letterInside(p,solid)&&letterInside(p,rim)))return false;
         tabs.push({a,b});slots.push(slot);return true;
       };
+      // Reserve both end anchors before distributing intermediate fingers.
+      // Opposing slots across a seam retain at least one material thickness of plate.
+      for(const right of [false,true]){
+        let anchored=false;
+        for(const w of [...new Set([tabWidth,Math.min(3,T),Math.min(2,T)])]){
+          if(w<Math.max(1,2*state.kerf+0.6))continue;
+          const mid=right?width-endInset-w/2:endInset+w/2;
+          if(addTab(mid,w,true,true)){anchored=true;break;}
+        }
+        if(!anchored)letterKerfErrors.push('A letter wall end cannot fit a safe attachment finger. Increase letter size or reduce material thickness before export.');
+      }
       for(let i=0;i<tabCount;i++){
         const target=(i+0.5)*width/tabCount,span=width/tabCount;
         let placed=false;
@@ -9384,6 +9389,17 @@ function setWallStyle(style) {
   pushHistoryNow();state.wallStyle=style;
   syncInputs();rebuild();
 }
+function updateLivingPatternPreview(){
+  const descriptions={straight:'Straight slots: parallel cuts with alternating end bridges.',wave:'Wave slots: smooth, repeating curves in parallel lanes.',zigzag:'Zigzag slots: repeating angular cuts in parallel lanes.',diamond:'Diamond lattice: neighboring zigzags face opposite directions.',oval:'Oval lattice: neighboring waves face opposite directions.',ladder:'Rounded ladder: alternating rounded steps.',chevron:'Chevron: repeating angled cuts with a pointed profile.',meander:'Square meander: repeating right-angle turns.',brick:'Brick steps: alternating offset steps.'};
+  $('livingPatternDescription').textContent=descriptions[state.livingDesign]||descriptions.straight;
+  const T=state.T,pitch=Math.max(state.livingPitch,2*state.kerf+0.6),bridge=Math.max(state.livingBridge,2*state.kerf+0.5),w=12*pitch,h=32;
+  let lines='';
+  for(let i=0;i<12;i++){
+    const line=livingHingeCut((i+0.5)*pitch,i%2?T+bridge:T,i%2?T+h:T+h-bridge,pitch,T,i);
+    lines+='<path d="'+ptsToPath(line.map(([x,y])=>[x,y-T]),false)+'"/>';
+  }
+  $('livingPatternPreview').innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 '+(w+2)+' '+(h+2)+'" width="100%" height="110" role="img" aria-label="'+(descriptions[state.livingDesign]||descriptions.straight)+'"><rect x="0" y="0" width="'+w+'" height="'+h+'" fill="#ead4ad"/><g fill="none" stroke="#973527" stroke-width="0.16">'+lines+'</g></svg>';
+}
 function setLivingDesign(design) {
   if(!['straight','wave','zigzag','diamond','oval','ladder','chevron','meander','brick'].includes(design)||design===state.livingDesign)return;
   pushHistoryNow();state.livingDesign=design;syncInputs();rebuild();
@@ -9408,12 +9424,15 @@ function updateShapeUI() {
   $('shapedTopOption').style.display=state.shape==='letter'?'none':'';
   $('snowmanEngravingControls').style.display=state.shape==='snowman'?'':'none';
   $('snowmanEngraving').checked=state.snowmanEngraving!==false;
+  const hingeHome=$(state.shape==='letter'&&!frame?'letterHingeControls':'livingControlsHome');
+  if($('livingControls').parentElement!==hingeHome)hingeHome.appendChild($('livingControls'));
   $('livingControls').style.display=living?'':'none';
   $('livingRadiusLabel').textContent='Corner radius (mm)';
   $('livingRadius').parentElement.style.display=['heart','snowman','letter'].includes(state.shape)?'none':'';
   for(const key of ['livingRadius','livingPitch','livingRepeat','livingBridge'])$(key).value=state[key];
   $('livingDesign').value=state.livingDesign || 'straight';
   $('livingRepeat').parentElement.style.display=state.livingDesign==='straight'?'none':'';
+  updateLivingPatternPreview();
   $('genFrame').style.display = shaped ? 'none' : '';
   $('boxShape').value = state.shape || 'standard';
   $('shapedBoxHint').textContent=living?(state.shape==='snowman'?'3 flexible wall sections.':state.shape==='heart'?'2 flexible wall sections.':'Glue wall tabs and seams.'):'Glue wall seams.';
