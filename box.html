@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.8.9</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8174,6 +8174,7 @@ and disclaimer.
       .main { flex-direction: column; }
       .dim-row { grid-template-columns: 1fr 1fr; }
     }
+    #tabSlotControls .hint, #tabSlotStatus, #fingerSizeHint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
     #letterControls .hint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
     #letterMapDialog { margin:auto; padding:16px; width:min(95vw,1000px); max-height:94vh; overflow:auto; color:var(--text); background:var(--surface); border:1px solid var(--border); }
     #letterMapDialog::backdrop { background:#0008; }
@@ -8189,7 +8190,7 @@ and disclaimer.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.8.9</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9</span>
     </div>
     <div class="tb-group">
       <button class="tb-btn" title="New" onclick="resetAll()">New</button>
@@ -8397,13 +8398,6 @@ and disclaimer.
             <input type="range" id="sldFingerLength" min="50" max="150" step="1" value="100" oninput="onFingerLength(this.value)" aria-describedby="fingerLengthHint">
             <div class="hint" id="fingerLengthHint" style="margin-top:4px">100% = standard reach.</div>
           </div>
-          <div class="ctrl" id="wallJointControls" style="margin-top:10px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="chkWallJoints" checked onchange="onWallJoints(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);">
-                <span><strong>Wall finger joints</strong> — joints between side walls</span>
-              </label>
-              
-            </div>
           <div class="hint" id="shapedBoxHint" style="margin-top:6px">Glue wall seams.</div>
         </div>
       </div>
@@ -8490,11 +8484,30 @@ and disclaimer.
         </div>
         <div class="lb-panel-body">
           <div class="ctrl">
-            <div class="ctrl-lbl"><strong>Finger size (target)</strong><span class="ctrl-val" id="valFinger">9.0 mm</span></div>
+            <label class="ctrl-lbl" for="jointStyle"><strong>Joint style</strong></label>
+            <select class="dim-inp" id="jointStyle" onchange="setJointStyle(this.value)">
+              <option value="finger">Finger joints</option>
+              <option value="tab-slot">Slots</option>
+              <option value="plates-only">Top and bottom only</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label class="ctrl-lbl" for="sldFinger"><strong id="fingerSizeLabel">Finger size (target)</strong><span class="ctrl-val" id="valFinger">9.0 mm</span></label>
             <input type="range" id="sldFinger" min="3" max="40" step="0.5" oninput="onFinger(this.value)">
-            <div class="hint" style="margin-top:4px">Equal fingers per edge.</div>
+            <div class="hint" id="fingerSizeHint" style="margin-top:4px">Equal fingers per edge.</div>
             <div class="joint-info" id="jointInfo"></div>
           </div>
+          <div class="ctrl" id="tabSlotControls" hidden>
+            <label class="ctrl-lbl" for="slotInset"><strong>Corner slot inset</strong><span class="ctrl-val" id="valSlotInset">3.0 mm</span></label>
+            <input type="range" id="slotInset" min="50" max="300" step="5" value="100" oninput="onSlotInset(this.value)" aria-describedby="slotInsetHint">
+            <div class="hint" id="slotInsetHint">Distance from the panel end to the slot.</div>
+            <label class="ctrl-lbl" for="tabClearance"><strong>Slot clearance</strong><span class="ctrl-val" id="valTabClearance">0.00 mm</span></label>
+            <input type="range" id="tabClearance" min="0" max="1" step="0.01" value="0" oninput="onTabClearance(this.value)" aria-describedby="tabSlotFitHint">
+            <div class="hint" id="tabSlotFitHint">Extra slot width. Test the fit on scrap.</div>
+            <div class="hint" id="slotAssemblyHint">Lower the front and back walls into the side slots.</div>
+            <div class="hint" id="tabSlotLidHint"></div>
+          </div>
+          <div class="hint" id="tabSlotStatus" role="status" aria-live="polite"></div>
           
           <div class="ctrl">
             <div class="ctrl-lbl"><strong>Kerf (beam width)</strong><span class="ctrl-val" id="valKerf">0.10 mm</span></div>
@@ -8693,6 +8706,21 @@ and disclaimer.
               <input type="range" id="drawerHoleSize" min="6" max="40" step="0.5" value="16" oninput="onDrawerHoleSize(this.value)">
               <div class="hint" id="drawerHoleSizeHint">Slot height = half width.</div>
             </div>
+            <div class="ctrl" id="drawerInsertControls">
+              <label><input type="checkbox" id="drawerInsertEnabled" onchange="setDrawerInsertOption('drawerInsertEnabled',this.checked)"> Enable Removable Drawer Dividers</label>
+              <div id="drawerInsertOptions" style="display:none;margin-top:8px">
+                <label class="ctrl-lbl" for="drawerInsertOrientation">Divider orientation</label>
+                <select class="dim-inp" id="drawerInsertOrientation" onchange="setDrawerInsertOption('drawerInsertOrientation',this.value)"><option value="fb">Front-to-back</option><option value="lr">Left-to-right</option><option value="grid">Both directions (grid)</option></select>
+                <div id="drawerInsertFBRow" class="ctrl"><label class="ctrl-lbl" for="drawerInsertFB">Front-to-back dividers</label><input class="dim-inp" id="drawerInsertFB" type="number" min="0" max="8" step="1" value="2" onchange="setDrawerInsertOption('drawerInsertFB',this.value)"></div>
+                <div id="drawerInsertLRRow" class="ctrl"><label class="ctrl-lbl" for="drawerInsertLR">Left-to-right dividers</label><input class="dim-inp" id="drawerInsertLR" type="number" min="0" max="8" step="1" value="2" onchange="setDrawerInsertOption('drawerInsertLR',this.value)"></div>
+                <div class="ctrl"><label class="ctrl-lbl" for="drawerInsertHeight">Divider height above carrier <span class="ctrl-val" id="drawerInsertHeightVal"></span></label><input type="range" id="drawerInsertHeight" min="6" max="50" step="0.1" oninput="setDrawerInsertOption('drawerInsertHeight',this.value)"><button type="button" class="btn btn-secondary" onclick="resetDrawerInsertHeight()">Fit drawer height</button><div class="hint" id="drawerInsertHeightHint"></div></div>
+                <div class="ctrl"><label class="ctrl-lbl" for="drawerInsertClearance">Insert clearance per side (mm)</label><input class="dim-inp" id="drawerInsertClearance" type="number" min="0.1" max="2" step="0.1" value="0.3" onchange="setDrawerInsertOption('drawerInsertClearance',this.value)"></div>
+                <details><summary>Adjust compartment spacing</summary><div class="hint">Equal ratios give equal compartments. Counts reset the affected direction to equal spacing.</div><div id="drawerInsertSpacingx"></div><div id="drawerInsertSpacingy"></div></details>
+                <div class="hint">Separate carrier, four perimeter rails and four removable locking keys keep the grid together. Assemble outside the drawer; lift by the perimeter rails. No glue or drawer modifications.</div>
+                <div class="hint" id="drawerInsertSummary" aria-live="polite"></div>
+                <div class="hint" id="drawerInsertError" role="alert" style="color:#b45309"></div>
+              </div>
+            </div>
             <div class="ctrl" id="drawerHoleTopGapRow" style="display:none">
               <label class="ctrl-lbl" for="drawerHoleTopGap">Distance below top edge <span class="ctrl-val" id="drawerHoleTopGapVal"></span></label>
               <input type="range" id="drawerHoleTopGap" min="0" max="30" step="0.1" oninput="onDrawerHoleTopGap(this.value)">
@@ -8726,7 +8754,7 @@ and disclaimer.
     <div class="workspace" id="canvasArea">
       <div class="workspace-header">
         <strong>Workspace</strong>
-        <span>Finger-joint box preview · Drag to rotate · Scroll to zoom · Right-drag to pan</span>
+        <span><span id="boxPreviewLabel">Finger-joint box preview</span> · Drag to rotate · Scroll to zoom · Right-drag to pan</span>
       </div>
       <canvas id="threeCanvas"></canvas>
       <div id="materialView" style="display:none">
@@ -8841,14 +8869,16 @@ const DEFAULTS = {
   snowmanEngraving:true,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
+  jointStyle: 'finger', slotInsetPercent: 100, tabClearance: 0, // clearance in mm
   frameBorder: 15, // mm — width of the mitered face frame
   frameFromTop: 0, // mm — how far the face sits below the top of the walls (0 = flush)
   frameJoint: 'face', // 'face' = fingers on the mitered frame, 'under' = fingers on the underlay
-  lid: 'none', lidH: 20, flatOverhang: 0, wallJoints: true, assembly: 1.0,
+  lid: 'none', lidH: 20, flatOverhang: 0, assembly: 1.0,
   slideDir: 'front', slideBorder: 15, slideThickness: null,
   sides: 4, // 4 = rectangle, 6 = hexagon
   divCols: 1, divRows: 1, divHeight: null,
   colWeights: [1], rowWeights: [1],
+  drawerInsertEnabled:false, drawerInsertOrientation:'grid', drawerInsertFB:2, drawerInsertLR:2, drawerInsertHeight:null, drawerInsertClearance:0.3, drawerInsertXWeights:[1,1,1], drawerInsertYWeights:[1,1,1],
   drawer: false, drawerMode:'lift', drawerH: 25, drawerClear: 0.5, drawerOpen: 'front',
   drawerHoleShape: 'round', drawerHoleSize: 16, drawerHoleTopGap:null,
   notePreset: 'none',
@@ -9477,7 +9507,7 @@ function updateShapeUI() {
   $('wallCountControls').style.display = frame || shaped || state.shape === 'sticky' ? 'none' : '';
   ['s-lid', 's-drawer', 's-feet'].forEach(id => { $(id).style.display = frame || shaped ? 'none' : ''; });
   $('s-div').style.display = shaped ? 'none' : '';
-  $('fingerLengthControls').style.display = shaped ? 'none' : '';
+  $('fingerLengthControls').style.display = shaped || tabSlotActive() || plateOnlyActive() ? 'none' : '';
   const depthEnabled = frame || shaped || state.sides === 4;
   $('depthGrp').style.opacity = depthEnabled ? '1' : '0.35';
   $('inD').disabled = $('sldD').disabled = !depthEnabled;
@@ -9778,11 +9808,6 @@ function onFlatOverhang(v) {
   pushHistory();
   state.flatOverhang = Math.max(0, parseFloat(v) || 0);
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang, 1, 2);
-  rebuild();
-}
-function onWallJoints(on) {
-  pushHistoryNow();
-  state.wallJoints = !!on;
   rebuild();
 }
 
@@ -10089,7 +10114,6 @@ function updateLabels() {
 }
 
 function syncLidControls() {
-  $('wallJointControls').style.display=state.lid==='flat'&&state.generator!=='frame'&&!shapedBoxActive()&&!livingActive()?'':'none';
   for(const [kind,suffix] of Object.entries({none:'None',flat:'Flat',slip:'Slip',pull:'Pull',slide:'Slide',hinge:'Hinge'})) {
     $('lid'+suffix).classList.toggle('active',state.lid===kind);
     const controls=$('lid'+suffix+'Controls');
@@ -10178,7 +10202,6 @@ function syncInputs() {
   });
   if ($('sldFlatOH')) $('sldFlatOH').value = state.flatOverhang || 0;
   if ($('valFlatOH')) $('valFlatOH').textContent = fmtLen(state.flatOverhang || 0, 1, 2);
-  if ($('chkWallJoints')) $('chkWallJoints').checked = state.wallJoints !== false;
   if ($('sldRaise')) $('sldRaise').value = state.bottomRaise || 0;
   if ($('inRaise')) $('inRaise').value = numDisp(state.bottomRaise || 0);
   if ($('sldFootCut')) $('sldFootCut').value = state.footCutout || 0;
@@ -10347,7 +10370,7 @@ function raiseApplicable() {
   // Flat-top overhang is allowed: when raise is active, overhang scales only the top plate.
   const s = state.sides || 4;
   if (s !== 4 && s !== 6) return false;
-  if (state.lid === 'flat' && state.wallJoints === false) return false;
+  if (plateOnlyActive()) return false;
   return true;
 }
 function bottomRaise() {
@@ -10364,7 +10387,12 @@ function dims() {
   if (state.mode !== 'inside') rz = Math.min(rz, Math.max(0, state.H - lidT - minI));
   let iw, ih, id;
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
-  else { iw = state.W - 2 * T; ih = state.H - lidT - rz; id = state.D - 2 * T; }
+  else {
+    const cornerAllowance = 2 * (tabSlotActive() ? cornerSlotInset(T) : openRimActive() ? T : 0);
+    iw = state.W - 2 * T - cornerAllowance;
+    ih = state.H - lidT - rz;
+    id = state.D - 2 * T - cornerAllowance;
+  }
   // Frame: outside wall height (oh) floors at 2×T, or 2×T+6 mm with dividers.
   // oh = ih + lidT, so the interior floor is that minimum minus one thickness.
   const minIh = state.generator === 'frame'
@@ -10401,6 +10429,7 @@ function segCount(L) {
  */
 function edgePieces(L, spec, startCorner, endCorner, T) {
   if (!spec) return [{ a: 0, b: L, inset: 0 }];
+  if (spec.spans) return tabSlotEdgePieces(L, spec);
   const n = segCount(L), s = L / n;
   const slotInset = spec.slotInset ?? T;
   const fingerInset = spec.fingerInset ?? 0;
@@ -10677,7 +10706,7 @@ function fingerSegments(H, ownEven) {
 }
 
 // The divider stands on the bottom plate; its maximum follows the lowest lid layer.
-function dividerHeightLimit(d, ceiling = null) {
+function dividerHeightLimit(d, ceiling = d.rimCeiling ?? null) {
   const base=d.T+(d.raise || 0);
   let top=ceiling ?? d.oh;
   const covered=ceiling != null || state.lid !== 'none';
@@ -10689,7 +10718,7 @@ function dividerHeightLimit(d, ceiling = null) {
 }
 // Drawer height is interior space; both its floor and cap must fit below the lid.
 function drawerHeightForDims(d) {
-  const swingRelief=hingeActive() && d.hinge ? d.hinge.relD : 0;
+  const swingRelief=hingeActive() && d.hinge && d.rimCeiling == null ? d.hinge.relD : 0;
   const maximum=Math.max(0,dividerHeightLimit(d)-2*d.T-swingRelief);
   const height=maximum<3 ? 0 : Math.max(3,Math.min(maximum,state.drawerH ?? 25));
   $('sldDrawerH').min=3; $('sldDrawerH').max=Math.max(3,maximum);
@@ -10732,32 +10761,33 @@ function dividerFingerSegments(H, T) {
  * cut from the top edge (X-dividers) or bottom edge (Y-dividers) so they
  * slide together into a half-lap joint.
  */
-function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
-  const length = interiorSpan + 2 * T;
-  const segs = dividerFingerSegments(H, T); // same guarded profile as the wall slots
+function dividerOutline(interiorSpan, H, T, crossPositions, fromTop, options={}) {
+  const edgeInset=options.plainEnds?0:T;
+  const length = interiorSpan + 2 * edgeInset;
+  const segs = options.plainEnds?[{a:0,b:H,isFinger:false}]:dividerFingerSegments(H, T); // same guarded profile as the wall slots
   const slotD = H / 2; // half-height cross-lap
-  const slotW = T;     // must match material thickness of the crossing divider
+  const slotW = options.slotWidth??T;     // must match material thickness of the crossing divider
 
   // Sorted cross-lap notch ranges along x (panel coords)
   // Crossing divider center at interior cx → panel x = T + cx; notch spans T centered there
   const notches = crossPositions
     .map(cx => {
-      const mid = T + cx;
+      const mid = edgeInset + cx;
       return { x0: mid - slotW / 2, x1: mid + slotW / 2 };
     })
-    .filter(n => n.x1 > T && n.x0 < length - T)
+    .filter(n => n.x1 > edgeInset && n.x0 < length - edgeInset)
     .sort((a, b) => a.x0 - b.x0);
 
   const pts = [];
 
   // --- Bottom edge (left → right), with notches if !fromTop ---
   {
-    let x = T;
+    let x = edgeInset;
     pts.push([x, 0]);
     if (!fromTop) {
       for (const n of notches) {
-        const a = Math.max(n.x0, T);
-        const b = Math.min(n.x1, length - T);
+        const a = Math.max(n.x0, edgeInset);
+        const b = Math.min(n.x1, length - edgeInset);
         if (b <= a) continue;
         if (a > x) pts.push([a, 0]);
         // notch up into the panel
@@ -10765,25 +10795,25 @@ function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
         x = b;
       }
     }
-    pts.push([length - T, 0]);
+    pts.push([length - edgeInset, 0]);
   }
 
   // --- Right end: bottom → top, finger joints ---
   for (const seg of segs) {
-    const x = seg.isFinger ? length : length - T;
+    const x = seg.isFinger ? length : length - edgeInset;
     pts.push([x, seg.a], [x, seg.b]);
   }
 
   // --- Top edge (right → left), with notches if fromTop ---
   {
-    let x = length - T;
+    let x = length - edgeInset;
     pts.push([x, H]);
     if (fromTop) {
       // walk right-to-left through notches in reverse
       for (let i = notches.length - 1; i >= 0; i--) {
         const n = notches[i];
-        const a = Math.max(n.x0, T);       // left of notch
-        const b = Math.min(n.x1, length - T); // right of notch
+        const a = Math.max(n.x0, edgeInset);       // left of notch
+        const b = Math.min(n.x1, length - edgeInset); // right of notch
         if (b <= a) continue;
         if (b < x) pts.push([b, H]);
         // notch down into the panel
@@ -10791,13 +10821,13 @@ function dividerOutline(interiorSpan, H, T, crossPositions, fromTop) {
         x = a;
       }
     }
-    pts.push([T, H]);
+    pts.push([edgeInset, H]);
   }
 
   // --- Left end: top → bottom, finger joints ---
   for (let i = segs.length - 1; i >= 0; i--) {
     const seg = segs[i];
-    const x = seg.isFinger ? 0 : T;
+    const x = seg.isFinger ? 0 : edgeInset;
     pts.push([x, seg.b], [x, seg.a]);
   }
 
@@ -11510,7 +11540,7 @@ function buildPolySlipOnLidDefs(d, J) {
   const nSides = d.sides || 6;
   if (state.lid !== 'slip' || nSides < 5) return [];
 
-  const lidFTF = ow + 2 * T;
+  const lidFTF = ow + (d.openRim ? 4 : 2) * T;
   const lidPoly = regularPolygonVerts(nSides, lidFTF);
   const sideLen = lidPoly.sideLen;
   const loh = state.lidH + T; // wall height includes top finger joint depth
@@ -11602,11 +11632,18 @@ function buildPullOffLidDefs(d) {
     ];
   }
 
+  const rimWeb = d.rimWeb || 0;
+  const rimLip = d.openRim ? T : 0;
+  const insertSize = span => rimWeb ? span - 2 * (rimWeb + clear) : Math.max(2 * T, span - 2 * clear);
+  if (rimWeb && Math.min(insertSize(iw), nSides === 4 ? insertSize(id) : Infinity) <= state.kerf + 0.2) {
+    d.tabSlotError = 'Increase the opening size or reduce lid fit clearance so the pull-off insert fits the rim.';
+    return [];
+  }
   if (nSides === 4) {
-    const insW = Math.max(T * 2, iw - 2 * clear);
-    const insD = Math.max(T * 2, id - 2 * clear);
-    const capW = ow;
-    const capD = od;
+    const insW = insertSize(iw);
+    const insD = insertSize(id);
+    const capW = ow + 2 * rimLip;
+    const capD = od + 2 * rimLip;
     const cx = capW / 2;
     const cy = capD / 2;
     const leftSlot = [
@@ -11641,9 +11678,8 @@ function buildPullOffLidDefs(d) {
     d.pull = { insW, insD, capW, capD, clear, R, B, rIn, tabW: B, tabLen, poly: false };
   } else {
     // Regular polygon (hex): insert fits inside, cap flush with outside
-    const outerFTF = ow;
-    const innerFTF = Math.max(2 * T, ow - 2 * T);
-    const insFTF = Math.max(2 * T, innerFTF - 2 * clear);
+    const outerFTF = ow + 2 * rimLip;
+    const insFTF = insertSize(iw);
     const insPoly = regularPolygonVerts(nSides, insFTF);
     const capPoly = regularPolygonVerts(nSides, outerFTF);
     // Slots centered on origin (polygon verts are centered)
@@ -12192,13 +12228,14 @@ function chestKerf(points,delta){
 }
 function generateFrontDrawerPanels(d){
   // Reuse the closed finger-jointed shell, without changing saved tray/lid settings.
-  const keys=['drawer','lid','flatOverhang','wallJoints','bottomRaise','footCutout','divCols','divRows','colWeights','rowWeights','drawerMode'],saved=Object.fromEntries(keys.map(k=>[k,state[k]]));
+  const keys=['drawer','lid','flatOverhang','jointStyle','bottomRaise','footCutout','divCols','divRows','colWeights','rowWeights','drawerMode'],saved=Object.fromEntries(keys.map(k=>[k,state[k]]));
   let result;
   try{
-    Object.assign(state,{drawer:false,drawerMode:'lift',lid:'flat',flatOverhang:0,wallJoints:true,bottomRaise:0,footCutout:0,divCols:1,divRows:1,colWeights:[1],rowWeights:[1]});
+    Object.assign(state,{drawer:false,drawerMode:'lift',lid:'flat',flatOverhang:0,jointStyle:tabSlotActive()?'tab-slot':'finger',bottomRaise:0,footCutout:0,divCols:1,divRows:1,colWeights:[1],rowWeights:[1]});
     result=generatePanelsBase(d);
   }finally{Object.assign(state,saved);}
   d=result.dims;d.frontDrawer=true;
+  if (d.tabSlotError) return result;
   const T=d.T,clear=Math.max(0.1,state.drawerClear??0.5),minimum=6+2*Math.max(T,2),maximum=d.oh-5*T-clear;
   const drIh=Math.max(minimum,Math.min(maximum,state.drawerH??25)),drOh=drIh+T,openingW=d.ow-6*T,drW=openingW-2*clear,drD=d.od-T-clear,runnerW=Math.max(2*T,8);
   $('sldDrawerH').min=minimum;$('sldDrawerH').max=Math.max(minimum,maximum);$('sldDrawerH').value=drIh;$('sldDrawerH').disabled=maximum<minimum;
@@ -12223,13 +12260,22 @@ function generateFrontDrawerPanels(d){
     const xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     result.panels.push({name,role,outline,cut,nominalHoles:holes,holes:cuts,slots:[],minX:Math.min(...xs),minY:Math.min(...ys),maxY:Math.max(...ys),bboxW:Math.max(...xs)-Math.min(...xs),bboxH:Math.max(...ys)-Math.min(...ys),area:polyArea(outline)-holes.reduce((n,p)=>n+polyArea(p),0),trayIndex:0,...extra});
   };
-  add('Drawer bottom','dr-bottom',drW,drD,plate);
-  const faceOutline=panelOutline(drW,drOh,fb,T),cutaway=notch?insertOnTopEdge(faceOutline,drOh,cx-holeW/2,cx+holeW/2,()=>arcPts(cx,drOh,holeW/2,Math.PI,2*Math.PI,32)):null;
+  const drawerShell = {
+    floor: { w: drW, h: drD, specs: plate },
+    front: { w: drW, h: drOh, specs: fb },
+    back: { w: drW, h: drOh, specs: fb },
+    left: { w: drD, h: drOh, specs: lr },
+    right: { w: drD, h: drOh, specs: lr },
+  };
+  if (tabSlotActive()) tabSlotShell(drawerShell, d, { drawerTray: true });
+  if (d.tabSlotError) return result;
+  add('Drawer bottom','dr-bottom',drW,drD,drawerShell.floor.specs);
+  const faceOutline=panelOutline(drW,drOh,drawerShell.front.specs,T),cutaway=notch?insertOnTopEdge(faceOutline,drOh,cx-holeW/2,cx+holeW/2,()=>arcPts(cx,drOh,holeW/2,Math.PI,2*Math.PI,32)):null;
   if(notch&&!cutaway.ok)return fail('Notch cannot fit the drawer top edge. Reduce its width.');
   add(notch?'Drawer front with top cutaway':'Drawer front with finger pull','dr-front',drW,drOh,fb,notch?[]:[pullHole],{outlineOverride:notch?cutaway.outline:faceOutline,drawerPullGeometry:{shape:state.drawerHoleShape,width:holeW,height:holeH,topGap:gap}});
-  add('Drawer back','dr-back',drW,drOh,fb);
-  add('Drawer left','dr-left',drD,drOh,lr);
-  add('Drawer right','dr-right',drD,drOh,lr);
+  add('Drawer back','dr-back',drW,drOh,drawerShell.back.specs);
+  add('Drawer left','dr-left',drD,drOh,drawerShell.left.specs);
+  add('Drawer right','dr-right',drD,drOh,drawerShell.right.specs);
   // Runners rest on the cabinet floor. Guide strips keep the drawer aligned with the opening.
   for(const side of [-1,1]){
     const x=side<0?-openingW/2-T:openingW/2+T-runnerW;
@@ -12328,7 +12374,495 @@ function addStackHandles(result){
   return result;
 }
 
-function generatePanels(){const result=addStackHandles(addStackingPanels(splitTallLivingWalls(frontDrawerActive()?generateFrontDrawerPanels(dims()):generatePanelsUnbounded())));syncDrawerModeUI();if(state.shape==='letter')finalizeLetterAssembly(result);return result;}
+function setDrawerInsertOption(key,value){
+  const ranges={drawerInsertFB:[0,8],drawerInsertLR:[0,8],drawerInsertHeight:[1,10000],drawerInsertClearance:[0.1,2]};
+  if(key==='drawerInsertEnabled')value=!!value;
+  else if(key==='drawerInsertOrientation'){if(!['fb','lr','grid'].includes(value))return;}
+  else if(ranges[key]){value=Number(value);if(!Number.isFinite(value))return;value=Math.max(ranges[key][0],Math.min(ranges[key][1],value));if(['drawerInsertFB','drawerInsertLR'].includes(key))value=Math.round(value);}
+  else return;
+  pushHistoryNow();state[key]=value;
+  if(key==='drawerInsertFB')state.drawerInsertXWeights=Array(value+1).fill(1);
+  if(key==='drawerInsertLR')state.drawerInsertYWeights=Array(value+1).fill(1);
+  rebuild();
+}
+function resetDrawerInsertHeight(){pushHistoryNow();state.drawerInsertHeight=null;rebuild();}
+function setDrawerInsertWeight(axis,index,value){
+  const n=Number(value);if(!Number.isFinite(n))return;const key=axis==='x'?'drawerInsertXWeights':'drawerInsertYWeights';
+  pushHistory();const weights=(state[key]||[]).slice();weights[index]=Math.max(0.5,Math.min(5,n));state[key]=weights;rebuild();
+}
+function insertWeights(axis,count){const values=state[axis==='x'?'drawerInsertXWeights':'drawerInsertYWeights']||[];return Array.from({length:count+1},(_,i)=>Number.isFinite(values[i])&&values[i]>0?values[i]:1);}
+function syncInsertSpacing(axis,count){
+  const host=$('drawerInsertSpacing'+axis),weights=insertWeights(axis,count);
+  host.style.display=count?'':'none';if(!count){host.innerHTML='';return;}
+  if(host.querySelectorAll('input').length!==weights.length)host.innerHTML=weights.map((_,i)=>'<label style="display:flex;gap:8px;align-items:center;margin:4px 0">'+(axis==='x'?'Column ':'Row ')+(i+1)+' ratio <input class="dim-inp" style="width:70px" type="number" min="0.5" max="5" step="0.1" onchange="setDrawerInsertWeight(\''+axis+'\','+i+',this.value)"></label>').join('');
+  host.querySelectorAll('input').forEach((input,i)=>{if(document.activeElement!==input)input.value=weights[i];});
+}
+function drawerInsertConfig(){
+  const orientation=state.drawerInsertOrientation||'grid';
+  return {nx:orientation==='lr'?0:state.drawerInsertFB??2,ny:orientation==='fb'?0:state.drawerInsertLR??2,clearance:state.drawerInsertClearance??0.3};
+}
+function syncDrawerInsertUI(){
+  const enabled=!!state.drawerInsertEnabled,{nx,ny}=drawerInsertConfig();
+  $('drawerInsertEnabled').checked=enabled;$('drawerInsertOptions').style.display=enabled?'':'none';
+  $('drawerInsertOrientation').value=state.drawerInsertOrientation||'grid';
+  $('drawerInsertFB').value=state.drawerInsertFB??2;$('drawerInsertLR').value=state.drawerInsertLR??2;
+  $('drawerInsertFBRow').style.display=state.drawerInsertOrientation==='lr'?'none':'';
+  $('drawerInsertLRRow').style.display=state.drawerInsertOrientation==='fb'?'none':'';
+  $('drawerInsertClearance').value=state.drawerInsertClearance??0.3;
+  if(enabled){syncInsertSpacing('x',nx);syncInsertSpacing('y',ny);}
+  $('drawerInsertError').textContent='';$('drawerInsertSummary').textContent='';
+}
+function addRemovableDrawerInserts(result){
+  syncDrawerInsertUI();
+  if(!state.drawerInsertEnabled||!state.drawer)return result;
+  const d=result.dims,T=d.T,trays=d.drawer?.trays||[],config=drawerInsertConfig(),{nx,ny,clearance}=config,fit=0.1,topClear=0.5;
+  const fail=message=>{d.drawerInsertError=message;$('drawerInsertError').textContent=message;return result;};
+  if(!trays.length){$('drawerInsertSummary').textContent='Generate a compatible drawer to add an insert.';return result;}
+  if(nx+ny===0)return fail('Choose at least one removable divider, or turn the insert off.');
+  if(T<3*state.kerf+0.5)return fail('Material is too thin for retaining keys at this kerf. Increase thickness or reduce kerf.');
+  const minHeight=Math.max(2*T,6),maxHeight=Math.min(...trays.map(tr=>tr.drIh-3*T-topClear)),height=state.drawerInsertHeight==null?maxHeight:Math.min(state.drawerInsertHeight,maxHeight);
+  $('drawerInsertHeight').min=minHeight;$('drawerInsertHeight').max=Math.max(minHeight,maxHeight);$('drawerInsertHeight').value=Math.max(minHeight,height);$('drawerInsertHeight').disabled=maxHeight<minHeight;
+  $('drawerInsertHeightVal').textContent=fmtLen(Math.max(0,height),1,2);
+  $('drawerInsertHeightHint').textContent='Divider height above carrier. Carrier and retaining feet use '+fmtLen(3*T,1,2)+' of drawer height; top clearance '+fmtLen(topClear,1,2)+'.';
+  if(height<minHeight)return fail('Drawer is too shallow for a removable insert. Allow at least '+fmtLen(3*T+minHeight+topClear,1,2)+' internal height, or use thinner material.');
+  const pending=[],kits=[],rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+  // New panels use the existing Clipper kerf helper; the drawer panels stay untouched.
+  const panel=(name,kind,outline,holes,placement,trayIndex,meta={})=>{
+    const cut=chestKerf(outline,state.kerf/2),cutHoles=holes.map(h=>chestKerf(h,-state.kerf/2));
+    if(!cut||cutHoles.some(h=>!h))throw new Error('A divider feature collapses under kerf compensation. Increase dimensions or reduce kerf.');
+    const xs=cut.map(q=>q[0]),ys=cut.map(q=>q[1]);
+    return {name,role:'dr-insert-'+kind,outline,cut,nominalHoles:holes,holes:cutHoles,slots:[],minX:Math.min(...xs),minY:Math.min(...ys),maxY:Math.max(...ys),bboxW:Math.max(...xs)-Math.min(...xs),bboxH:Math.max(...ys)-Math.min(...ys),area:polyArea(outline)-holes.reduce((n,h)=>n+polyArea(h),0),trayIndex,insertPlacement:placement,insertPart:{kind,...meta}};
+  };
+  try{
+    for(let trayIndex=0;trayIndex<trays.length;trayIndex++){
+      const tr=trays[trayIndex],label=tr.label||'D'+(trayIndex+1),W=tr.drW-2*T-2*clearance,D=tr.drD-2*T-2*clearance,innerW=W-6*T,innerD=D-6*T;
+      if(Math.min(W,D)<14*T)return fail(label+': drawer is too small for the carrier and locking frame. Increase drawer width/depth or reduce material thickness.');
+      const wx=insertWeights('x',nx),wy=insertWeights('y',ny),cellsX=cellSizes(wx,innerW,T),cellsY=cellSizes(wy,innerD,T),minCell=Math.max(4*T+1,8);
+      if(Math.min(...cellsX,...cellsY)<minCell)return fail(label+': compartments must be at least '+fmtLen(minCell,1,2)+' wide. Reduce divider counts, adjust spacing ratios, or enlarge the drawer.');
+      const xs=[2.5*T,...dividerCenters(wx,innerW,T).map(v=>v+3*T),W-2.5*T],ys=[2.5*T,...dividerCenters(wy,innerD,T).map(v=>v+3*T),D-2.5*T];
+      const left=tr.wx-W/2,front=tr.wz+D/2,floor=(tr.wy??T)+T,baseSlots=[],parts=[];
+      const cells=(sizes)=>{let start=3*T;return sizes.map(size=>{const c={start,size,mid:start+size/2};start+=size+T;return c;});};
+      const xc=cells(cellsX),yc=cells(cellsY);
+      const addRail=(axis,position,index,isFrame)=>{
+        const along=axis==='x'?D:W,length=along-T,crosses=(axis==='x'?ys:xs).map(v=>v-0.5*T),fromTop=axis==='y';
+        const intervals=crosses.map(v=>[v-(T+fit)/2,v+(T+fit)/2]);
+        if(intervals.some(([a,b])=>a<T||b>length-T))throw new Error(label+': cross-lap too near a panel end. Increase drawer dimensions.');
+        let {outline}=dividerOutline(length,height,T,crosses,fromTop,{plainEnds:true,slotWidth:T+fit});
+        const spaces=axis==='x'?yc:xc;
+        const chosen=isFrame?[spaces.slice().sort((a,b)=>Math.abs(a.mid-along/2)-Math.abs(b.mid-along/2))[0]]:spaces.length>1?[spaces[0],spaces.at(-1)]:spaces;
+        const tabs=chosen.map(c=>({mid:c.mid-0.5*T,width:isFrame?3*T:Math.min(2*T,c.size-2*T),depth:isFrame?3*T:T}));
+        const holes=[];
+        for(const tab of tabs){
+          const a=tab.mid-tab.width/2,b=tab.mid+tab.width/2;
+          const mirrored=outline.map(([x,y])=>[x,-y]);
+          const joined=insertOnTopEdge(mirrored,0,a,b,()=>[[a,0],[a,tab.depth],[b,tab.depth],[b,0]]);
+          if(!joined.ok)throw new Error(label+': a locating tab conflicts with a cross-lap. Adjust spacing.');
+          outline=joined.outline.map(([x,y])=>[x,-y]);
+          if(axis==='x')baseSlots.push(rect(position-(T+fit)/2,a+0.5*T-fit/2,T+fit,tab.width+fit));
+          else baseSlots.push(rect(a+0.5*T-fit/2,position-(T+fit)/2,tab.width+fit,T+fit));
+          if(isFrame)holes.push(rect(tab.mid-(T+fit)/2,-2*T-fit/2,T+fit,T+fit));
+        }
+        const placement=axis==='x'?{o:[left+position-T/2,floor+3*T,front-0.5*T],u:[0,0,-1],v:[0,1,0],n:[1,0,0]}:{o:[left+0.5*T,floor+3*T,front-position-T/2],u:[1,0,0],v:[0,1,0],n:[0,0,1]};
+        const roleName=isFrame?(axis==='x'?(index===0?'Left frame':'Right frame'):(index===0?'Front frame':'Back frame')):(axis==='x'?'Front-to-back divider '+index:'Left-to-right divider '+index);
+        parts.push(panel(label+' insert '+roleName,isFrame?'frame':axis==='x'?'fb':'lr',outline,holes,placement,trayIndex,{axis,position,crosses,fromTop,slotWidth:T+fit,slotDepth:height/2,height,tabs}));
+        if(isFrame){
+          // Taper seats at the outside face of the frame, without nominal overlap.
+          const tangent=tabs[0].mid+0.5*T,first=index===0,head=1.16*T+fit,tip=0.76*T+fit,keyShape=[[0,-head/2],[5*T,-tip/2],[5*T,tip/2],[0,head/2]];
+          const keyPlacement=axis==='x'?{o:[first?left:left+W,floor+T,front-tangent],u:[first?1:-1,0,0],v:[0,0,first?-1:1],n:[0,1,0]}:{o:[left+tangent,floor+T,first?front:front-D],u:[0,0,first?-1:1],v:[first?-1:1,0,0],n:[0,1,0]};
+          parts.push(panel(label+' insert locking key '+roleName.toLowerCase(),'key',keyShape,[],keyPlacement,trayIndex,{axis,position,tangent}));
+        }
+      };
+      xs.forEach((x,i)=>addRail('x',x,i,i===0||i===xs.length-1));
+      ys.forEach((y,i)=>addRail('y',y,i,i===0||i===ys.length-1));
+      // Base slots are separate closed contours, with material between them.
+      const bounds=p=>({a:Math.min(...p.map(q=>q[0])),b:Math.max(...p.map(q=>q[0])),c:Math.min(...p.map(q=>q[1])),d:Math.max(...p.map(q=>q[1]))});
+      const bb=baseSlots.map(bounds);
+      if(bb.some(b=>b.a<T||b.b>W-T||b.c<T||b.d>D-T))return fail(label+': a carrier slot is too near its edge. Increase drawer dimensions.');
+      for(let i=0;i<bb.length;i++)for(let j=i+1;j<bb.length;j++){
+        const a=bb[i],b=bb[j],gap=Math.max(0.6,2*state.kerf);
+        if(a.a<b.b+gap&&a.b>b.a-gap&&a.c<b.d+gap&&a.d>b.c-gap)return fail(label+': carrier slots are too close together. Adjust divider spacing or counts.');
+      }
+      parts.unshift(panel(label+' insert carrier (separate from drawer floor)','carrier',rect(0,0,W,D),baseSlots,{o:[left,floor+2*T,front],u:[1,0,0],v:[0,0,-1],n:[0,1,0]},trayIndex));
+      pending.push(...parts);kits.push({trayIndex,label,width:W,depth:D,height:height+3*T,bodyHeight:height,innerW,innerD,nx,ny,cellsX,cellsY,xCenters:xs,yCenters:ys,clearance,partCount:parts.length,floor,left,front});
+    }
+  }catch(error){return fail(error.message);}
+  result.panels.push(...pending);d.drawerInserts=kits;
+  $('drawerInsertSummary').textContent=kits.length+' removable insert'+(kits.length===1?'':'s')+' · '+nx+' front-to-back / '+ny+' left-to-right dividers each · '+pending.length+' added parts. '+kits.map(k=>k.label+': '+fmtLen(k.width,1,2)+' × '+fmtLen(k.depth,1,2)+' × '+fmtLen(k.height,1,2)).join('; ')+'.';
+  return result;
+}
+function placementDrawerInsert(p){const q=p.insertPlacement,V=a=>new THREE.Vector3(...a);return {o:V(q.o),u:V(q.u),v:V(q.v),n:V(q.n)};}
+
+function generatePanels() {
+  let result = frontDrawerActive() ? generateFrontDrawerPanels(dims()) : generatePanelsUnbounded();
+  syncDrawerModeUI();
+  if (result.dims.tabSlotError) return { panels: [], dims: result.dims };
+  result = addStackHandles(addStackingPanels(splitTallLivingWalls(result)));
+  addRemovableDrawerInserts(result);
+  if (state.shape === 'letter') finalizeLetterAssembly(result);
+  return result;
+}
+
+function tabSlotSupported() {
+  return state.generator === 'box' && state.sides === 4 && !livingActive() && !shapedBoxActive();
+}
+
+function tabSlotActive() {
+  return state.jointStyle === 'tab-slot' && tabSlotSupported();
+}
+
+function plateOnlyActive() {
+  return state.jointStyle === 'plates-only' &&
+    state.generator === 'box' && !shapedBoxActive() && !livingActive() && !frontDrawerActive();
+}
+
+function openRimActive() {
+  return state.lid !== 'flat' && plateOnlyActive();
+}
+
+function setJointStyle(value) {
+  if (!['finger', 'tab-slot', 'plates-only'].includes(value) || state.jointStyle === value) return;
+  pushHistoryNow();
+  state.jointStyle = value;
+  rebuild();
+}
+
+function minimumSlotInsetPercent(T) {
+  const web = Math.max(0.4, state.kerf + 0.15);
+  return Math.max(50, 5 * Math.ceil((100 * (web + state.tabClearance / 2) / T - 1e-8) / 5));
+}
+
+function cornerSlotInset(T) {
+  return T * Math.max(minimumSlotInsetPercent(T), state.slotInsetPercent) / 100;
+}
+
+function onSlotInset(value) {
+  const inset = Number(value);
+  if (!Number.isFinite(inset)) return;
+  pushHistory();
+  state.slotInsetPercent = Math.max(50, Math.min(300, inset));
+  rebuild();
+}
+
+function onTabClearance(value) {
+  const clearance = Number(value);
+  if (!Number.isFinite(clearance)) return;
+  pushHistory();
+  state.tabClearance = Math.max(0, Math.min(1, clearance));
+  rebuild();
+}
+
+function syncJointStyleUI(d) {
+  const selected = state.jointStyle === 'tab-slot';
+  const active = tabSlotActive();
+  const plateOnly = plateOnlyActive();
+  $('jointStyle').value = state.jointStyle;
+  $('tabSlotControls').hidden = !active;
+  $('boxPreviewLabel').textContent = active ? 'Slot-joint box preview' : 'Finger-joint box preview';
+  $('slotAssemblyHint').hidden = !d.slotLap;
+  $('fingerSizeLabel').textContent = active ? 'Plate tab width (target)' : 'Finger size (target)';
+  $('fingerSizeHint').textContent = active ? 'Sets the size of the plate tabs. Each wall corner uses one sliding slot sized to the material thickness.' : 'Equal fingers per edge.';
+  $('jointInfo').hidden = active;
+  const inset = $('slotInset');
+  const minInset = minimumSlotInsetPercent(d.T);
+  inset.min = minInset;
+  inset.max = Math.max(300, minInset);
+  inset.value = Math.max(minInset, state.slotInsetPercent);
+  $('valSlotInset').textContent = fmtLen(cornerSlotInset(d.T), 1, 3);
+  $('tabClearance').value = state.tabClearance;
+  $('valTabClearance').textContent = fmtLen(state.tabClearance, 2, 4);
+  $('fingerLengthControls').style.display = active || plateOnly || livingActive() || shapedBoxActive() ? 'none' : '';
+  if (state.jointStyle === 'plates-only') {
+    const message = {
+      none: 'The open rim and base join to the walls. The vertical wall seams are plain.',
+      flat: 'The top and bottom join to the walls. The vertical wall seams are plain.',
+      slip: 'The open rim joins the walls. The lid skirt fits over the rim.',
+      pull: 'The open rim joins the walls. The lid insert fits inside the rim opening.',
+      slide: 'The lower guide is a closed ring that joins all four walls below the lid track.',
+      hinge: 'The open rim joins the walls below the path of the swinging lid.',
+    };
+    $('tabSlotStatus').textContent = d.tabSlotError || (plateOnly
+      ? state.sides !== 4 && ['slide', 'hinge'].includes(state.lid)
+        ? 'Slide-in and hinged lids require a rectangular box. This box uses an open rim.'
+        : message[state.lid]
+      : 'Choose a panel box to use this style. The current design uses its usual joints.');
+  } else {
+    $('tabSlotStatus').textContent = selected && !active
+    ? 'This shape or generator uses its original joints. Slots are available for rectangular panel boxes.'
+    : d.tabSlotError || [d.slotLap && state.slotInsetPercent < minInset && 'Inset increased to leave enough material at the corners.',
+      state.drawer && 'Drawer trays retain their existing joints to preserve their fit.', d.tabSlotNotice].filter(Boolean).join(' ');
+  }
+  $('tabSlotLidHint').textContent = !active ? '' : ({
+    slip: 'Lower the front and back of the skirt into its side walls, then fit the cap. Lift off the finished lid as one piece.',
+    pull: 'The pull-off insert stays glued to the cap. Its fit inside the box uses the lid clearance.',
+    slide: 'Fit the guides to the side walls first. Glue their straight edges to the front and back where they meet, then insert the lid from its entry side.',
+    hinge: 'The lid keeps its pivot and closing notch so it can swing freely.',
+  })[d.frontDrawer ? 'flat' : state.lid] || '';
+}
+
+function tabSlotRect(x, y, w, h) {
+  return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+}
+
+// Each profile is measured along the same counterclockwise edges as panelOutline.
+function tabSlotProfile(inset, spans = [], featureInset = inset) {
+  return { inset, spans, featureInset };
+}
+
+function tabSlotEdgePieces(length, { inset, spans, featureInset }) {
+  let start = 0;
+  const pieces = [];
+  for (const [a, b, depth = featureInset] of spans) {
+    pieces.push({ a: start, b: a, inset }, { a, b, inset: depth });
+    start = b;
+  }
+  pieces.push({ a: start, b: length, inset });
+  return pieces;
+}
+
+// Walls cross at their existing stock centerlines. The end lip leaves solid
+// material outside each open slot. Its base and cap tabs stay clear of the lap.
+function addWallLap(wall, T, lapY, dropsIn, web, d) {
+  const { w, h, specs } = wall;
+  const lip = cornerSlotInset(T);
+  const half = state.tabClearance / 2;
+  const edge = dropsIn ? 0 : 2;
+  const depth = dropsIn ? lapY + half : h - lapY + half;
+  const padded = specs.map((spec, i) => {
+    if (i % 2) return null;
+    if (!spec) return tabSlotProfile(0);
+    return { ...spec, spans: spec.spans.map(([a, b]) => [a + lip, b + lip]) };
+  });
+  const lap = padded[edge];
+  lap.spans = [
+    [lip - half, lip + T + half, depth],
+    ...lap.spans,
+    [lip + w - T - half, lip + w + half, depth],
+  ];
+  if (lip - half < web || depth - lap.inset < web || h - depth < web ||
+      lap.spans.some(([a], i) => i && a - lap.spans[i - 1][1] < web)) {
+    d.tabSlotError ||= 'Increase the box size or reduce slot clearance to leave material around the sliding corner slots.';
+    return;
+  }
+  wall.outlineOverride = panelOutline(w + 2 * lip, h, padded, T).map(([x, y]) => [x - lip, y]);
+  wall.cornerLap = dropsIn ? 'rising' : 'standing';
+}
+
+// Enclosed plate mortises are near the ends of each wall. Raised floors
+// engage the side walls first, then the other walls slide down over the tabs.
+function tabSlotShell(parts, d, options = {}) {
+  const { T } = d;
+  const { floor, top, front, back, left, right } = parts;
+  const walls = [front, right, back, left];
+  const { overhang = 0, floorOverhang = 0, raise = 0, entry, rails, cornerLaps = false } = options;
+  const clearance = state.tabClearance;
+  const half = clearance / 2;
+  const web = Math.max(0.4, state.kerf + 0.15);
+  const gap = Math.max(T, clearance + 2 * web);
+  const minTab = Math.max(T / 2, 2 * web);
+  const error = 'Increase the box size or reduce thickness, clearance, or kerf to fit the slots.';
+
+  function spans(lo, hi, cornerWeb = Math.max(T / 2, web)) {
+    const start = lo + cornerWeb + half;
+    const end = hi - cornerWeb - half;
+    const run = end - start;
+    const wanted = cornerLaps ? 2 : Math.max(1, Math.round((run + gap) / (2 * state.finger)));
+    const limit = Math.floor((run + gap) / (minTab + gap));
+    if (limit < 1) {
+      d.tabSlotError ||= error;
+      return [];
+    }
+    const count = Math.min(wanted, limit);
+    const pitch = (run + gap) / count;
+    const width = Math.min(pitch - gap, Math.max(minTab, state.finger));
+    if (count < wanted || width > state.finger + 1e-6) {
+      d.tabSlotNotice = 'Tab spacing was adjusted to leave enough material between slots.';
+    }
+    if (cornerLaps && count === 2) return [[start, start + width], [end - width, end]];
+    return Array.from({ length: count }, (_, i) => {
+      const center = (start + end + (2 * i + 1 - count) * pitch) / 2;
+      return [center - width / 2, center + width / 2];
+    });
+  }
+
+  function profile(part, edge, inset, tabs, featureInset, expand = false) {
+    const length = edge % 2 ? part.h : part.w;
+    const offset = expand ? half : 0;
+    const ranges = tabs.map(([a, b]) => [a - offset, b + offset]);
+    const oriented = edge >= 2 ? ranges.reverse().map(([a, b]) => [length - b, length - a]) : ranges;
+    part.specs[edge] = tabSlotProfile(inset, oriented, featureInset);
+  }
+
+  function slot(part, x, y, w, h) {
+    (part.tabSlots ||= []).push(tabSlotRect(x - half, y - half, w + clearance, h + clearance));
+  }
+
+  for (const part of [floor, top, ...walls, ...(rails || [])]) {
+    if (!part) continue;
+    part.specs = [null, null, null, null];
+    part.outlineOverride = null;
+    part.holes = [];
+    part.tabSlot = true;
+  }
+
+  if (options.drawerTray) for (const [side, frontEdge, backEdge] of [[left, 3, 3], [right, 1, 1]]) {
+    if (!side) continue;
+    for (const [face, receiverEdge, tabEdge] of [[front, frontEdge, 1], [back, backEdge, 3]]) {
+      if (!face || options.joinCorners === false) continue;
+      const low = floor && !raise ? T : 0;
+      const high = Math.min(side.h - (top || rails && side.role !== entry ? T : 0),
+        face.h - (top || rails && face.role !== entry ? T : 0));
+      const tabs = spans(low, high);
+      profile(side, tabEdge, T, tabs, 0);
+      profile(face, receiverEdge, 0, tabs, T + half, true);
+    }
+  }
+
+  // Work in each wall's local left-to-right coordinates. The horizontal
+  // plates run front-to-back, while the side walls run back-to-front.
+  walls.forEach((wall, edge) => {
+    if (!wall) return;
+    const joined = options.joinCorners !== false;
+    const lo = joined ? T : 0;
+    const hi = wall.w - lo;
+    const plateTabs = (tabs, offset = 0) => tabs.map(([a, b]) => edge % 2
+      ? [wall.w - b + offset, wall.w - a + offset] : [a + offset, b + offset]).sort((a, b) => a[0] - b[0]);
+    const receiver = (plate, over, tabs) => {
+      const offset = over + ((edge % 2 ? plate.h : plate.w) - 2 * over - wall.w) / 2;
+      const ranges = plateTabs(tabs, offset);
+      if (over - half >= web) {
+        for (const [a, b] of ranges) {
+          if (edge === 0) slot(plate, a, over, b - a, T);
+          if (edge === 1) slot(plate, plate.w - over - T, a, T, b - a);
+          if (edge === 2) slot(plate, a, plate.h - over - T, b - a, T);
+          if (edge === 3) slot(plate, over, a, T, b - a);
+        }
+      } else {
+        profile(plate, edge, 0, ranges, over + T + half, true);
+      }
+    };
+    if (floor) {
+      const tabs = spans(lo, hi);
+      if (raise) {
+        profile(floor, edge, T, plateTabs(tabs), 0);
+        if (cornerLaps && edge % 2 === 0) {
+          profile(wall, 0, 0, tabs, raise + T + half, true);
+        } else {
+          if (raise - half - (options.footCut || 0) < web) {
+            d.tabSlotError ||= 'Raise the bottom farther or lower the foot cutout to keep material below the floor slots.';
+          }
+          for (const [a, b] of tabs) slot(wall, a, raise, b - a, T);
+        }
+      } else {
+        profile(wall, 0, T, tabs, 0);
+        receiver(floor, floorOverhang, tabs);
+      }
+    }
+    if (top) {
+      const tabs = spans(lo, hi);
+      profile(wall, 2, T, tabs, 0);
+      receiver(top, overhang, tabs);
+    }
+    if (rails && wall.role !== entry && (!cornerLaps || edge % 2 === 1)) {
+      const tabs = spans(lo, hi);
+      for (const rail of rails) profile(rail, edge, T, plateTabs(tabs), 0);
+      profile(wall, 2, 0, tabs, T + half, true);
+      for (const [a, b] of tabs) slot(wall, a, d.slide.lowerY, b - a, T);
+      if (d.slide.lowerY - half < (raise ? raise + T + half : T) + web) d.tabSlotError ||= error;
+    }
+  });
+
+  if (cornerLaps) {
+    const low = floor ? raise + T : 0;
+    const high = Math.min(...walls.map(wall => wall.h - (top ? T : 0)));
+    const lapY = (low + high) / 2;
+    if (high - low < 2 * (web + half)) d.tabSlotError ||= error;
+    walls.forEach((wall, edge) => addWallLap(wall, T, lapY, edge % 2 === 0, web, d));
+  }
+
+  if (rails) {
+    const { border } = d.slide;
+    if (border - T < web || Math.min(d.ow, d.od) - 2 * border < web) {
+      d.tabSlotError ||= 'Adjust the frame border or box dimensions to leave material in the slide guides.';
+      return;
+    }
+    const entryEdge = ['front', 'right', 'back', 'left'].indexOf(entry);
+    for (const rail of rails) {
+      const length = entryEdge % 2 ? rail.h : rail.w;
+      const depth = entryEdge % 2 ? rail.w : rail.h;
+      for (let i = 0; i < 4; i++) rail.specs[i] ||= tabSlotProfile(T);
+      rail.specs[entryEdge] = tabSlotProfile(T, [[border, length - border]], depth - border);
+    }
+  }
+}
+
+function tabSlotParts(defs, prefix = '') {
+  const byRole = role => defs.find(p => p.role === prefix + role);
+  return {
+    floor: byRole('bottom'), top: byRole('top'), front: byRole('front'),
+    back: byRole('back'), left: byRole('left'), right: byRole('right'),
+  };
+}
+
+function applyBoxTabSlots(defs, d, joinCorners) {
+  const parts = tabSlotParts(defs);
+  const lip = joinCorners ? cornerSlotInset(d.T) : 0;
+  const overhang = Math.max(d.plate?.O || 0, parts.top ? lip : 0);
+  const floorOverhang = d.raise ? 0 : Math.max(d.plate?.botO || 0, lip);
+  if (overhang || floorOverhang) d.plate = { ...d.plate, O: overhang, botO: floorOverhang };
+  parts.floor.w = d.ow + 2 * floorOverhang;
+  parts.floor.h = d.od + 2 * floorOverhang;
+  if (parts.top) {
+    parts.top.w = d.ow + 2 * overhang;
+    parts.top.h = d.od + 2 * overhang;
+  }
+  if (lip) {
+    d.slotLap = { overallLip: Math.max(lip, overhang, floorOverhang) };
+  }
+  tabSlotShell(parts, d, {
+    joinCorners, cornerLaps: Boolean(lip), raise: d.raise, footCut: footCutoutHeight(),
+    overhang, floorOverhang, entry: d.slide?.dir,
+    rails: d.slide && defs.filter(p => p.role.startsWith('slide-frame-')),
+  });
+  if (d.lid) {
+    const skirt = tabSlotParts(defs, 'lid-');
+    d.lid.capOverhang = lip;
+    skirt.top.w += 2 * lip;
+    skirt.top.h += 2 * lip;
+    tabSlotShell(skirt, d, { cornerLaps: true, overhang: lip });
+  }
+  for (let i = 0; i < (d.drawer?.trays?.length || 0); i++) {
+    const tray = tabSlotParts(defs.filter(p => p.trayIndex === i), 'dr-');
+    tabSlotShell({ ...tray, top: null }, d, { drawerTray: true }); // Cap is glued on.
+  }
+  const pull = defs.find(p => p.role === 'pull-cap');
+  if (pull) {
+    const half = state.tabClearance / 2;
+    pull.tabSlots = pull.holes.map(hole => tabSlotRect(
+      hole[0][0] - half, hole[0][1] - half,
+      hole[1][0] - hole[0][0] + 2 * half, hole[2][1] - hole[0][1] + 2 * half,
+    ));
+    pull.holes = [];
+    pull.tabSlot = true;
+  }
+}
+
+// Validate nominal slots as a set, including the existing divider openings.
+// Kerf moves a laser centerline into a hole, as in the drawer and stacking exports.
+function cutTabSlots(def, outline, otherHoles, d) {
+  if (!def.tabSlots?.length) return [];
+  const slots = def.tabSlots;
+  const area = slots.reduce((sum, p) => sum + polyArea(p.map(point => point.map(v => Math.round(v * 1000) / 1000))), 0);
+  const remaining = letterDifference([outline], [...slots, ...otherHoles]);
+  const original = letterDifference([outline], otherHoles);
+  const solidArea = loops => loops.reduce((sum, p) => sum + signedPolyArea(p), 0);
+  const cuts = slots.map(hole => chestKerf(hole, -state.kerf / 2));
+  if (Math.abs(solidArea(original) - solidArea(remaining) - area) > 0.01
+      || remaining.filter(p => signedPolyArea(p) > 0).length !== 1
+      || remaining.length !== original.length + slots.length || cuts.some(p => !p)) {
+    d.tabSlotError ||= 'A slot overlaps another cut or reaches the panel edge. Adjust the box, lid, dividers, or clearance.';
+  }
+  return cuts.filter(Boolean);
+}
 
 function generatePanelsUnbounded() {
   if (!hingeActive() || !state.hingeSide || state.hingeSide === 'back') return generatePanelsBase();
@@ -12348,10 +12882,90 @@ function generatePanelsUnbounded() {
   }
   return {panels:result.panels,dims:{...result.dims,...actual,hingeLayoutDims:result.dims,hingeRotation:angle}};
 }
+function openTopRim(defs, d, inset = false) {
+  const { ow, od, iw, id, T, sides } = d;
+  const polygon = sides !== 4;
+  // Keep stock outside the mortises and an inner web between the mortises
+  // and the opening. A narrow box gets a proportionally narrower inner web.
+  const web = Math.min(T, (polygon ? iw : Math.min(iw, id)) / 4);
+  if (T <= state.kerf || web <= state.kerf / 2 + 0.1) {
+    d.tabSlotError = 'Increase the box size or stock thickness, or reduce kerf, to leave enough material in the top rim.';
+    return;
+  }
+  const base = defs.find(p => p.role === 'bottom');
+  base.tabSlots = base.holes;
+  base.holes = [];
+  d.openRim = true;
+  const topIndex = defs.findIndex(p => p.role === 'top');
+  if (inset) {
+    defs.splice(topIndex, 1);
+    return;
+  }
+  const top = defs[topIndex];
+  top.name = 'Top Rim';
+  const opening = polygon
+    ? regularPolygonVerts(sides, iw - 2 * web).verts
+    : tabSlotRect(2 * T + web, 2 * T + web, ow - 2 * (T + web), od - 2 * (T + web));
+  top.tabSlots = [...top.holes, opening];
+  top.holes = [];
+  d.rimWeb = web;
+  d.rimCeiling = d.oh - T;
+}
+
+// A mid-wall rim has outward tabs that pass through slots in the short walls.
+// At a wall's top edge the receiving slot is open, so the tongue stays flush.
+function insetTopRim(defs, d, role, y, border, entry = null) {
+  const { ow, od, oh, T } = d;
+  const upper = role === 'slide-frame-upper';
+  const margin = Math.max(0.4, state.kerf + 0.15);
+  if (y < T + margin || border - T < margin || Math.min(ow, od) - 2 * border < margin) {
+    d.tabSlotError ||= 'Increase the box size or adjust the frame border to leave room for the lid and its supporting rim.';
+    return;
+  }
+
+  const wallRoles = ['front', 'right', 'back', 'left'];
+  const specs = wallRoles.map(role => {
+    const wall = defs.find(p => p.role === role);
+    const tabs = lanternTabs(wall.w, T).map(({ a, b }) => [a, b]);
+    if (upper && role === entry) return tabSlotProfile(T);
+    const spans = tabs.map(([a, b]) => [a + T, b + T]);
+    if (Math.abs(y + T - wall.h) < 1e-6) {
+      const cuts = tabs.map(([a, b]) => [wall.w - b, wall.w - a]).reverse();
+      wall.rimTop = tabSlotProfile(0, cuts, T);
+    } else {
+      if (wall.h - (y + T) < margin) {
+        d.tabSlotError ||= 'Increase the box height to leave material above the rim slots.';
+      }
+      (wall.tabSlots ||= []).push(...tabs.map(([a, b]) => tabSlotRect(a, y, b - a, T)));
+    }
+    return tabSlotProfile(T, spans, 0);
+  });
+
+  if (upper) {
+    const edge = wallRoles.indexOf(entry);
+    const length = edge % 2 ? od : ow;
+    const depth = edge % 2 ? ow : od;
+    specs[edge] = tabSlotProfile(T, [[border, length - border]], depth - border);
+  }
+  const rim = {
+    role, name: upper ? 'Slide frame upper' : role === 'slide-frame-lower' ? 'Slide frame lower rim' : 'Top Rim',
+    w: ow, h: od, specs,
+    ...(upper ? {} : { tabSlots: [tabSlotRect(border, border, ow - 2 * border, od - 2 * border)] }),
+  };
+  defs.push(rim);
+  for (const role of wallRoles) {
+    const wall = defs.find(p => p.role === role);
+    const bottom = lanternTabs(wall.w, T).map(({ a, b }) => [a, b]);
+    wall.outlineOverride = panelOutline(wall.w, wall.h,
+      [tabSlotProfile(T, bottom, 0), null, wall.rimTop || null, null], T);
+  }
+}
+
 function generatePanelsBase(d = dims()) {
   const { ow, oh, od, T, iw, ih, id } = d;
   const rz = d.raise || 0;
   const flat = state.lid === 'flat';
+  const openRim = openRimActive();
   const slip = state.lid === 'slip';
   const hinge = hingeActive();
   const slide = state.lid === 'slide';
@@ -12374,18 +12988,18 @@ function generatePanelsBase(d = dims()) {
     d.poly = poly;
     d.od = ow; // treat depth = width for HUD
     const sideW = poly.sideLen;
-    const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
+    const O = openRim ? T : flat ? Math.max(0, state.flatOverhang || 0) : 0;
     const defs = [];
     // Per-wall slots (raised-bottom plate fingers, etc.)
     const polyWallSlots = [];
 
-    const joinWalls = !flat || state.wallJoints !== false;
+    const joinWalls = !plateOnlyActive();
     // Inner side length so wall inner edges meet when joints are off
     const innerPoly = regularPolygonVerts(nSides, Math.max(ow - 2 * T, 2 * T));
     const wallLen = joinWalls ? sideW : innerPoly.sideLen;
     d.wallSpan = { wallLen, joinWalls };
 
-    if (flat && O > 0) {
+    if (openRim || (flat && O > 0)) {
       // When raised bottom / feet are active, overhang applies to the TOP plate only.
       const topOnlyOverhang = rz > 0;
       const plate = solidPolygonPlateWithSlots(nSides, ow, T, O, wallLen);
@@ -12486,12 +13100,15 @@ function generatePanelsBase(d = dims()) {
     }
 
     // Slip-on / pull-off lids for hex (and other regular polygons)
+    if (openRim) openTopRim(defs, d);
     if (state.lid === 'slip') {
       defs.push(...buildPolySlipOnLidDefs(d, J));
     }
     if (state.lid === 'pull') {
       defs.push(...buildPullOffLidDefs(d));
     }
+
+    if (d.tabSlotError) return { panels: [], dims: d };
 
     // Skip hinge/slide/dividers for non-rectangular
     const panels = defs.map(def => {
@@ -12532,19 +13149,22 @@ function generatePanelsBase(d = dims()) {
           x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf,
         ]);
       }
+      const tabCuts = cutTabSlots(def, outline, [], d);
       return {
-        ...def, outline, cut, holes, slots,
+        ...def, outline, cut, holes: holes.concat(tabCuts), slots,
+        ...(def.tabSlots ? { nominalHoles: def.tabSlots } : {}),
         minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
-        area: polyArea(outline),
+        area: polyArea(outline) - (def.tabSlots || []).reduce((sum, hole) => sum + polyArea(hole), 0),
       };
     });
-    return { panels, dims: d };
+    return { panels: d.tabSlotError ? [] : panels, dims: d };
   }
 
   // ---------- Rectangular 4-sided box ----------
-  const O = flat ? Math.max(0, state.flatOverhang || 0) : 0;
+  const tabs = tabSlotActive();
+  const O = openRim ? T : flat ? Math.max(0, state.flatOverhang || 0) : 0;
   const defs = [];
-  const joinWalls = !flat || state.wallJoints !== false;
+  const joinWalls = !plateOnlyActive();
 
   // Wall specs — vertical joints optional when flat top
   //            bottom          right                                           top                         left
@@ -12559,7 +13179,7 @@ function generatePanelsBase(d = dims()) {
   const sideD = joinWalls ? od : id;
   d.wallSpan = { frontW, sideD, joinWalls };
 
-  if (flat && (O > 0 || !joinWalls)) {
+  if (openRim || (flat && (O > 0 || !joinWalls))) {
     // When raised bottom / feet are active, overhang applies to the TOP plate only.
     // Bottom stays flush (finger-jointed) so feet and raise still work.
     const topOnlyOverhang = rz > 0 && O > 0;
@@ -12638,10 +13258,13 @@ function generatePanelsBase(d = dims()) {
     );
   }
 
+  if (openRim) openTopRim(defs, d, slide || hinge);
+
   // Slip-on lid
   if (slip) {
-    const low = ow + 2 * T;
-    const lod = od + 2 * T;
+    const skirtOffset = 2 * (T + (tabs ? cornerSlotInset(T) : d.openRim ? T : 0));
+    const low = ow + skirtOffset;
+    const lod = od + skirtOffset;
     const loh = state.lidH + T;
     const lfb = [null, J(true, true), J(true, true), J(true, true)];
     const llr = [null, J(false, false), J(true, false), J(false, false)];
@@ -12663,7 +13286,8 @@ function generatePanelsBase(d = dims()) {
 
   // --- Slide-in lid: two U-shaped frames at top + sliding panel ---
   if (slide) {
-    const border = Math.max(4, Math.min(state.slideBorder || 15, Math.min(ow, od) / 2 - 2));
+    const minBorder = openRim ? T + Math.max(0.4, state.kerf + 0.15) : 4;
+    const border = Math.max(minBorder, Math.min(state.slideBorder || 15, Math.min(ow, od) / 2 - 2));
     const panelThickness=slideLidThickness();
     const gap = panelThickness + 0.5;
     const dir = state.slideDir || 'front';
@@ -12807,30 +13431,42 @@ function generatePanelsBase(d = dims()) {
       return { outline: cleanPoly(outPts), holes: [], ow, od };
     }
 
-    const fr = slideUFrameOutline(ow, od, T, border, dir);
+    if (openRim) {
+      const entryWall = defs.find(p => p.role === dir);
+      entryWall.h = lowerY + T;
+      d.slide.entryWallH = entryWall.h;
+      d.slide.entryWall = dir;
+      insetTopRim(defs, d, 'slide-frame-lower', lowerY, border);
+      insetTopRim(defs, d, 'slide-frame-upper', upperY, border, dir);
+      d.rimCeiling = lowerY;
+    } else {
+      const fr = slideUFrameOutline(ow, od, T, border, dir);
 
-    // Upper frame: at top — uses edge finger joints with wall tops (like flat lid).
-    // We already built fingers into the U outline; walls on 3 sides get matching top-edge joints.
-    defs.push({
-      name: 'Slide frame upper', role: 'slide-frame-upper', w: fr.ow, h: fr.od,
-      specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
-    });
-    defs.push({
-      name: 'Slide frame lower', role: 'slide-frame-lower', w: fr.ow, h: fr.od,
-      specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
-    });
+      // Upper frame: at top — uses edge finger joints with wall tops (like flat lid).
+      // We already built fingers into the U outline; walls on 3 sides get matching top-edge joints.
+      defs.push({
+        name: 'Slide frame upper', role: 'slide-frame-upper', w: fr.ow, h: fr.od,
+        specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
+      });
+      defs.push({
+        name: 'Slide frame lower', role: 'slide-frame-lower', w: fr.ow, h: fr.od,
+        specs: null, outlineOverride: fr.outline, holes: fr.holes || [],
+      });
+    }
 
     // Sliding panel
     const clear = 0.6;
+    const minimum = openRim ? 0 : 10;
     let slW, slD;
     if (dir === 'front' || dir === 'back') {
-      slW = Math.max(10, iw - 2 * clear);
-      slD = Math.max(10, id - clear);
+      slW = Math.max(minimum, iw - 2 * clear);
+      slD = Math.max(minimum, id - clear);
     } else {
-      slW = Math.max(10, iw - clear);
-      slD = Math.max(10, id - 2 * clear);
+      slW = Math.max(minimum, iw - clear);
+      slD = Math.max(minimum, id - 2 * clear);
     }
-    const pullW = Math.min(28, Math.max(12, (dir === 'left' || dir === 'right' ? slD : slW) * 0.22));
+    const entrySpan = (dir === 'left' || dir === 'right') ? slD : slW;
+    const pullW = Math.min(28, Math.max(12, entrySpan * 0.22), openRim ? 0.8 * entrySpan : Infinity);
     const pullD = Math.min(10, Math.max(5, T * 1.8));
     function sliderOutline(w, dht, dir, pullW, pullD) {
       // Pull tab sticks OUTWARD from the open edge (not cut into the panel).
@@ -12857,56 +13493,58 @@ function generatePanelsBase(d = dims()) {
     d.slide.slD = slD;
 
     // Lower frame mid-wall slots on the THREE non-entry walls only
-    function edgeSlots(L, slotY, T, offset) {
-      const segs = fingerSegments(L, false); // match U-frame finger parity
-      const slots = [];
-      for (const seg of segs) {
-        if (seg.isFinger) slots.push([offset + seg.a, slotY, seg.b - seg.a, T]);
-      }
-      return slots;
-    }
-    const xOff = 0; // outer-aligned fingers on full wall width
-    const zOff = 0;
-    const fs = { front: [], back: [], left: [], right: [] };
-    // Upper frame joints with wall TOPS on 3 sides — handled by wall top edge specs below.
-    // Lower frame: mid-wall slots on 3 non-entry sides
-    if (dir !== 'front') fs.front.push(...edgeSlots(ow, lowerY, T, xOff));
-    if (dir !== 'back')  fs.back.push(...edgeSlots(ow, lowerY, T, xOff));
-    if (dir !== 'left')  fs.left.push(...edgeSlots(od, lowerY, T, zOff));
-    if (dir !== 'right') fs.right.push(...edgeSlots(od, lowerY, T, zOff));
-    d.slide.frameSlots = fs;
-
-    // Entry wall shortened so the panel can slide in above it: its top reaches
-    // the TOP face of the lower frame plate (= the floor of the channel the panel
-    // slides in), so the panel rides directly on top of the wall.
-    d.slide.entryWallH = Math.max(T * 2, lowerY + T);
-    d.slide.entryWall = dir;
-
-    // Patch walls: entry wall shorter; other three get top finger joints for upper frame
-    const entryH = d.slide.entryWallH;
-    const topJ = J(true, true); // even fingers on wall top, mating upper frame
-    for (const def of defs) {
-      if (!def.role) continue;
-      if (def.role === dir) {
-        // entry wall — shortened so its top reaches the underside of the lid.
-        // Build the outline at the FULL wall height first so the vertical finger
-        // joints use exactly the same spacing as the neighbouring (full-height)
-        // walls, then cut the top off at entryH. (Building it directly at the
-        // shorter height changes the finger count/size and the joints no longer mate.)
-        if (def.specs) {
-          const sp = def.specs.slice();
-          sp[2] = null; // top plain
-          def.specs = sp;
-          def.outlineOverride = clipOutlineBelow(panelOutline(def.w, oh, sp, T), entryH);
+    if (!openRim) {
+      function edgeSlots(L, slotY, T, offset) {
+        const segs = fingerSegments(L, false); // match U-frame finger parity
+        const slots = [];
+        for (const seg of segs) {
+          if (seg.isFinger) slots.push([offset + seg.a, slotY, seg.b - seg.a, T]);
         }
-        def.h = entryH;
-      } else if (['front','back','left','right'].includes(def.role)) {
-        // non-entry walls — finger joints on top for upper frame
-        if (def.specs) {
-          const sp = def.specs.slice();
-          sp[2] = topJ;
-          def.specs = sp;
-          def.outlineOverride = null;
+        return slots;
+      }
+      const xOff = 0; // outer-aligned fingers on full wall width
+      const zOff = 0;
+      const fs = { front: [], back: [], left: [], right: [] };
+      // Upper frame joints with wall TOPS on 3 sides — handled by wall top edge specs below.
+      // Lower frame: mid-wall slots on 3 non-entry sides
+      if (dir !== 'front') fs.front.push(...edgeSlots(ow, lowerY, T, xOff));
+      if (dir !== 'back')  fs.back.push(...edgeSlots(ow, lowerY, T, xOff));
+      if (dir !== 'left')  fs.left.push(...edgeSlots(od, lowerY, T, zOff));
+      if (dir !== 'right') fs.right.push(...edgeSlots(od, lowerY, T, zOff));
+      d.slide.frameSlots = fs;
+
+      // Entry wall shortened so the panel can slide in above it: its top reaches
+      // the TOP face of the lower frame plate (= the floor of the channel the panel
+      // slides in), so the panel rides directly on top of the wall.
+      d.slide.entryWallH = Math.max(T * 2, lowerY + T);
+      d.slide.entryWall = dir;
+
+      // Patch walls: entry wall shorter; other three get top finger joints for upper frame
+      const entryH = d.slide.entryWallH;
+      const topJ = J(true, true); // even fingers on wall top, mating upper frame
+      for (const def of defs) {
+        if (!def.role) continue;
+        if (def.role === dir) {
+          // entry wall — shortened so its top reaches the underside of the lid.
+          // Build the outline at the FULL wall height first so the vertical finger
+          // joints use exactly the same spacing as the neighbouring (full-height)
+          // walls, then cut the top off at entryH. (Building it directly at the
+          // shorter height changes the finger count/size and the joints no longer mate.)
+          if (def.specs) {
+            const sp = def.specs.slice();
+            sp[2] = null; // top plain
+            def.specs = sp;
+            def.outlineOverride = clipOutlineBelow(panelOutline(def.w, oh, sp, T), entryH);
+          }
+          def.h = entryH;
+        } else if (['front','back','left','right'].includes(def.role)) {
+          // non-entry walls — finger joints on top for upper frame
+          if (def.specs) {
+            const sp = def.specs.slice();
+            sp[2] = topJ;
+            def.specs = sp;
+            def.outlineOverride = null;
+          }
         }
       }
     }
@@ -12922,6 +13560,13 @@ function generatePanelsBase(d = dims()) {
     });
     d.hinge = g;
     d.hingeWarn = g.warn;
+    if (openRim) {
+      const y = oh - 2 * T - Math.max(g.relD + 0.5, T);
+      insetTopRim(defs, d, 'top', y, T + Math.min(T, Math.min(iw, id) / 4));
+      d.rimCeiling = y;
+      d.insetTopY = y;
+      d.plate.O = 0;
+    }
   }
 
   // --- Lift-out compartment drawers (main box stays open-top) ---
@@ -13049,7 +13694,7 @@ function generatePanelsBase(d = dims()) {
   const wallSlots = { front: [], back: [], left: [], right: [] };
   // Raised bottom: slots in every wall where the bottom plate's fingers enter.
   // Same finger pattern the plate uses on its own edges (spec J(false,false), corners left to the walls).
-  if (rz > 0) {
+  if (rz > 0 && !tabs) {
     const plateSlots = (L, arr) => {
       for (const pc of edgePieces(L, J(false, false), true, true, T)) {
         if (pc.inset !== 0) continue;
@@ -13062,7 +13707,7 @@ function generatePanelsBase(d = dims()) {
   }
   // Front/Back: local x = 0 at LEFT exterior, interior starts at x = T.
   // xCenters are measured from the left interior face → matches local x.
-  for (const cx of xCenters) {
+  for (const cx of tabs && joinWalls ? [] : xCenters) {
     const sx = T + cx - T / 2;
     wallSlots.front.push(...wallFingerSlots(sx, T + rz, divH, T));
     wallSlots.back.push(...wallFingerSlots(sx, T + rz, divH, T));
@@ -13081,7 +13726,7 @@ function generatePanelsBase(d = dims()) {
   }
 
   // Slide-in frame slots + entry notch on walls
-  if (slide && d.slide && d.slide.frameSlots) {
+  if (slide && d.slide && d.slide.frameSlots && !tabs) {
     const fs = d.slide.frameSlots;
     const offW = joinWalls ? 0 : 0; // frames are outer size; slots along full wall width
     // Front/Back wall local x: 0 at left exterior. Frame spans full ow.
@@ -13091,20 +13736,21 @@ function generatePanelsBase(d = dims()) {
     wallSlots.right.push(...(fs.right || []));
   }
 
+  const dropInDivider = tabs && joinWalls;
   xCenters.forEach((cx, i) => {
-    let { outline, holes } = dividerOutline(id, divH, T, yCenters, true);
+    let { outline, holes } = dividerOutline(id, divH, T, yCenters, true, { plainEnds: dropInDivider });
     if (hinge && d.hinge && divH > ih - 0.5 - d.hinge.relD) {
       const reliefDepth=Math.max(0,d.hinge.relD-(ih-0.5-divH));
       // Relief at the back-top so the rear of the hinged lid can swing down past this divider
-      const xr1 = id + 2 * T - T, xr0 = xr1 - d.hinge.relW;
+      const xr1 = dropInDivider ? id : id + T, xr0 = xr1 - d.hinge.relW;
       const rel = insertOnTopEdge(outline, divH, xr0, xr1,
         () => [[xr0, divH], [xr0, divH - reliefDepth], [xr1, divH - reliefDepth], [xr1, divH]]);
       outline = rel.outline;
     }
     defs.push({
-      name: `Div X${i + 1}`, role: 'div-x', w: id + 2 * T, h: divH,
+      name: `Div X${i + 1}`, role: 'div-x', w: id + (dropInDivider ? 0 : 2 * T), h: divH,
       specs: null, outlineOverride: outline, holes,
-      divIndex: i, divAxis: 'x', divPos: cx,
+      divIndex: i, divAxis: 'x', divPos: cx, ...(dropInDivider ? { dropInDivider } : {}),
     });
   });
   yCenters.forEach((cy, i) => {
@@ -13115,6 +13761,9 @@ function generatePanelsBase(d = dims()) {
       divIndex: i, divAxis: 'y', divPos: cy,
     });
   });
+
+  if (tabs) applyBoxTabSlots(defs, d, joinWalls);
+  if (d.tabSlotError) return { panels: [], dims: d };
 
   const panels = defs.map(def => {
     let outline;
@@ -13136,10 +13785,11 @@ function generatePanelsBase(d = dims()) {
     if (hinge && d.hinge) {
       const g = d.hinge;
       if (def.role === 'left' || def.role === 'right') {
-        const ring = addHingeRing(outline, def.h, T, g.xc, g.R);
+        const hingeX = g.xc - (openRim ? T : 0);
+        const ring = addHingeRing(outline, def.h, T, hingeX, g.R);
         if (ring.ok) {
           outline = ring.outline;
-          extraHoles.push(circlePoly(g.xc, def.h - T / 2, g.holeR + state.kerf / 2, 32));
+          extraHoles.push(circlePoly(hingeX, def.h - T / 2, g.holeR + state.kerf / 2, 32));
         }
       } else if (def.role === 'front') {
         const nt = addTopNotch(outline, def.h, def.w / 2, g.notchW, T);
@@ -13186,6 +13836,12 @@ function generatePanelsBase(d = dims()) {
         const belly = Math.max(0, Math.min(100, state.footBelly || 0));
         const ft = insertOnBottomEdge(outline, 0, cutX0, cutX1, cutH, radius, belly);
         if (ft.ok) outline = ft.outline;
+        else if (def.cornerLap === 'rising') {
+          const relief = footNotchPts(0, cutX0, cutX1, cutH, radius, belly, state.footScallops || 1);
+          const remaining = letterDifference([outline], [relief]);
+          if (remaining.length === 1) outline = remaining[0];
+          else d.tabSlotError ||= 'The foot cutout overlaps the floor or corner slots. Reduce the foot cutout.';
+        }
       }
     }
 
@@ -13212,6 +13868,14 @@ function generatePanelsBase(d = dims()) {
         slots = slots.concat([[en.x, en.y, en.w, en.h]]);
       }
     }
+    if (def.tabSlot && slots.length) {
+      const half = state.tabClearance / 2;
+      (def.tabSlots ||= []).push(...slots.map(([x, y, w, h]) =>
+        tabSlotRect(x - half, y - half, w + 2 * half, h + 2 * half)));
+      slots = [];
+    }
+    const tabCuts = cutTabSlots(def, outline, extraHoles, d);
+    const nominalHoles = def.tabSlots ? [...(def.holes || []), ...extraHoles, ...def.tabSlots] : undefined;
     slots = slots.map(([x, y, w, h]) => [x - state.kerf / 2, y - state.kerf / 2, w + state.kerf, h + state.kerf]);
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -13221,13 +13885,14 @@ function generatePanelsBase(d = dims()) {
     }
 
     return {
-      ...def, outline, cut, holes, slots,
+      ...def, outline, cut, holes: holes.concat(tabCuts), slots,
+      ...(nominalHoles ? { nominalHoles } : {}),
       minX, minY, maxY, bboxW: maxX - minX, bboxH: maxY - minY,
-      area: polyArea(outline),
+      area: polyArea(outline) - (def.tabSlots || []).reduce((sum, hole) => sum + polyArea(hole), 0),
     };
   });
 
-  return { panels, dims: d };
+  return { panels: d.tabSlotError ? [] : panels, dims: d };
 }
 
 // ============================================================
@@ -13425,12 +14090,12 @@ function zoomMaterial(factor,anchor=null){
 function refreshMaterialView(){
   if(state.workspaceMode!=='material')return;
   syncWorkspaceUI();
-  const {panels}=generatePanels(),layout=layoutPanels(panels,3,true);materialCache=layout;
+  const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,true);materialCache=layout;
   if(!layout.placed.some(p=>p.materialKey===selectedMaterialKey))selectedMaterialKey=null;
   const page=Math.max(0,Math.min(state.materialPage,layout.sheets.length-1));state.materialPage=page;
   $('materialSheet').innerHTML=layout.sheets.map((s,i)=>'<option value="'+i+'">'+(i+1)+' · '+(s.material==='lid'?'Lid':'Box')+'</option>').join('');$('materialSheet').value=page;
   const sheet=layout.sheets[page],w=state.materialWidth,h=state.materialHeight;
-  $('materialStatus').textContent=layout.oversized.length?'Oversized: '+layout.oversized.map(p=>p.name).join(', '):'Drag parts; select to rotate.';
+  $('materialStatus').textContent=d.tabSlotError || (layout.oversized.length?'Oversized: '+layout.oversized.map(p=>p.name).join(', '):'Drag parts; select to rotate.');
   $('materialStage').innerHTML='<svg id="materialCanvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" aria-label="Material sheet layout"><defs><pattern id="materialGrid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#a78e65" stroke-width="0.12"/></pattern></defs><rect width="'+w+'" height="'+h+'" fill="#e2c799"/><rect width="'+w+'" height="'+h+'" fill="url(#materialGrid)"/><rect x="4" y="4" width="'+(w-8)+'" height="'+(h-8)+'" fill="none" stroke="#94774a" stroke-width="0.2" stroke-dasharray="2 2"/>'+(sheet?sheet.placed.map(materialPanelMarkup).join(''):'')+'</svg>';
   updateMaterialSelection();
   const svg=$('materialCanvas');if(!svg?.addEventListener)return;
@@ -13528,7 +14193,7 @@ function svgPanelPoint(p,x,y) {
 }
 function svgSheetResult(showLabels,compact,solid,hingeGap) {
   const {panels,dims:d}=generatePanels(),layout=layoutPanels(panels,3,compact);
-  if(d.frontDrawerError)return {svg:'',svgs:[],error:d.frontDrawerError};
+  if(d.tabSlotError||d.frontDrawerError||d.drawerInsertError)return {svg:'',svgs:[],error:d.tabSlotError||d.frontDrawerError||d.drawerInsertError};
   if(layout.oversized.length)return {svg:'',svgs:[],totalW:state.materialWidth,totalH:state.materialHeight,count:panels.length,error:'Parts exceed the material sheet: '+layout.oversized.map(p=>p.name).join(', ')+'. Reduce box dimensions.'};
   if(state.shape==='letter'&&d.letterValidation?.length)return {svg:'',svgs:[],error:d.letterValidation.join(' ')};
   const svgs=layout.sheets.map(sheet=>solid?renderSolidSVGPage(sheet.placed,d,hingeGap):renderLaserSVGPage(sheet.placed,showLabels));
@@ -13634,7 +14299,8 @@ ${labels}  </g>
 
 // ---------- DXF (simple R12, mm) ----------
 function buildDXF() {
-  const { panels } = generatePanels();
+  const { panels, dims: d } = generatePanels();
+  if (d.tabSlotError) return '';
   const { placed } = layoutPanelsLegacy(panels, 5, true);
   let entities = '';
   const addPoly = (pts, layer = 'CUT', closed = true) => {
@@ -13748,7 +14414,7 @@ function placement(role, d) {
   const { ow, oh, od, T, iw, id } = d, hw = ow / 2, hd = od / 2;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   // Slip lid outer sizes
-  const low = ow + 2 * T, lod = od + 2 * T;
+  const low = d.lid?.low ?? ow + 2 * T, lod = d.lid?.lod ?? od + 2 * T;
   const lhw = low / 2, lhd = lod / 2;
   const loh = (d.lid ? d.lid.loh : state.lidH + T);
   // Lid sits on top of the box; top face at y = oh + T when assembled
@@ -13761,7 +14427,7 @@ function placement(role, d) {
     }
     case 'top': {
       const O = (d.plate && d.plate.O) || 0;
-      return { o: V(-hw - O, oh - T, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+      return { o: V(-hw - O, d.insetTopY ?? oh - T, hd + O), u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     }
     case 'front': {
       // Center shorter walls (no wall joints) so inner edges meet at corners
@@ -13781,7 +14447,7 @@ function placement(role, d) {
       return { o: V(hw, 0, -sd / 2), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
     }
     // Slip-on lid: larger box centered on the main box, sitting on top
-    case 'lid-top':   return { o: V(-lhw, lidBaseY, lhd),           u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
+    case 'lid-top':   return { o: V(-lhw - (d.lid?.capOverhang || 0), lidBaseY, lhd + (d.lid?.capOverhang || 0)),           u: V(1, 0, 0), v: V(0, 0, -1), n: V(0, 1, 0) };
     case 'lid-front': return { o: V(-lhw, lidBaseY - state.lidH, lhd - T), u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
     case 'lid-back':  return { o: V(-lhw, lidBaseY - state.lidH, -lhd),    u: V(1, 0, 0), v: V(0, 1, 0), n: V(0, 0, 1) };
     case 'lid-left':  return { o: V(-lhw + T, lidBaseY - state.lidH, -lhd), u: V(0, 0, 1), v: V(0, 1, 0), n: V(-1, 0, 0) };
@@ -14099,7 +14765,7 @@ function placementDivider(p, d) {
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   if (p.role === 'div-x') {
     const x = -hw + T + p.divPos - T / 2;
-    return { o: V(x, T + (d.raise || 0), hd), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
+    return { o: V(x, T + (d.raise || 0), hd - (p.dropInDivider ? T : 0)), u: V(0, 0, -1), v: V(0, 1, 0), n: V(1, 0, 0) };
   }
   if (p.role === 'div-y') {
     const z = hd - T - p.divPos + T / 2;
@@ -14212,6 +14878,7 @@ function rebuild3D() {
 
     let pl;
     if(p.flex) pl={o:new THREE.Vector3(),u:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),n:new THREE.Vector3(0,0,1)};
+    else if (p.insertPlacement) pl=placementDrawerInsert(p);
     else if (p.chestPlacement) pl=placementChest(p);
     else if (p.stacking) pl=placementStacking(p,layoutD);
     else if (p.role === 'div-x' || p.role === 'div-y') pl = placementDivider(p, layoutD);
@@ -14239,7 +14906,7 @@ function rebuild3D() {
     const mesh = new THREE.Mesh(geo, p.flex?mat:[mat,edgeMat]);
     // No edge overlay when the mesh has internal holes/slots — those edges clutter the sides
     const hasInternalCuts = (p.holes && p.holes.length) || (p.slots && p.slots.length);
-    if (!hasInternalCuts && !p.flex) {
+    if ((!hasInternalCuts || p.tabSlot) && !p.flex) {
       const line = new THREE.LineSegments(
         new THREE.EdgesGeometry(geo, 20),
         new THREE.LineBasicMaterial({ color: 0x2a1f12, transparent: true, opacity: 0.4 })
@@ -14265,6 +14932,20 @@ function rebuild3D() {
       mesh.add(new THREE.LineSegments(detailGeo,new THREE.LineBasicMaterial({color:0x234877})));
     }
     let dir = p.role==='stack-locator'?[0,-0.5,0]:p.role==='stack-rim'?[0,1,0]:EXPLODE_DIR[p.role] || [0, 0.5, 0];
+    if (d.slotLap) {
+      const rise = (d.oh + d.T) / amount;
+      const skirt = p.role.startsWith('lid-');
+      if (p.cornerLap === 'standing') dir = [0, skirt ? rise + 0.4 : 0, 0];
+      if (p.cornerLap === 'rising') dir = [0, skirt ? rise + 0.4 + state.lidH / amount : rise, 0];
+      if ((d.slide && p.role.startsWith('slide-frame-')) || (d.raise && p.role === 'bottom')) dir = [0, 0, 0];
+      if (p.role === 'slide-panel' && d.slide) dir = {
+        front: [0, 0, 1.2], back: [0, 0, -1.2], left: [-1.2, 0, 0], right: [1.2, 0, 0],
+      }[d.slide.dir];
+      if (['top', 'hinge-lid', 'pull-cap', 'pull-insert', 'pull-handle', 'stack-rim'].includes(p.role)) {
+        dir = [0, rise + 0.5, 0];
+      }
+      if (p.role === 'lid-top') dir = [0, rise + state.lidH / amount + 0.9, 0];
+    }
     // div-x columns stay fixed; div-y rows use EXPLODE_DIR upward; polygon sides override
     if ((p.role === 'poly-side' || p.role === 'lid-poly-side') && (d.poly || p.nSides)) {
       // Explode each side outward from center
@@ -14364,9 +15045,11 @@ function updateHUD(d, panels) {
     : `${(vol / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span style="font-size:0.7em;opacity:0.7">cm³</span>`;
 
   const dec = inch ? 2 : 1;
-  $('iExtW').textContent = toDisp(d.ow).toFixed(dec);
+  const lip = d.openRim ? d.T : d.slotLap?.overallLip || 0;
+  const lidLip = d.lid?.capOverhang || 0;
+  $('iExtW').textContent = toDisp(lidLip ? d.lid.low + 2 * lidLip : d.ow + 2 * lip).toFixed(dec);
   $('iExtH').textContent = toDisp(d.stacking?.overallHeight ?? d.oh).toFixed(dec);
-  $('iExtD').textContent = toDisp(d.od).toFixed(dec);
+  $('iExtD').textContent = toDisp(lidLip ? d.lid.lod + 2 * lidLip : d.od + 2 * lip).toFixed(dec);
   $('iVol').textContent = inch ? (vol / 16387.064).toFixed(1) + ' in³' : (vol / 1e6).toFixed(2) + ' L';
 
   $('stPieces').textContent = panels.length;
@@ -14377,6 +15060,7 @@ function updateHUD(d, panels) {
   if ($('sbPieces')) $('sbPieces').textContent = panels.length;
   if ($('sbArea')) $('sbArea').textContent = inch ? (area / 645.16).toFixed(1) + ' in²' : (area / 100).toFixed(0) + ' cm²';
 
+  syncJointStyleUI(d);
   // Actual finger widths per edge
   const edges = [['Width', d.ow], ['Depth', d.od], ['Height', d.oh]];
   $('jointInfo').innerHTML = edges.map(([n, L]) => {
@@ -14385,7 +15069,10 @@ function updateHUD(d, panels) {
   }).join('<br>');
 
   const wb = $('warnBox');
-  if (d.warn) {
+  if (d.tabSlotError) {
+    wb.textContent = d.tabSlotError;
+    wb.classList.add('show');
+  } else if (d.warn) {
     wb.textContent = 'Box is too small for this material thickness — interior was clamped to a minimum. Increase the size or reduce thickness.';
     wb.classList.add('show');
   } else if (d.thinRaise) {
@@ -14474,7 +15161,8 @@ function refreshSVGPreview() {
 function fileBase() {
   const d = dims();
   const prefix = frontDrawerActive() ? 'jackintheshop_drawer_module' : state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : state.shape==='sticky' ? 'jackintheshop_sticky_notes' : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
-  return `${prefix}_${d.ow.toFixed(0)}x${d.oh.toFixed(0)}x${d.od.toFixed(0)}mm_T${state.T}`;
+  const lip = tabSlotActive() ? cornerSlotInset(d.T) : openRimActive() ? d.T : 0;
+  return `${prefix}_${(d.ow + 2 * lip).toFixed(0)}x${d.oh.toFixed(0)}x${(d.od + 2 * lip).toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
   const blob = new Blob([data], { type });
@@ -14507,7 +15195,7 @@ function downloadSVGAll() {
   const files=result.svgs.map((svg,i)=>({name:base+'_sheet-'+String(i+1).padStart(2,'0')+'.svg',svg}));
   download(zipSVGFiles(files),'application/zip',base+'_sheets.zip');
 }
-function downloadDXF() { if(state.shape==='letter'||frontDrawerActive()){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
+function downloadDXF() { if(openRimActive()||tabSlotActive()||state.shape==='letter'||frontDrawerActive()||state.drawerInsertEnabled){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
 function resetAll() {
   pushHistoryNow();
