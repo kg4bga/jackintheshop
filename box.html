@@ -9723,10 +9723,11 @@ function onFootWidthInput(v) {
   if ($('valFootWidth')) $('valFootWidth').textContent = fmtLen(n, 1, 2);
   rebuild();
 }
-/** Dim raise / cutout controls when they do not apply (lantern-style flat top). */
+/** Dim raise and foot cutout controls when they do not apply. */
 function syncRaiseUI() {
   const ok = raiseApplicable();
-  const rz = bottomRaise();
+  const platesOnly = plateOnlyActive();
+  const rz = platesOnly ? dims().raise : bottomRaise();
   if ($('raiseGrp')) $('raiseGrp').style.opacity = ok ? '1' : '0.35';
   if ($('sldRaise')) $('sldRaise').disabled = !ok;
   if ($('inRaise')) $('inRaise').disabled = !ok;
@@ -9737,12 +9738,13 @@ function syncRaiseUI() {
     const maxR = state.mode === 'inside' ? 60 : Math.max(0, Math.min(60, state.H - lidT - Math.max(2, 2 * T)));
     $('sldRaise').max = maxR;
   }
-  const cutOk = ok && rz > 0.01;
+  const cutMax = footCutoutLimit(rz);
+  const cutOk = ok && cutMax > 0.01;
   if ($('footCutoutGrp')) $('footCutoutGrp').style.opacity = cutOk ? '1' : '0.35';
   if ($('sldFootCut')) {
     $('sldFootCut').disabled = !cutOk;
-    $('sldFootCut').max = Math.max(0.5, rz);
-    if ((state.footCutout || 0) > rz) state.footCutout = rz;
+    $('sldFootCut').max = platesOnly && cutOk ? cutMax : Math.max(0.5, rz);
+    if ((state.footCutout || 0) > cutMax) state.footCutout = cutMax;
     $('sldFootCut').value = state.footCutout || 0;
   }
   if ($('inFootCut')) {
@@ -10361,7 +10363,7 @@ function enforceFrameHeight() {
 }
 
 /** Interior / exterior dimensions (mm). */
-/** Can the bottom panel be raised for the current setup? (rectangular box, not lantern-style flat top) */
+/** Can the bottom panel be raised for the current setup? */
 function raiseApplicable() {
   if(frontDrawerActive())return false;
   if (shapedBoxActive() || livingActive()) return false;
@@ -10370,7 +10372,6 @@ function raiseApplicable() {
   // Flat-top overhang is allowed: when raise is active, overhang scales only the top plate.
   const s = state.sides || 4;
   if (s !== 4 && s !== 6) return false;
-  if (plateOnlyActive()) return false;
   return true;
 }
 function bottomRaise() {
@@ -10388,7 +10389,7 @@ function dims() {
   let iw, ih, id;
   if (state.mode === 'inside') { iw = state.W; ih = state.H; id = state.D; }
   else {
-    const cornerAllowance = 2 * (tabSlotActive() ? cornerSlotInset(T) : openRimActive() ? T : 0);
+    const cornerAllowance = 2 * (tabSlotActive() ? cornerSlotInset(T) : openRimLip(T, rz));
     iw = state.W - 2 * T - cornerAllowance;
     ih = state.H - lidT - rz;
     id = state.D - 2 * T - cornerAllowance;
@@ -11017,10 +11018,14 @@ function insertOnBottomEdge(outline, bottomY, cutX0, cutX1, height, radius, bell
 }
 
 /** Decorative feet cutout height (clamped to raise). */
-function footCutoutHeight() {
-  const rz = bottomRaise();
-  if (rz < 0.05) return 0;
-  return Math.max(0, Math.min(state.footCutout || 0, rz));
+function footCutoutLimit(raise) {
+  const web = plateOnlyActive() ? Math.max(0.4, state.kerf + 0.15) : 0;
+  return Math.max(0, raise - web);
+}
+
+function footCutoutHeight(raise = bottomRaise()) {
+  if (raise < 0.05) return 0;
+  return Math.max(0, Math.min(state.footCutout || 0, footCutoutLimit(raise)));
 }
 
 /**
@@ -12519,6 +12524,11 @@ function openRimActive() {
   return state.lid !== 'flat' && plateOnlyActive();
 }
 
+function openRimLip(T, raise) {
+  if (!openRimActive()) return 0;
+  return raise > 0 && state.sides === 4 && ['slide', 'hinge'].includes(state.lid) ? 0 : T;
+}
+
 function setJointStyle(value) {
   if (!['finger', 'tab-slot', 'plates-only'].includes(value) || state.jointStyle === value) return;
   pushHistoryNow();
@@ -12893,11 +12903,14 @@ function openTopRim(defs, d, inset = false) {
     return;
   }
   const base = defs.find(p => p.role === 'bottom');
-  base.tabSlots = base.holes;
-  base.holes = [];
+  if (base.holes?.length) {
+    base.tabSlots = base.holes;
+    base.holes = [];
+  }
   d.openRim = true;
   const topIndex = defs.findIndex(p => p.role === 'top');
   if (inset) {
+    d.plate.O = 0;
     defs.splice(topIndex, 1);
     return;
   }
@@ -12955,9 +12968,42 @@ function insetTopRim(defs, d, role, y, border, entry = null) {
   defs.push(rim);
   for (const role of wallRoles) {
     const wall = defs.find(p => p.role === role);
-    const bottom = lanternTabs(wall.w, T).map(({ a, b }) => [a, b]);
+    const bottom = d.raise ? null : tabSlotProfile(T, lanternTabs(wall.w, T).map(({ a, b }) => [a, b]), 0);
     wall.outlineOverride = panelOutline(wall.w, wall.h,
-      [tabSlotProfile(T, bottom, 0), null, wall.rimTop || null, null], T);
+      [bottom, null, wall.rimTop || null, null], T);
+  }
+}
+
+// Cut the raised floor to the inner faces, with fingers extending through
+// slots cut from the same pattern in the shorter, unjointed walls.
+function raisedPlateOnlyFloor(defs, d) {
+  const { T, sides, ow, od, iw, raise } = d;
+  const floor = defs.find(p => p.role === 'bottom');
+  const walls = sides === 4
+    ? ['front', 'right', 'back', 'left'].map(role => defs.find(p => p.role === role))
+    : defs.filter(p => p.role === 'poly-side');
+  const edgeWeb = Math.max(T / 2, state.kerf + 0.15);
+  const patterns = walls.map(wall => {
+    const fingers = edgePieces(wall.w, { ownEven: false, ownCorners: false }, false, false, T)
+      .filter(p => p.inset === 0)
+      .map(p => [Math.max(edgeWeb, p.a), Math.min(wall.w - edgeWeb, p.b)])
+      .filter(([a, b]) => b - a > state.kerf + 0.1);
+    if (!fingers.length) d.tabSlotError ||= 'Increase the box width or reduce kerf to fit the raised floor fingers.';
+    (wall.tabSlots ||= []).push(...fingers.map(([a, b]) => tabSlotRect(a, raise, b - a, T)));
+    return fingers;
+  });
+  if (sides === 4) {
+    const specs = patterns.map(fingers => tabSlotProfile(T, fingers.map(([a, b]) => [T + a, T + b]), 0));
+    floor.outlineOverride = panelOutline(ow, od, specs, T);
+  } else {
+    const { verts, sideLen } = regularPolygonVerts(sides, iw);
+    floor.outlineOverride = cleanPoly(verts.flatMap((start, i) => {
+      const end = verts[(i + 1) % sides];
+      const ux = (end[0] - start[0]) / sideLen;
+      const uy = (end[1] - start[1]) / sideLen;
+      const at = (distance, out) => [start[0] + ux * distance + uy * out, start[1] + uy * distance - ux * out];
+      return [start, ...patterns[i].flatMap(([a, b]) => [at(a, 0), at(a, T), at(b, T), at(b, 0)])];
+    }));
   }
 }
 
@@ -12999,14 +13045,14 @@ function generatePanelsBase(d = dims()) {
     const wallLen = joinWalls ? sideW : innerPoly.sideLen;
     d.wallSpan = { wallLen, joinWalls };
 
-    if (openRim || (flat && O > 0)) {
+    if (openRim || (flat && (O > 0 || (!joinWalls && rz > 0)))) {
       // When raised bottom / feet are active, overhang applies to the TOP plate only.
       const topOnlyOverhang = rz > 0;
       const plate = solidPolygonPlateWithSlots(nSides, ow, T, O, wallLen);
       const vRight = joinWalls ? polygonWallJoint(J(true, true), nSides, T) : null;
       const vLeft = joinWalls ? polygonWallJoint(J(false, false), nSides, T) : null;
       if (topOnlyOverhang) {
-        // Flush finger-jointed bottom + overhang top + walls with top tabs only
+        // Raised floor and walls with top tabs only
         defs.push({
           name: 'Bottom', role: 'bottom', w: ow, h: ow,
           specs: null,
@@ -13025,7 +13071,7 @@ function generatePanelsBase(d = dims()) {
           if (b - a > 1e-6) sideSlots.push([a, rz, b - a, T]);
         }
         for (let i = 0; i < nSides; i++) {
-          polyWallSlots.push(sideSlots.map(s => s.slice()));
+          polyWallSlots.push(joinWalls ? sideSlots.map(s => s.slice()) : []);
           defs.push({
             name: `Side ${i + 1}`, role: 'poly-side', w: wallLen, h: oh,
             specs: null,
@@ -13101,6 +13147,7 @@ function generatePanelsBase(d = dims()) {
 
     // Slip-on / pull-off lids for hex (and other regular polygons)
     if (openRim) openTopRim(defs, d);
+    if (rz > 0 && !joinWalls) raisedPlateOnlyFloor(defs, d);
     if (state.lid === 'slip') {
       defs.push(...buildPolySlipOnLidDefs(d, J));
     }
@@ -13115,7 +13162,7 @@ function generatePanelsBase(d = dims()) {
       let outline = def.outlineOverride || panelOutline(def.w, def.h, def.specs, T);
 
       // Decorative feet on polygon side walls
-      const cutH = footCutoutHeight();
+      const cutH = footCutoutHeight(joinWalls ? undefined : rz);
       if (cutH > 0.05 && def.role === 'poly-side') {
         const L = def.w;
         const footW = Math.max(T, Math.min(state.footWidth || 15, L * 0.45));
@@ -13182,7 +13229,7 @@ function generatePanelsBase(d = dims()) {
   if (openRim || (flat && (O > 0 || !joinWalls))) {
     // When raised bottom / feet are active, overhang applies to the TOP plate only.
     // Bottom stays flush (finger-jointed) so feet and raise still work.
-    const topOnlyOverhang = rz > 0 && O > 0;
+    const topOnlyOverhang = rz > 0 && (O > 0 || !joinWalls);
     const plateTop = solidPlateWithSlots(ow, od, T, O, frontW, sideD);
     if (topOnlyOverhang) {
       // Flush finger-jointed bottom + overhang top + walls with top tabs only
@@ -13694,7 +13741,7 @@ function generatePanelsBase(d = dims()) {
   const wallSlots = { front: [], back: [], left: [], right: [] };
   // Raised bottom: slots in every wall where the bottom plate's fingers enter.
   // Same finger pattern the plate uses on its own edges (spec J(false,false), corners left to the walls).
-  if (rz > 0 && !tabs) {
+  if (rz > 0 && !tabs && joinWalls) {
     const plateSlots = (L, arr) => {
       for (const pc of edgePieces(L, J(false, false), true, true, T)) {
         if (pc.inset !== 0) continue;
@@ -13763,6 +13810,7 @@ function generatePanelsBase(d = dims()) {
   });
 
   if (tabs) applyBoxTabSlots(defs, d, joinWalls);
+  if (rz > 0 && !joinWalls) raisedPlateOnlyFloor(defs, d);
   if (d.tabSlotError) return { panels: [], dims: d };
 
   const panels = defs.map(def => {
@@ -13823,7 +13871,7 @@ function generatePanelsBase(d = dims()) {
     // Decorative feet: rectangular cutout on the bottom edge of each side wall,
     // leaving solid corner posts under a raised bottom plate.
     // Foot width is independent of finger size (controlled by Feet → Foot width).
-    const cutH = footCutoutHeight();
+    const cutH = footCutoutHeight(joinWalls ? undefined : rz);
     if (cutH > 0.05 && ['front', 'back', 'left', 'right'].includes(def.role)) {
       const L = def.w;
       const footW = Math.max(T, Math.min(state.footWidth || 15, L * 0.45));
@@ -15045,7 +15093,7 @@ function updateHUD(d, panels) {
     : `${(vol / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span style="font-size:0.7em;opacity:0.7">cm³</span>`;
 
   const dec = inch ? 2 : 1;
-  const lip = d.openRim ? d.T : d.slotLap?.overallLip || 0;
+  const lip = d.openRim ? Math.max(d.plate.O, d.plate.botO) : d.slotLap?.overallLip || 0;
   const lidLip = d.lid?.capOverhang || 0;
   $('iExtW').textContent = toDisp(lidLip ? d.lid.low + 2 * lidLip : d.ow + 2 * lip).toFixed(dec);
   $('iExtH').textContent = toDisp(d.stacking?.overallHeight ?? d.oh).toFixed(dec);
@@ -15161,7 +15209,7 @@ function refreshSVGPreview() {
 function fileBase() {
   const d = dims();
   const prefix = frontDrawerActive() ? 'jackintheshop_drawer_module' : state.shape==='letter' ? 'jackintheshop_letter_'+state.letter : state.shape==='sticky' ? 'jackintheshop_sticky_notes' : livingActive() ? 'jackintheshop_living_'+state.shape : shapedBoxActive() ? 'jackintheshop_' + state.shape : state.generator === 'frame' ? 'jackintheshop_frame' : 'jackintheshop_box';
-  const lip = tabSlotActive() ? cornerSlotInset(d.T) : openRimActive() ? d.T : 0;
+  const lip = tabSlotActive() ? cornerSlotInset(d.T) : openRimLip(d.T, d.raise);
   return `${prefix}_${(d.ow + 2 * lip).toFixed(0)}x${d.oh.toFixed(0)}x${(d.od + 2 * lip).toFixed(0)}mm_T${state.T}`;
 }
 function download(data, type, name) {
