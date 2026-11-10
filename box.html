@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.01</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.02</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8180,6 +8180,264 @@ and disclaimer.
     #letterMapDialog::backdrop { background:#0008; }
     #letterLargeMap { background:white; overflow:auto; }
     #letterLargeMap svg { min-width:600px; }
+    .file-menu { position:relative; flex-shrink:0; }
+    .file-menu-trigger[aria-expanded="true"] { background:var(--surface2); border-color:var(--border-light); }
+    .file-menu-popup { position:fixed; z-index:1000; min-width:190px; padding:5px; border:1px solid var(--border-light); border-radius:8px; background:var(--surface); box-shadow:0 10px 30px rgba(0,0,0,.22); }
+    .file-menu-popup[hidden] { display:none; }
+    .file-menu-popup button { display:block; width:100%; border:0; border-radius:5px; padding:9px 11px; text-align:left; color:var(--text); background:transparent; font:inherit; cursor:pointer; white-space:nowrap; }
+    .file-menu-popup button:hover,.file-menu-popup button:focus-visible { background:var(--surface2); outline:2px solid var(--accent); outline-offset:-2px; }
+    .project-name { max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:12px; align-self:center; }
+    .project-name.dirty { color:var(--text); }
+    .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+    .tb-label { font-size: 11px; color: var(--muted); margin: 0 4px; }
+
+    /* Unit switch */
+    .unit-switch {
+      display: flex; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; height: 24px;
+    }
+    .unit-switch button {
+      background: none; border: none; color: var(--muted);
+      padding: 0 10px; font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+    .unit-switch button.active { background: var(--accent); color: #fff; }
+
+    /* ========== MAIN LAYOUT ========== */
+    .main { display: flex; flex: 1; min-height: 0; }
+
+    /* Left docked panels (LightBurn window style) */
+    .left-dock {
+      width: 280px; background: var(--bg); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+    }
+
+    /* Panel windows */
+    .lb-panel {
+      border-bottom: 1px solid var(--border); background: var(--surface);
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .lb-panel.open { flex: 1; }
+    .lb-panel-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 26px; padding: 0 8px; background: var(--panel-header);
+      border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+      font-size: 12px; font-weight: 600;
+    }
+    .lb-panel-hdr:hover { background: var(--surface2); }
+    .lb-panel-hdr .title { display: flex; align-items: center; gap: 6px; }
+    .lb-panel-hdr .chevron {
+      width: 12px; height: 12px; opacity: 0.6; transition: transform 0.15s;
+    }
+    .lb-panel:not(.open) .chevron { transform: rotate(-90deg); }
+    .lb-panel:not(.open) .lb-panel-body { display: none; }
+    .lb-panel-body {
+      padding: 8px 10px; overflow-y: auto; flex: 1;
+    }
+    .lb-panel-body::-webkit-scrollbar { width: 8px; }
+    .lb-panel-body::-webkit-scrollbar-track { background: var(--surface); }
+    .lb-panel-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+    /* Form controls */
+    .hint {
+      font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.35;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 100%;
+    }
+    .hint:empty { display: none; }
+    .ctrl { margin-bottom: 10px; }
+    .ctrl-lbl {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 3px; font-size: 11px; font-weight: 500;
+    }
+    .ctrl-val { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+
+    input[type="range"] {
+      width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
+      background: var(--bg); border-radius: 2px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); cursor: pointer; border: 1px solid #fff;
+    }
+
+    .dim-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .dim-grp label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+    .dim-inp {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 4px 6px; color: var(--text);
+      font-family: var(--mono); font-size: 12px; outline: none;
+    }
+    .dim-inp:focus { border-color: var(--accent); }
+
+    .btn-grp { display: flex; gap: 2px; margin-bottom: 8px; }
+    .btn-grp button {
+      flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+      padding: 5px 4px; border-radius: var(--radius); font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    .btn-grp button.active {
+      background: var(--accent); color: #fff; border-color: var(--accent-dim);
+    }
+    .btn-grp button:hover:not(.active) { border-color: var(--border-light); color: var(--text); }
+
+    .info-box {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 6px; margin-top: 6px;
+    }
+    .info-item { text-align: center; }
+    .info-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .info-val { font-family: var(--mono); font-size: 12px; color: var(--text); margin-top: 1px; }
+
+    .warn-box {
+      display: none; margin-top: 6px; font-size: 11px; color: var(--warn);
+      border: 1px solid var(--warn); border-radius: var(--radius);
+      padding: 5px 7px; line-height: 1.35; background: rgba(255,140,66,0.08);
+    }
+    .warn-box.show { display: block; }
+
+    .joint-info {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      line-height: 1.55; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 6px; margin-top: 4px;
+    }
+
+    /* Action buttons at bottom of left dock */
+    .actions {
+      padding: 8px; display: flex; flex-direction: column; gap: 4px;
+      border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+    }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 7px 10px; border-radius: var(--radius); font-weight: 600;
+      font-size: 12px; cursor: pointer; border: 1px solid transparent;
+      font-family: inherit; transition: all 0.12s;
+    }
+    .btn-download {
+      background: var(--accent); color: #fff; border-color: var(--accent-dim);
+    }
+    .btn-download:hover { background: var(--accent-hover); }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text); border-color: var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-light); background: var(--surface3); }
+    .btn-ghost {
+      background: transparent; color: var(--muted); border-color: var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-light); }
+
+    /* ========== WORKSPACE (center) ========== */
+    .workspace {
+      flex: 1; position: relative; background: var(--workspace); min-width: 0;
+      display: flex; flex-direction: column;
+    }
+    .workspace-header {
+      height: 22px; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 8px; font-size: 11px; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .workspace-header strong { color: var(--text); margin-right: 8px; }
+    #materialView { position:absolute; inset:22px 0 0; z-index:10; background:var(--workspace); flex-direction:column; min-height:0; }
+    .material-tools { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:6px; background:var(--surface); border-bottom:1px solid var(--border); }
+    .material-tools label { display:flex; align-items:center; gap:4px; white-space:nowrap; font-size:11px; }
+    .material-tools input { width:70px; }
+    .material-tools select { width:auto; max-width:130px; }
+    #materialStatus { padding:3px 8px; margin:0; flex-shrink:0; }
+    #materialStage { flex:1; min-height:0; padding:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    #materialStage svg { width:100%; height:100%; touch-action:none; user-select:none; }
+    #materialStage [data-material-part] { cursor:grab; }
+    #materialStage [data-material-part].selected path { stroke:#0078d4; }
+    #materialStage [data-material-part].dragging { cursor:grabbing; }
+    #threeCanvas { width: 100%; height: 100%; display: block; flex: 1; }
+
+    /* HUD overlays */
+    .hud { position: absolute; pointer-events: none; font-size: 11px; z-index: 5; }
+    .hud-tl { top: 30px; left: 10px; }
+    .hud-tr { top: 30px; right: 10px; text-align: right; }
+    .hud-k { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .hud-v { font-family: var(--mono); font-size: 14px; color: var(--hud-text); margin-top: 1px; }
+    .stat-row { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 2px; }
+    .stat-k { color: var(--muted); }
+    .stat-v { font-family: var(--mono); color: var(--text); }
+
+    .canvas-hint {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: var(--muted); text-align: center; line-height: 1.4;
+      opacity: 0.65; pointer-events: none; background: rgba(0,0,0,0.35);
+      padding: 3px 10px; border-radius: 3px;
+    }
+
+    /* ========== RIGHT DOCK (optional extra info) ========== */
+    .right-dock {
+      width: 200px; background: var(--bg); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+    }
+    .right-dock .lb-panel { flex: 1; }
+
+    /* ========== STATUS BAR ========== */
+    .statusbar {
+      height: 22px; background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 8px; font-size: 11px;
+      color: var(--muted); flex-shrink: 0; gap: 16px;
+    }
+    .statusbar .sep { width: 1px; height: 12px; background: var(--border); }
+    .statusbar .status-item { display: flex; align-items: center; gap: 4px; }
+    .statusbar .status-val { color: var(--text); font-family: var(--mono); }
+
+    /* ========== MODAL (SVG preview) ========== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+      width: min(900px, 95vw); max-height: 90vh; display: flex; flex-direction: column;
+      overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .modal-hdr {
+      display: flex; justify-content: space-between; align-items: center;
+      height: 32px; padding: 0 12px; background: var(--panel-header);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-weight: 600; font-size: 12px; }
+    .modal-close {
+      background: none; border: none; color: var(--muted); font-size: 16px;
+      cursor: pointer; padding: 2px 6px; line-height: 1;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body {
+      flex: 1; overflow: auto; padding: 12px; background: var(--modal-bg); min-height: 280px;
+      display: flex; /* children use margin:auto so tall sheets scroll instead of being clipped at the top */
+    }
+    .modal-body svg { margin: auto; flex: 0 0 auto; max-width: 100%; height: auto; background: var(--svg-preview-bg); border-radius: 2px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 6px; padding: 8px 12px;
+      border-top: 1px solid var(--border); background: var(--surface);
+    }
+    .opt-row {
+      padding: 8px 12px; border-top: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 12px;
+      background: var(--surface);
+    }
+    .opt-row label {
+      display: flex; align-items: center; gap: 5px; color: var(--text-dim); cursor: pointer;
+    }
+    .opt-row input[type="checkbox"] { accent-color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .left-dock { width: 100%; max-height: 42vh; border-right: none; border-bottom: 1px solid var(--border); }
+      .right-dock { display: none; }
+      .main { flex-direction: column; }
+      .dim-row { grid-template-columns: 1fr 1fr; }
+    }
+    #tabSlotControls .hint, #tabSlotStatus, #fingerSizeHint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+    #letterControls .hint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+    #letterMapDialog { margin:auto; padding:16px; width:min(95vw,1000px); max-height:94vh; overflow:auto; color:var(--text); background:var(--surface); border:1px solid var(--border); }
+    #letterMapDialog::backdrop { background:#0008; }
+    #letterLargeMap { background:white; overflow:auto; }
+    #letterLargeMap svg { min-width:600px; }
     @media(max-width:900px){ .toolbar { max-width:100vw; overflow-x:auto; } .toolbar .tb-group { flex-shrink:0; } }
     #drawerControls .hint { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
   #lanternSettings .hint{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
@@ -8197,11 +8455,23 @@ and disclaimer.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.01</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.02</span>
     </div>
     <div class="tb-group">
-      <button class="tb-btn" title="New" onclick="resetAll()">New</button>
+      <div class="file-menu" id="fileMenu">
+        <button class="tb-btn file-menu-trigger" id="fileMenuTrigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fileMenuPopup">File ▼</button>
+        <div class="file-menu-popup" id="fileMenuPopup" role="menu" aria-label="File" hidden>
+          <button type="button" role="menuitem" data-file-action="new">New Project</button>
+          <button type="button" role="menuitem" data-file-action="open">Open Project...</button>
+          <button type="button" role="menuitem" data-file-action="save">Save Project</button>
+          <button type="button" role="menuitem" data-file-action="saveas">Save Project As...</button>
+        </div>
+      </div>
+      <span class="project-name" id="projectNameLabel" aria-live="polite">Untitled</span>
+      <input id="projectFileInput" type="file" accept=".jits,application/json" hidden>
+
       <button class="tb-btn" id="btnUndo" title="Undo" onclick="undo()" disabled>↶ Undo</button>
+      <button class="tb-btn" id="btnRedo" title="Redo" onclick="redo()" disabled>↷ Redo</button>
       <button class="tb-btn primary" title="Export SVG" onclick="showSVG()">⬇ SVG</button>
       <button class="tb-btn" title="Export DXF" onclick="downloadDXF()">DXF</button>
     </div>
@@ -8260,6 +8530,11 @@ and disclaimer.
   <select class="dim-inp" id="lanternSides" onchange="setLantern('lanternSides',Number(this.value))"><option value="4">Four sides</option><option value="6">Six sides (hexagon)</option></select>
   <p class="hint" id="lanternDefinition"></p>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm)</label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm)</label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"></div>
+  <div id="lanternDoorOptions" hidden><h4>Front Door</h4><div class="ctrl"><label><input type="checkbox" id="lanternDoor" onchange="setLantern('lanternDoor',this.checked)"> Hinged front door</label></div>
+  <div id="lanternDoorControls" hidden><p class="hint">The single-layer inner floor rim glues onto the floor, stops inward door movement, and helps retain contents.</p><div class="ctrl"><label class="ctrl-lbl" for="lanternDoorGap">Door edge clearance (mm)</label><input class="dim-inp" id="lanternDoorGap" type="number" min="0.2" max="2" step="0.1" value="0.5" onchange="setLantern('lanternDoorGap',Number(this.value))"></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorPinClearance">Pin radial clearance (mm per side)</label><input class="dim-inp" id="lanternDoorPinClearance" type="number" min="0" max="1.5" step="0.05" value="0.25" onchange="setLantern('lanternDoorPinClearance',Number(this.value))"><div class="hint">Pivot hole diameter = material thickness × √2 + twice this clearance.</div></div>
+  <div class="ctrl"><label><input type="checkbox" id="lanternDoorHandle" onchange="setLantern('lanternDoorHandle',this.checked)"> Add small door handle</label></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorOpen">Preview door opening <span class="ctrl-val" id="lanternDoorOpenVal">0°</span></label><input type="range" id="lanternDoorOpen" min="0" max="110" step="1" value="0" oninput="setLanternDoorOpen(this.value)"></div></div></div>
   <h4>Upper Lantern Box</h4><div class="ctrl"><label><input type="checkbox" id="lanternUpper" onchange="setLantern('lanternUpper',this.checked)"> Add Upper Box</label></div>
   <div id="lanternUpperSettings" hidden><p class="hint">Upper box uses the main roof as its floor.</p>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternUpperW">Upper width / across flats (mm)</label><input class="dim-inp" id="lanternUpperW" type="number" step="0.1" min="1" value="60" onchange="setLantern('lanternUpperW',Number(this.value))"><input type="range" id="lanternUpperWSlider" aria-label="Upper width / across flats (mm)" min="1" max="300" step="0.1" value="60" oninput="setLanternSlider('lanternUpperW',this.value)"></div><div id="lanternUpperDepthRow"><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperD">Upper depth (mm)</label><input class="dim-inp" id="lanternUpperD" type="number" step="0.1" min="1" value="50" onchange="setLantern('lanternUpperD',Number(this.value))"><input type="range" id="lanternUpperDSlider" aria-label="Upper depth (mm)" min="1" max="300" step="0.1" value="50" oninput="setLanternSlider('lanternUpperD',this.value)"></div></div><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperH">Upper wall height (mm)</label><input class="dim-inp" id="lanternUpperH" type="number" step="0.1" min="1" value="35" onchange="setLantern('lanternUpperH',Number(this.value))"><input type="range" id="lanternUpperHSlider" aria-label="Upper wall height (mm)" min="1" max="300" step="0.1" value="35" oninput="setLanternSlider('lanternUpperH',this.value)"></div>
@@ -8268,7 +8543,6 @@ and disclaimer.
   <h4>Hanging Ring</h4><div class="ctrl"><label><input type="checkbox" id="lanternRing" onchange="setLantern('lanternRing',this.checked)"> Add Hanging Ring</label></div>
   <div id="lanternRingSettings" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternRingDiameter">Ring outside diameter (mm)</label><input class="dim-inp" id="lanternRingDiameter" type="number" step="0.1" min="1" value="30" onchange="setLantern('lanternRingDiameter',Number(this.value))"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternRingBand">Ring band width (mm)</label><input class="dim-inp" id="lanternRingBand" type="number" step="0.1" min="1" value="5" onchange="setLantern('lanternRingBand',Number(this.value))"></div><p class="hint">Glue ring into cap; secure the removable roof before hanging the whole lantern.</p></div>
   <details><summary>Fit</summary><div class="ctrl"><label class="ctrl-lbl" for="lanternFit">Removable roof slot clearance (total) (mm)</label><input class="dim-inp" id="lanternFit" type="number" step="0.1" min="0.1" value="0.2" onchange="setLantern('lanternFit',Number(this.value))"></div></details>
-  <details open><summary>Assembly and LED access</summary><p class="hint" id="lanternAssembly"></p></details>
 </div>
           <div class="ctrl" id="notePresetControls" style="display:none">
             <label class="ctrl-lbl" for="notePreset">Sticky-note box</label>
@@ -8890,6 +9164,7 @@ const DEFAULTS = {
   letter:'A', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false,
   snowmanEngraving:true,
   lanternRing:false, lanternRingDiameter:30, lanternRingBand:5, lanternSides:4, lanternRoof:10, lanternBase:10, lanternUpper:false, lanternUpperW:60, lanternUpperD:50, lanternUpperH:35, lanternDouble:true, lanternCap:6, lanternCap2:3, lanternJoint:'finger', lanternUpperJoint:'inherit', lanternRectJoint:null, lanternRectUpperJoint:null, lanternFit:0.2,
+  lanternDoor:false, lanternDoorHandle:false, lanternDoorGap:0.5, lanternDoorPinClearance:0.25, lanternDoorOpen:0,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
   jointStyle: 'finger', slotInsetPercent: 100, tabClearance: 0, // clearance in mm
@@ -8934,6 +9209,7 @@ let panels3D = [];
 // ---------- Undo history ----------
 const HISTORY_MAX = 50;
 const history = [];
+const redoHistory = [];
 let historyTimer = null;
 let applyingHistory = false;
 
@@ -8950,6 +9226,7 @@ function pushHistory() {
   // Coalesce rapid changes (e.g. slider drag) into one undo step
   if (historyTimer) return;
   history.push(cloneState());
+  redoHistory.length=0;
   if (history.length > HISTORY_MAX) history.shift();
   updateUndoBtn();
   historyTimer = setTimeout(() => { historyTimer = null; }, 400);
@@ -8959,31 +9236,43 @@ function pushHistoryNow() {
   if (applyingHistory) return;
   if (historyTimer) { clearTimeout(historyTimer); historyTimer = null; }
   history.push(cloneState());
+  redoHistory.length=0;
   if (history.length > HISTORY_MAX) history.shift();
   updateUndoBtn();
 }
 
 function updateUndoBtn() {
   const btn = $('btnUndo');
-  if (!btn) return;
-  btn.disabled = history.length === 0;
-  btn.title = history.length
+  if (btn) {
+    btn.disabled = history.length === 0;
+    btn.title = history.length
     ? `Undo (${history.length} step${history.length > 1 ? 's' : ''}) — Ctrl+Z`
     : 'Nothing to undo';
+  }
+  const redo=$('btnRedo');
+  if(redo){redo.disabled=redoHistory.length===0;redo.title=redoHistory.length?`Redo (${redoHistory.length} step${redoHistory.length>1?'s':''}) — Ctrl+Y`:'Nothing to redo';}
+}
+
+function restoreHistoryState(snapshot){
+  applyingHistory=true;
+  Object.keys(snapshot).forEach(k=>{state[k]=snapshot[k];});
+  state.colWeights=(snapshot.colWeights||[1]).slice();state.rowWeights=(snapshot.rowWeights||[1]).slice();
+  syncInputs();rebuild();applyingHistory=false;updateUndoBtn();
 }
 
 function undo() {
   if (!history.length) return;
+  if(historyTimer){clearTimeout(historyTimer);historyTimer=null;}
   const prev = history.pop();
-  applyingHistory = true;
-  Object.keys(prev).forEach(k => { state[k] = prev[k]; });
-  // Ensure arrays are copies so future edits don't mutate history entries
-  state.colWeights = (prev.colWeights || [1]).slice();
-  state.rowWeights = (prev.rowWeights || [1]).slice();
-  syncInputs();
-  rebuild();
-  applyingHistory = false;
-  updateUndoBtn();
+  redoHistory.push(cloneState());if(redoHistory.length>HISTORY_MAX)redoHistory.shift();
+  restoreHistoryState(prev);
+}
+
+function redo(){
+  if(!redoHistory.length)return;
+  if(historyTimer){clearTimeout(historyTimer);historyTimer=null;}
+  const next=redoHistory.pop();history.push(cloneState());if(history.length>HISTORY_MAX)history.shift();
+  restoreHistoryState(next);
 }
 
 // ---------- Unit helpers ----------
@@ -12550,6 +12839,10 @@ function setLanternSlider(key,value){
   const size=Number(value);if(!Number.isFinite(size)||size<=0)return;
   pushHistory();state[key]=size;rebuild();
 }
+function setLanternDoorOpen(value){
+  const angle=Number(value);if(!Number.isFinite(angle))return;
+  state.lanternDoorOpen=Math.max(0,Math.min(110,angle));$('lanternDoorOpenVal').textContent=state.lanternDoorOpen+'°';rebuild();
+}
 function syncLanternUI(){
   const on=lanternActive();document.body.classList.toggle('lantern-mode',on);
   for(const id of ['jointStyle','lanternUpperJoint'])for(const option of $(id).options){
@@ -12559,6 +12852,15 @@ function syncLanternUI(){
       option.disabled=on;
     }
   }
+  const doorCompatible=on&&[4,6].includes(state.lanternSides);
+  $('lanternDoorOptions').hidden=!doorCompatible;
+  $('lanternDoor').checked=!!state.lanternDoor;
+  $('lanternDoorControls').hidden=!doorCompatible||!state.lanternDoor;
+  $('lanternDoorHandle').checked=!!state.lanternDoorHandle;
+  $('lanternDoorGap').value=state.lanternDoorGap;
+  $('lanternDoorPinClearance').value=state.lanternDoorPinClearance;
+  $('lanternDoorOpen').value=state.lanternDoorOpen;
+  $('lanternDoorOpenVal').textContent=state.lanternDoorOpen+'°';
   if(!on)return;
   $('lanternRing').checked=!!state.lanternRing;
   $('lanternRingSettings').hidden=!state.lanternRing;
@@ -12589,7 +12891,6 @@ function syncLanternUI(){
   $('fingerSizeLabel').textContent='Finger / tab size (target)';
   $('fingerSizeHint').textContent='Finger joints join rectangular wall edges. Top and bottom only uses smooth vertical seams.';
   $('tabSlotStatus').textContent=state.lanternSides===6?'Six sides switches to Top and bottom only; four-sided joint choices are restored when you switch back.':'Main roof is removable. Its slots include the access clearance below.';
-  $('lanternAssembly').textContent='Glue the wall seams and base tabs. Leave the main roof unglued so the roof and upper box lift off together for LED access. Glue upper walls to the shared roof and primary cap; center and glue the optional second cap. Add your own artwork after SVG export. LED lights only. '+(state.lanternSides===6?'Hexagonal smooth walls meet at their inner corners; square cuts leave a visible V seam on the outside (no bevel implied). Glue the seams and both end plates to stabilize each shell; leave only the main roof removable. Hexagonal vertical finger joints are not supported: export is blocked for that selection. ':'');
 }
 function generateLanternPanels(){
   const d=lanternDims(),{T,ow,od,oh}=d,n=state.lanternSides,k=state.kerf,web=Math.max(1,T/3),parts=[];
@@ -12605,6 +12906,15 @@ function generateLanternPanels(){
   const uj=state.lanternUpperJoint==='inherit'?state.lanternJoint:state.lanternUpperJoint;
   if(!['finger','tab-slot','plates-only'].includes(state.lanternJoint)||!['finger','tab-slot','plates-only'].includes(uj))return fail('Choose a valid lantern joint style.');
   if(n===6&&(state.lanternJoint==='finger'||state.lanternUpper&&uj==='finger'))return fail('Six-sided vertical finger joints are not yet validated. Select Top and bottom only for both shells; this uses square-cut walls with visible V seams.');
+  const doorEnabled=!!state.lanternDoor&&[4,6].includes(n),doorGap=state.lanternDoorGap,pinClearance=state.lanternDoorPinClearance;
+  if(doorEnabled&&(!Number.isFinite(doorGap)||doorGap<0.2||doorGap>2))return fail('Set door edge clearance between 0.2 and 2 mm.');
+  if(doorEnabled&&(!Number.isFinite(pinClearance)||pinClearance<0||pinClearance>1.5))return fail('Set pivot pin radial clearance between 0 and 1.5 mm.');
+  const frontFacet=n===6?3:2,hexTrim=n===6?T*Math.tan(Math.PI/6):0;
+  const doorSpan=n===6?ow/Math.sqrt(3)-2*hexTrim:ow-2*T,doorWidth=doorSpan-2*doorGap;
+  if(doorEnabled&&state.lanternDoorHandle){
+    const handleFit=0.4,handleEdgeInset=Math.max(T,3),minDoorWidth=handleEdgeInset+(T+handleFit)+T+web;
+    if(doorWidth<minDoorWidth||oh-2*T-2*doorGap<Math.max(8,T+6))return fail('Increase the front facet and wall height to fit the door handle.');
+  }
   if(state.lanternUpper){
     if([state.lanternUpperW,state.lanternUpperD,state.lanternUpperH].some(v=>!Number.isFinite(v)||v<=0))return fail('Upper box dimensions must be positive.');
     if(Math.min(state.lanternUpperW,n===6?state.lanternUpperW:state.lanternUpperD)<12*T||state.lanternUpperH<6*T)return fail('Upper width/depth must be at least 12 thicknesses and wall height at least 6.');
@@ -12616,6 +12926,17 @@ function generateLanternPanels(){
   const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
   const plate=(name,w,h,over,y,explodeY)=>({name,explode:[0,explodeY,0],outline:footprint(w+2*over,h+2*over),holes:[],chestPlacement:{o:[0,y,0],u:[1,0,0],v:[0,0,-1],n:[0,1,0]}});
   const base=plate('Lantern base',ow,od,state.lanternBase,0,-0.5),roof=plate('Main roof / shared upper floor (removable)',ow,od,state.lanternRoof,oh-T,0.8);
+  const frontZ=-od/2,doorBottom=T+doorGap,doorTop=oh-T-doorGap,doorPlane=frontZ-doorGap;
+  const doorLeftX=n===6?-doorSpan/2+doorGap:-ow/2+T+doorGap;
+  const doorHingeX=doorLeftX+T/2,doorHingeZ=doorPlane+T/2;
+  const openAngle=doorEnabled?(state.lanternDoorOpen||0)*Math.PI/180:0,doorCos=Math.cos(openAngle),doorSin=Math.sin(openAngle);
+  const doorOrigin=[doorHingeX-doorCos*T/2-doorSin*T/2,0,doorHingeZ+doorSin*T/2-doorCos*T/2];
+  const doorPlacement={o:doorOrigin,u:[doorCos,0,-doorSin],v:[0,1,0],n:[doorSin,0,doorCos]};
+  if(doorEnabled){
+    const pivotRadius=T/Math.SQRT2+pinClearance;
+    base.holes.push(circlePoly(doorHingeX,-doorHingeZ,pivotRadius,48));
+    roof.holes.push(circlePoly(doorHingeX,-doorHingeZ,pivotRadius,48));
+  }
   parts.push(base,roof);
   function shell(prefix,w,h,height,y,bottom,top,joint,removable){
     const verts=footprint(w,h);
@@ -12640,13 +12961,14 @@ function generateLanternPanels(){
           left=right=tabSlotProfile(i%2===0?T:0,spans,i%2===0?0:T);
         }
       }
+      if(doorEnabled&&prefix==='Main'&&(i===1||i===3)){if(i===1)right=null;else left=null;}
       // Build vertical edges only over the shoulder-to-shoulder height to avoid
       // tiny doubled-back segments where side joints meet plain tab shoulders.
       const bodyH=height-2*T;
       const horizontal=tabbedWallOutline(length,height,T,null,null,tabs,tabs);
       // Side profiles are generated at body height then kept plain in the tabs.
       let outline=horizontal;
-      if(left){
+      if(left||right){
         const edge=(spec)=>edgePieces(bodyH,spec,false,false,T);
         const rp=edge(right),lp=edge(left);
         const pts=[[lp[0].inset,T],...tabs.flatMap(q=>[[q.a,T],[q.a,0],[q.b,0],[q.b,T]])];
@@ -12656,8 +12978,9 @@ function generateLanternPanels(){
         outline=cleanPoly(pts);
       }
       const origin=[a[0]+u[0]*trim,a[1]+u[1]*trim];
-      parts.push({name:prefix+' wall '+(i+1),explode:[-inward[0],prefix==='Upper'?1.3:0,inward[1]],outline,holes:[],tabs,edgeIndex:i,wallLength:length,chestPlacement:{o:[origin[0],y,-origin[1]],u:[u[0],0,-u[1]],v:[0,1,0],n:[inward[0],0,-inward[1]]}});
-      for(const [p,clear] of [[bottom,0],[top,removable?state.lanternFit:0]])for(const q of tabs){
+      const omitWall=doorEnabled&&prefix==='Main'&&i===frontFacet;
+      if(!omitWall)parts.push({name:prefix+' wall '+(i+1),explode:[-inward[0],prefix==='Upper'?1.3:0,inward[1]],outline,holes:[],tabs,edgeIndex:i,wallLength:length,chestPlacement:{o:[origin[0],y,-origin[1]],u:[u[0],0,-u[1]],v:[0,1,0],n:[inward[0],0,-inward[1]]}});
+      if(!omitWall)for(const [p,clear] of [[bottom,0],[top,removable?state.lanternFit:0]])for(const q of tabs){
         const at=(s,t)=>[origin[0]+u[0]*s+inward[0]*t,origin[1]+u[1]*s+inward[1]*t];
         const half=clear/2;p.holes.push([at(q.a-half,-half),at(q.b+half,-half),at(q.b+half,T+half),at(q.a-half,T+half)]);
       }
@@ -12665,6 +12988,41 @@ function generateLanternPanels(){
   }
   try{
     shell('Main',ow,od,oh,0,base,roof,state.lanternJoint,true);
+    if(doorEnabled){
+      const rimWidth=2*T,rimClearance=0.15;
+      const outerFlat=n===6?ow-2*T-2*rimClearance:null;
+      const outerWidth=n===4?d.iw-2*rimClearance:outerFlat;
+      const outerDepth=n===4?d.id-2*rimClearance:outerFlat;
+      const outer=footprint(outerWidth,outerDepth),inner=footprint(n===4?outerWidth-2*rimWidth:outerFlat-2*rimWidth,n===4?outerDepth-2*rimWidth:outerFlat-2*rimWidth);
+      const fa=outer[frontFacet],fb=outer[(frontFacet+1)%n],notchPad=Math.max(1,T/3),notchReach=pinClearance+T/Math.SQRT2+notchPad;
+      const notchLeft=doorHingeX-notchReach,notchRight=doorHingeX+notchReach,notchY=-doorHingeZ-(T/Math.SQRT2+pinClearance+notchPad);
+      const tForX=x=>Math.max(0,Math.min(1,(x-fa[0])/(fb[0]-fa[0])));
+      const ta=tForX(notchRight),tb=tForX(notchLeft),pointAt=t=>[fa[0]+(fb[0]-fa[0])*t,fa[1]+(fb[1]-fa[1])*t];
+      const pA=pointAt(ta),pB=pointAt(tb),rimOutline=[];
+      for(let i=0;i<n;i++){
+        if(i!==frontFacet){rimOutline.push(outer[i]);continue;}
+        rimOutline.push(fa,pA,[pA[0],notchY],[pB[0],notchY],pB);
+      }
+      const cleanRim=cleanPoly(rimOutline);
+      if(!cleanRim.length||inner.some(q=>!q))throw Error('Increase the lantern size to fit the single-layer inner floor rim.');
+      parts.push({name:'Lantern inner floor rim',outline:cleanRim,holes:[inner],explode:[0,0,0],chestPlacement:{o:[0,T,0],u:[1,0,0],v:[0,0,-1],n:[0,1,0]}});
+      const handleY=(doorBottom+doorTop)/2;
+      const doorOutline=[[0,0],[T,0],[T,doorBottom],[doorWidth,doorBottom],[doorWidth,doorTop],[T,doorTop],[T,oh],[0,oh],[0,doorTop],[0,doorBottom]];
+      const doorHoles=[];
+      if(state.lanternDoorHandle){
+        const fit=0.4,handleTabH=Math.max(4,T+0.6),handleBodyH=Math.max(6,handleTabH+2),handleProjection=6,pinDepth=T+fit;
+        const handleEdgeInset=Math.max(T,3),handleCenterX=doorWidth-handleEdgeInset-(T+fit)/2;
+        const handleTabBottom=(handleBodyH-handleTabH)/2,handleTabTop=handleTabBottom+handleTabH;
+        doorHoles.push(rect(handleCenterX-(T+fit)/2,handleY-handleTabH/2-fit/2,T+fit,handleTabH+fit));
+        // The handle lies in a vertical plane. Its single tongue enters the door slot
+        // along the door normal; the short bar projects outward as a pull.
+        const handleOutline=[[0,0],[handleTabBottom,0],[handleTabBottom,-pinDepth],[handleTabTop,-pinDepth],[handleTabTop,0],[handleBodyH,0],[handleBodyH,handleProjection],[0,handleProjection]];
+        const handleOrigin=[doorOrigin[0]+doorPlacement.u[0]*(handleCenterX-T/2),handleY-handleBodyH/2,doorOrigin[2]+doorPlacement.u[2]*(handleCenterX-T/2)];
+        const handlePlacement={o:handleOrigin,u:doorPlacement.v,v:[-doorPlacement.n[0],-doorPlacement.n[1],-doorPlacement.n[2]],n:doorPlacement.u};
+        parts.push({name:'Lantern door handle',outline:handleOutline,holes:[],explode:[0,0,0],chestPlacement:handlePlacement});
+      }
+      parts.push({name:'Lantern hinged front door',outline:doorOutline,holes:doorHoles,explode:[0,0,0],chestPlacement:doorPlacement});
+    }
     let totalH=oh,ringPlates=[roof];
     if(state.lanternUpper){
       const w=state.lanternUpperW,h=n===6?w:state.lanternUpperD,wallH=state.lanternUpperH,capY=oh+wallH;
@@ -15363,6 +15721,7 @@ function rebuild() {
   rebuild3D();
   if(state.workspaceMode==='material')refreshMaterialView();
   if ($('svgModal').classList.contains('show')) refreshSVGPreview();
+  updateProjectDirty();
 }
 
 function setView(name, btn) {
@@ -15456,6 +15815,232 @@ function downloadSVGAll() {
 }
 function downloadDXF() { if(lanternActive()||openRimActive()||tabSlotActive()||state.shape==='letter'||frontDrawerActive()||state.drawerInsertEnabled){const check=buildSVG(false);if(check.error){alert(check.error);return;}}download(buildDXF(), 'application/dxf', fileBase() + '.dxf'); }
 
+const JITS_FORMAT = 'JITS-BoxMaker';
+const JITS_FORMAT_VERSION = 1;
+const JITS_GENERATOR_VERSION = '0.9.02';
+const JITS_MAX_BYTES = 10 * 1024 * 1024;
+let projectName = 'Untitled';
+let projectCreatedAt = new Date().toISOString();
+let projectFileHandle = null;
+let lastSavedDesignSignature = null;
+
+function projectStateSnapshot(source = state) {
+  const copy = JSON.parse(JSON.stringify(source));
+  // These properties only control the current view or the selected sheet.
+  ['workspaceMode','materialPage','assembly','drawerPull','slidePull','slipLift','pullLift','hingeOpen','lanternDoorOpen'].forEach(k => delete copy[k]);
+  return copy;
+}
+
+function currentDesignSignature() { return JSON.stringify(projectStateSnapshot()); }
+
+function updateProjectDirty() {
+  const label = $('projectNameLabel');
+  if (!label) return;
+  const dirty = lastSavedDesignSignature !== null && currentDesignSignature() !== lastSavedDesignSignature;
+  label.textContent = projectName + (dirty ? ' *' : '');
+  label.classList.toggle('dirty', dirty);
+  label.title = dirty ? 'Unsaved project changes' : projectName;
+  window.jitsProjectDirty = dirty;
+}
+
+function markProjectSaved() {
+  lastSavedDesignSignature = currentDesignSignature();
+  updateProjectDirty();
+}
+
+function jitsSafeValue(value, depth = 0) {
+  if (depth > 8) throw new Error('Project settings are nested too deeply.');
+  if (value === null || typeof value === 'boolean') return;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || Math.abs(value) > 100000) throw new Error('Project contains an invalid numeric setting.');
+    return;
+  }
+  if (typeof value === 'string') {
+    if (value.length > 2000) throw new Error('Project contains an oversized text setting.');
+    return;
+  }
+  if (Array.isArray(value)) {
+    if (value.length > 500) throw new Error('Project contains too many setting values.');
+    value.forEach(item => jitsSafeValue(item, depth + 1));
+    return;
+  }
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Object]') {
+    const keys = Object.keys(value);
+    if (keys.length > 500 || keys.some(k => ['__proto__','prototype','constructor'].includes(k))) throw new Error('Project contains an invalid setting object.');
+    keys.forEach(k => jitsSafeValue(value[k], depth + 1));
+    return;
+  }
+  throw new Error('Project contains an unsupported setting value.');
+}
+
+function validateJitsDocument(doc) {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc) || doc.format !== JITS_FORMAT) throw new Error('This is not a JITS Box Maker project.');
+  if (doc.formatVersion !== JITS_FORMAT_VERSION) throw new Error(doc.formatVersion > JITS_FORMAT_VERSION ? 'This project was created by a newer Box Maker version.' : 'This project format version is not supported.');
+  if (doc.generatorVersion != null && (typeof doc.generatorVersion !== 'string' || doc.generatorVersion.length > 32)) throw new Error('The generator version is invalid.');
+  if (!doc.project || typeof doc.project.name !== 'string' || !doc.project.name.trim() || doc.project.name.length > 120) throw new Error('The project name is missing or invalid.');
+  if (doc.project.createdAt != null && (typeof doc.project.createdAt !== 'string' || Number.isNaN(Date.parse(doc.project.createdAt)))) throw new Error('The project creation date is invalid.');
+  if (doc.project.modifiedAt != null && (typeof doc.project.modifiedAt !== 'string' || Number.isNaN(Date.parse(doc.project.modifiedAt)))) throw new Error('The project modification date is invalid.');
+  if (!doc.design || typeof doc.design !== 'object' || Array.isArray(doc.design) || !doc.design.settings || typeof doc.design.settings !== 'object' || Array.isArray(doc.design.settings)) throw new Error('The project design settings are missing.');
+  const incoming = doc.design.settings;
+  const doorKeys=['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen'];
+  const expectedKeys = Object.keys(state).sort(), incomingKeys = Object.keys(incoming).sort();
+  if (incomingKeys.some(k=>!expectedKeys.includes(k)) || expectedKeys.some(k=>!incomingKeys.includes(k)&&!doorKeys.includes(k))) throw new Error('This project is missing settings or contains settings this version cannot safely load.');
+  jitsSafeValue(incoming);
+  for (const key of incomingKeys) {
+    const expected = DEFAULTS[key], value = incoming[key];
+    const invalidNullDefault = expected === null && value !== null && (['lanternRectJoint','lanternRectUpperJoint'].includes(key) ? typeof value !== 'string' : typeof value !== 'number');
+    if (invalidNullDefault || (expected !== null && (Array.isArray(expected) ? !Array.isArray(value) : expected && typeof expected === 'object' ? !value || typeof value !== 'object' || Array.isArray(value) : typeof value !== typeof expected))) throw new Error('The project contains an invalid value for ' + key + '.');
+  }
+  if (doc.design.shape !== incoming.shape || !$('boxShape').options || !Array.from($('boxShape').options).some(option => option.value === incoming.shape)) throw new Error('The project shape is missing or unsupported.');
+  if (!['box','frame'].includes(incoming.generator) || !['mm','in'].includes(incoming.unit)) throw new Error('The project generator mode or units are invalid.');
+  const enums = { mode:['inside','outside'], wallStyle:['panels','living'], livingDesign:['straight','wave','zigzag','diamond','oval','ladder','chevron','meander','brick'], jointStyle:['finger','tab-slot','plates-only'], frameJoint:['face','under'], lid:['none','flat','slip','slide','hinge','pull'], slideDir:['front','back','left','right'], drawerMode:['lift','front'], drawerOpen:['front','back','left','right'], drawerHoleShape:['round','slot','cutaway'], notePreset:['none','open','covered','popup'], hingeSide:['front','back','left','right'], workspaceMode:['3d','material'], lanternJoint:['finger','tab-slot','plates-only'], lanternRectJoint:['finger','tab-slot','plates-only','inherit'], lanternRectUpperJoint:['finger','tab-slot','plates-only','inherit'], lanternUpperJoint:['inherit','finger','plates-only'] };
+  if ('lanternSides' in incoming && ![4,6].includes(incoming.lanternSides)) throw new Error('The project lantern side count is invalid.');
+  if ('lanternJoint' in incoming && !['finger','tab-slot','plates-only'].includes(incoming.lanternJoint)) throw new Error('The project lantern joint is invalid.');
+  if ('lanternUpperJoint' in incoming && !['inherit','finger','plates-only'].includes(incoming.lanternUpperJoint)) throw new Error('The project upper lantern joint is invalid.');
+  if ('lanternDoorGap' in incoming && (typeof incoming.lanternDoorGap!=='number'||incoming.lanternDoorGap<0.2||incoming.lanternDoorGap>2)) throw new Error('The project door edge clearance is invalid.');
+  if ('lanternDoorPinClearance' in incoming && (typeof incoming.lanternDoorPinClearance!=='number'||incoming.lanternDoorPinClearance<0||incoming.lanternDoorPinClearance>1.5)) throw new Error('The project pin clearance is invalid.');
+  if ('lanternDoorOpen' in incoming && (typeof incoming.lanternDoorOpen!=='number'||incoming.lanternDoorOpen<0||incoming.lanternDoorOpen>110)) throw new Error('The project preview door angle is invalid.');
+  for (const [key, values] of Object.entries(enums)) if (key in incoming && incoming[key] != null && !values.includes(incoming[key])) throw new Error('The project contains an unsupported ' + key + ' setting.');
+  if (typeof incoming.letter === 'string' && !Object.keys(LETTER_GLYPHS).includes(incoming.letter)) throw new Error('The project letter is unsupported.');
+  for (const key of ['W','H','D','T']) if (typeof incoming[key] !== 'number' || incoming[key] <= 0) throw new Error('The project contains an invalid dimension or material thickness.');
+  return doc;
+}
+
+function migrateJitsProject(doc) {
+  validateJitsDocument(doc);
+  // Version 1 is the initial schema; future upgrades belong here.
+  const settings=JSON.parse(JSON.stringify(doc.design.settings));
+  for(const key of ['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen'])if(!(key in settings))settings[key]=JSON.parse(JSON.stringify(DEFAULTS[key]));
+  return { name: doc.project.name.trim(), createdAt: doc.project.createdAt || new Date().toISOString(), settings };
+}
+
+function buildJitsDocument(name) {
+  const settings = JSON.parse(JSON.stringify(state));
+  jitsSafeValue(settings);
+  return { format: JITS_FORMAT, formatVersion: JITS_FORMAT_VERSION, generatorVersion: JITS_GENERATOR_VERSION, project: { name, createdAt: projectCreatedAt, modifiedAt: new Date().toISOString() }, design: { shape: settings.shape, settings } };
+}
+
+function safeProjectFilename(name) {
+  const safe = name.normalize('NFKC').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-').replace(/[. ]+$/g, '').trim();
+  return (safe || 'Untitled').slice(0,120) + '.jits';
+}
+
+function downloadJits(doc, name) {
+  const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = safeProjectFilename(name); document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function writeJitsHandle(handle, doc) {
+  const writable = await handle.createWritable();
+  try { await writable.write(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json;charset=utf-8' })); await writable.close(); }
+  catch (err) { try { await writable.abort(); } catch (_) {} throw err; }
+}
+
+async function saveProject(saveAs = false) {
+  let nextName = projectName;
+  if (saveAs) {
+    nextName = window.prompt('Project name', projectName);
+    if (nextName === null) return;
+    nextName = nextName.trim();
+    if (!nextName || nextName.length > 120) { alert('Enter a project name between 1 and 120 characters.'); return; }
+  }
+  let doc;
+  try { doc = buildJitsDocument(nextName); } catch (err) { alert('Could not save project: ' + err.message); return; }
+  try {
+    if (saveAs && window.showSaveFilePicker) {
+      const handle = await window.showSaveFilePicker({ suggestedName: safeProjectFilename(nextName), types: [{ description: 'JITS Box Maker Project', accept: { 'application/json': ['.jits'] } }] });
+      await writeJitsHandle(handle, doc); projectFileHandle = handle;
+    } else if (!saveAs && projectFileHandle && projectFileHandle.createWritable) {
+      await writeJitsHandle(projectFileHandle, doc);
+    } else {
+      downloadJits(doc, nextName);
+      if (saveAs) projectFileHandle = null;
+    }
+    projectName = nextName; markProjectSaved();
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    alert('Could not save the project. ' + (err.message || 'The browser did not complete the save.'));
+  }
+}
+
+function confirmDiscardIfDirty() {
+  updateProjectDirty();
+  return !window.jitsProjectDirty || window.confirm('You have unsaved changes. Continuing will discard those changes.');
+}
+
+function applyLoadedProject(loaded, handle = null) {
+  if (!confirmDiscardIfDirty()) return false;
+  const previous = JSON.parse(JSON.stringify(state));
+  const previousProject = { name: projectName, createdAt: projectCreatedAt, fileHandle: projectFileHandle, savedSignature: lastSavedDesignSignature };
+    const previousHistory = JSON.parse(JSON.stringify(history)),previousRedo=JSON.parse(JSON.stringify(redoHistory));
+  try {
+    Object.keys(loaded.settings).forEach(k => { state[k] = loaded.settings[k]; });
+    projectName = loaded.name; projectCreatedAt = loaded.createdAt; projectFileHandle = handle;
+    history.length = 0;redoHistory.length=0; if (historyTimer) { clearTimeout(historyTimer); historyTimer = null; }
+    materialCache = null; selectedMaterialKey = null; materialDrag = null; materialNestingRun++; materialNestingActive = false;
+    syncInputs(); rebuild(); updateUndoBtn(); markProjectSaved();
+    return true;
+  } catch (err) {
+    Object.keys(previous).forEach(k => { state[k] = previous[k]; });
+    projectName = previousProject.name; projectCreatedAt = previousProject.createdAt; projectFileHandle = previousProject.fileHandle; lastSavedDesignSignature = previousProject.savedSignature;
+    history.splice(0, history.length, ...previousHistory);
+    redoHistory.splice(0,redoHistory.length,...previousRedo);
+    try { syncInputs(); rebuild(); } catch (_) {}
+    updateUndoBtn(); updateProjectDirty();
+    alert('Could not apply this project. Your current design has been restored. ' + (err.message || ''));
+    return false;
+  }
+}
+
+async function readJitsFile(file, handle = null) {
+  if (!file) return;
+  try {
+    if (file.size > JITS_MAX_BYTES) throw new Error('Project files must be 10 MB or smaller.');
+    const doc = JSON.parse(await file.text()), loaded = migrateJitsProject(doc);
+    applyLoadedProject(loaded, handle);
+  } catch (err) { alert('Could not open project: ' + (err.message || 'The file is invalid.')); }
+}
+
+async function openProject() {
+  if (window.showOpenFilePicker) {
+    try {
+      const [handle] = await window.showOpenFilePicker({ multiple: false, types: [{ description: 'JITS Box Maker Project', accept: { 'application/json': ['.jits'] } }] });
+      await readJitsFile(await handle.getFile(), handle);
+    } catch (err) { if (!err || err.name !== 'AbortError') alert('Could not open project. ' + (err.message || '')); }
+  } else $('projectFileInput').click();
+}
+
+function newProject() {
+  if (!confirmDiscardIfDirty()) return;
+  resetAll();
+  projectName = 'Untitled'; projectCreatedAt = new Date().toISOString(); projectFileHandle = null;
+  history.length = 0;redoHistory.length=0; if (historyTimer) { clearTimeout(historyTimer); historyTimer = null; }
+  updateUndoBtn(); markProjectSaved();
+}
+
+function setupFileMenu() {
+  const trigger = $('fileMenuTrigger'), popup = $('fileMenuPopup'), root = $('fileMenu');
+  const close = (restoreFocus = false) => { popup.hidden = true; trigger.setAttribute('aria-expanded','false'); if (restoreFocus) trigger.focus(); };
+  trigger.addEventListener('click', () => { const opening = popup.hidden; popup.hidden = !opening; trigger.setAttribute('aria-expanded', String(opening)); if (opening) { const r = trigger.getBoundingClientRect(); popup.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 205)) + 'px'; popup.style.top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - 190)) + 'px'; popup.querySelector('[role="menuitem"]').focus(); } });
+  popup.addEventListener('click', e => { const button = e.target.closest('[data-file-action]'); if (!button) return; close(); const action = button.dataset.fileAction; if (action === 'new') newProject(); else if (action === 'open') openProject(); else if (action === 'save') saveProject(false); else if (action === 'saveas') saveProject(true); });
+  popup.addEventListener('keydown', e => { const items = [...popup.querySelectorAll('[role="menuitem"]')], i = items.indexOf(document.activeElement); if (e.key === 'Escape') { e.preventDefault(); close(true); } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); } else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); items[e.key === 'Home' ? 0 : items.length-1].focus(); } });
+  document.addEventListener('pointerdown', e => { if (!root.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !popup.hidden) { e.preventDefault(); close(true); return; }
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const tag = e.target && e.target.tagName;
+    if (['INPUT','TEXTAREA','SELECT'].includes(tag) || (e.target && e.target.isContentEditable)) return;
+    const key = e.key.toLowerCase();
+    if (key === 'n' && !e.shiftKey) { e.preventDefault(); newProject(); }
+    else if (key === 'o' && !e.shiftKey) { e.preventDefault(); openProject(); }
+    else if (key === 's') { e.preventDefault(); saveProject(e.shiftKey); }
+  });
+  ['input','change','click'].forEach(type => document.addEventListener(type, () => setTimeout(updateProjectDirty, 0)));
+  $('projectFileInput').addEventListener('change', e => { const file = e.target.files && e.target.files[0]; if (file) readJitsFile(file); e.target.value = ''; });
+}
+
 function resetAll() {
   pushHistoryNow();
   materialCache=null;selectedMaterialKey=null;materialDrag=null;materialNestingRun++;materialNestingActive=false;
@@ -15470,6 +16055,11 @@ function resetAll() {
 }
 
 window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && ((e.key === 'y' || e.key === 'Y') || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+    e.preventDefault();redo();return;
+  }
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
@@ -15479,6 +16069,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('load', () => {
+  setupFileMenu();
   initTheme();
   try {
     initThree();
@@ -15493,6 +16084,7 @@ window.addEventListener('load', () => {
   } catch (err) {
     console.error('rebuild failed', err);
   }
+  markProjectSaved();
   try {
     if (camera && controls) {
       setView('persp', document.querySelector('.toolbar .tb-btn[onclick*="persp"]'));
@@ -15501,7 +16093,12 @@ window.addEventListener('load', () => {
     console.error('setView failed', err);
   }
 });
+window.addEventListener('beforeunload', e => {
+  updateProjectDirty();
+  if (window.jitsProjectDirty) { e.preventDefault(); e.returnValue = ''; }
+});
 </script>
 </body>
 </html>
+
 
