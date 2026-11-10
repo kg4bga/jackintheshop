@@ -8529,20 +8529,19 @@ and disclaimer.
   <h3>Lantern Settings</h3><label class="ctrl-lbl" for="lanternSides">Lantern geometry</label>
   <select class="dim-inp" id="lanternSides" onchange="setLantern('lanternSides',Number(this.value))"><option value="4">Four sides</option><option value="6">Six sides (hexagon)</option></select>
   <p class="hint" id="lanternDefinition"></p>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm)</label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm)</label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm) <span class="ctrl-val" id="lanternRoofSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"><input type="range" id="lanternRoofSlider" min="0" max="100" step="0.1" value="10" aria-label="Roof overhang per side (mm)" oninput="setLanternSlider('lanternRoof',this.value)"></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm) <span class="ctrl-val" id="lanternBaseSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"><input type="range" id="lanternBaseSlider" min="0" max="100" step="0.1" value="10" aria-label="Base overhang per side (mm)" oninput="setLanternSlider('lanternBase',this.value)"></div>
   <div id="lanternDoorOptions" hidden><h4>Front Door</h4><div class="ctrl"><label><input type="checkbox" id="lanternDoor" onchange="setLantern('lanternDoor',this.checked)"> Hinged front door</label></div>
-  <div id="lanternDoorControls" hidden><p class="hint">The single-layer inner floor rim glues onto the floor, stops inward door movement, and helps retain contents.</p><div class="ctrl"><label class="ctrl-lbl" for="lanternDoorGap">Door edge clearance (mm)</label><input class="dim-inp" id="lanternDoorGap" type="number" min="0.2" max="2" step="0.1" value="0.5" onchange="setLantern('lanternDoorGap',Number(this.value))"></div>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorPinClearance">Pin radial clearance (mm per side)</label><input class="dim-inp" id="lanternDoorPinClearance" type="number" min="0" max="1.5" step="0.05" value="0.25" onchange="setLantern('lanternDoorPinClearance',Number(this.value))"><div class="hint">Pivot hole diameter = material thickness × √2 + twice this clearance.</div></div>
+  <div id="lanternDoorControls" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternDoorGap">Door edge clearance (mm)</label><input class="dim-inp" id="lanternDoorGap" type="number" min="0.2" max="2" step="0.1" value="0.5" onchange="setLantern('lanternDoorGap',Number(this.value))"></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorPinClearance">Pin radial clearance (mm per side)</label><input class="dim-inp" id="lanternDoorPinClearance" type="number" min="0" max="1.5" step="0.05" value="0.25" onchange="setLantern('lanternDoorPinClearance',Number(this.value))"></div>
   <div class="ctrl"><label><input type="checkbox" id="lanternDoorHandle" onchange="setLantern('lanternDoorHandle',this.checked)"> Add small door handle</label></div>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorOpen">Preview door opening <span class="ctrl-val" id="lanternDoorOpenVal">0°</span></label><input type="range" id="lanternDoorOpen" min="0" max="110" step="1" value="0" oninput="setLanternDoorOpen(this.value)"></div></div></div>
   <h4>Upper Lantern Box</h4><div class="ctrl"><label><input type="checkbox" id="lanternUpper" onchange="setLantern('lanternUpper',this.checked)"> Add Upper Box</label></div>
   <div id="lanternUpperSettings" hidden><p class="hint">Upper box uses the main roof as its floor.</p>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternUpperW">Upper width / across flats (mm)</label><input class="dim-inp" id="lanternUpperW" type="number" step="0.1" min="1" value="60" onchange="setLantern('lanternUpperW',Number(this.value))"><input type="range" id="lanternUpperWSlider" aria-label="Upper width / across flats (mm)" min="1" max="300" step="0.1" value="60" oninput="setLanternSlider('lanternUpperW',this.value)"></div><div id="lanternUpperDepthRow"><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperD">Upper depth (mm)</label><input class="dim-inp" id="lanternUpperD" type="number" step="0.1" min="1" value="50" onchange="setLantern('lanternUpperD',Number(this.value))"><input type="range" id="lanternUpperDSlider" aria-label="Upper depth (mm)" min="1" max="300" step="0.1" value="50" oninput="setLanternSlider('lanternUpperD',this.value)"></div></div><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperH">Upper wall height (mm)</label><input class="dim-inp" id="lanternUpperH" type="number" step="0.1" min="1" value="35" onchange="setLantern('lanternUpperH',Number(this.value))"><input type="range" id="lanternUpperHSlider" aria-label="Upper wall height (mm)" min="1" max="300" step="0.1" value="35" oninput="setLanternSlider('lanternUpperH',this.value)"></div>
-  <details><summary>Upper wall construction</summary><select class="dim-inp" id="lanternUpperJoint" onchange="setLantern('lanternUpperJoint',this.value)"><option value="inherit">Same as main body</option><option value="finger">Finger joints</option><option value="plates-only">Top and bottom only</option></select></details>
-  <h4>Upper Cap</h4><div class="ctrl"><label class="ctrl-lbl" for="lanternCap">Primary cap overhang (mm)</label><input class="dim-inp" id="lanternCap" type="number" step="0.1" min="0" value="6" onchange="setLantern('lanternCap',Number(this.value))"></div><div class="ctrl"><label><input type="checkbox" id="lanternDouble" onchange="setLantern('lanternDouble',this.checked)"> Two-Layer Upper Lid</label></div><div id="lanternCap2Row"><div class="ctrl"><label class="ctrl-lbl" for="lanternCap2">Secondary cap overhang (mm)</label><input class="dim-inp" id="lanternCap2" type="number" step="0.1" min="0" value="3" onchange="setLantern('lanternCap2',Number(this.value))"></div></div></div>
+  <h4>Upper Cap</h4><div class="ctrl"><label class="ctrl-lbl" for="lanternCap">Primary cap overhang (mm) <span class="ctrl-val" id="lanternCapSliderVal">6.0 mm</span></label><input class="dim-inp" id="lanternCap" type="number" step="0.1" min="0" value="6" onchange="setLantern('lanternCap',Number(this.value))"><input type="range" id="lanternCapSlider" min="0" max="100" step="0.1" value="6" aria-label="Primary cap overhang (mm)" oninput="setLanternSlider('lanternCap',this.value)"></div><div class="ctrl"><label><input type="checkbox" id="lanternDouble" onchange="setLantern('lanternDouble',this.checked)"> Two-Layer Upper Lid</label></div><div id="lanternCap2Row"><div class="ctrl"><label class="ctrl-lbl" for="lanternCap2">Secondary cap overhang (mm)</label><input class="dim-inp" id="lanternCap2" type="number" step="0.1" min="0" value="3" onchange="setLantern('lanternCap2',Number(this.value))"></div></div></div>
   <h4>Hanging Ring</h4><div class="ctrl"><label><input type="checkbox" id="lanternRing" onchange="setLantern('lanternRing',this.checked)"> Add Hanging Ring</label></div>
   <div id="lanternRingSettings" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternRingDiameter">Ring outside diameter (mm)</label><input class="dim-inp" id="lanternRingDiameter" type="number" step="0.1" min="1" value="30" onchange="setLantern('lanternRingDiameter',Number(this.value))"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternRingBand">Ring band width (mm)</label><input class="dim-inp" id="lanternRingBand" type="number" step="0.1" min="1" value="5" onchange="setLantern('lanternRingBand',Number(this.value))"></div><p class="hint">Glue ring into cap; secure the removable roof before hanging the whole lantern.</p></div>
-  <details><summary>Fit</summary><div class="ctrl"><label class="ctrl-lbl" for="lanternFit">Removable roof slot clearance (total) (mm)</label><input class="dim-inp" id="lanternFit" type="number" step="0.1" min="0.1" value="0.2" onchange="setLantern('lanternFit',Number(this.value))"></div></details>
 </div>
           <div class="ctrl" id="notePresetControls" style="display:none">
             <label class="ctrl-lbl" for="notePreset">Sticky-note box</label>
@@ -9163,7 +9162,7 @@ const DEFAULTS = {
   workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
   letter:'A', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false,
   snowmanEngraving:true,
-  lanternRing:false, lanternRingDiameter:30, lanternRingBand:5, lanternSides:4, lanternRoof:10, lanternBase:10, lanternUpper:false, lanternUpperW:60, lanternUpperD:50, lanternUpperH:35, lanternDouble:true, lanternCap:6, lanternCap2:3, lanternJoint:'finger', lanternUpperJoint:'inherit', lanternRectJoint:null, lanternRectUpperJoint:null, lanternFit:0.2,
+  lanternRing:false, lanternRingDiameter:30, lanternRingBand:5, lanternSides:4, lanternRoof:10, lanternBase:10, lanternUpper:false, lanternUpperW:60, lanternUpperD:50, lanternUpperH:35, lanternDouble:true, lanternCap:6, lanternCap2:3, lanternJoint:'finger', lanternUpperJoint:'inherit', lanternRectJoint:null, lanternRectUpperJoint:null, lanternFit:0.2, lanternDefaultsInitialized:false,
   lanternDoor:false, lanternDoorHandle:false, lanternDoorGap:0.5, lanternDoorPinClearance:0.25, lanternDoorOpen:0,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
@@ -9381,7 +9380,12 @@ function setBoxShape(shape) {
   if (!['standard', 'sticky', 'heart', 'cross', 'star', 'snowman', 'letter', 'lantern'].includes(shape) || shape === state.shape) return;
   pushHistoryNow();
   state.shape = shape;
-  if(shape==='lantern')state.generator='box';
+  if(shape==='lantern'){
+    state.generator='box';
+    if(!state.lanternDefaultsInitialized){
+      state.W=100;state.D=100;state.H=150;state.lanternUpper=true;state.lanternDefaultsInitialized=true;
+    }
+  }
   if (shape === 'sticky') {
     state.generator = 'box'; state.wallStyle = 'panels'; state.sides = 4;
     syncInputs();
@@ -12823,20 +12827,18 @@ function setLantern(key,value){
   if(key==='lanternSides'&&value!==state.lanternSides){
     if(value===6){
       state.lanternRectJoint=state.lanternJoint;
-      state.lanternRectUpperJoint=state.lanternUpperJoint;
       if(state.lanternJoint==='finger')state.lanternJoint='plates-only';
-      if(state.lanternUpperJoint==='finger')state.lanternUpperJoint='plates-only';
     }else if(value===4){
       if(state.lanternRectJoint)state.lanternJoint=state.lanternRectJoint;
-      if(state.lanternRectUpperJoint)state.lanternUpperJoint=state.lanternRectUpperJoint;
-      state.lanternRectJoint=state.lanternRectUpperJoint=null;
+      state.lanternRectJoint=null;
     }
   }
+  if(key==='lanternJoint'||key==='lanternSides'){state.lanternUpperJoint='inherit';state.lanternRectUpperJoint=null;}
   state[key]=value;syncLanternUI();rebuild();
 }
 function setLanternSlider(key,value){
-  if(!['lanternUpperW','lanternUpperD','lanternUpperH'].includes(key))return;
-  const size=Number(value);if(!Number.isFinite(size)||size<=0)return;
+  if(!['lanternUpperW','lanternUpperD','lanternUpperH','lanternRoof','lanternBase','lanternCap'].includes(key))return;
+  const size=Number(value),min=['lanternRoof','lanternBase','lanternCap'].includes(key)?0:0.1;if(!Number.isFinite(size)||size<min)return;
   pushHistory();state[key]=size;rebuild();
 }
 function setLanternDoorOpen(value){
@@ -12845,7 +12847,7 @@ function setLanternDoorOpen(value){
 }
 function syncLanternUI(){
   const on=lanternActive();document.body.classList.toggle('lantern-mode',on);
-  for(const id of ['jointStyle','lanternUpperJoint'])for(const option of $(id).options){
+  for(const id of ['jointStyle'])for(const option of $(id).options){
     if(option.value==='finger')option.disabled=on&&state.lanternSides===6;
     if(option.value==='tab-slot'){
       option.hidden=on;
@@ -12866,7 +12868,12 @@ function syncLanternUI(){
   $('lanternRingSettings').hidden=!state.lanternRing;
   $('lanternRingDiameter').value=state.lanternRingDiameter;
   $('lanternRingBand').value=state.lanternRingBand;
-  for(const key of ['lanternSides','lanternRoof','lanternBase','lanternUpperW','lanternUpperD','lanternUpperH','lanternCap','lanternCap2','lanternFit','lanternUpperJoint'])$(key).value=state[key];
+  for(const key of ['lanternSides','lanternRoof','lanternBase','lanternUpperW','lanternUpperD','lanternUpperH','lanternCap','lanternCap2'])$(key).value=state[key];
+  for(const key of ['lanternRoof','lanternBase','lanternCap']){
+    const current=state[key],slider=$(key+'Slider');
+    slider.min=0;slider.max=Math.max(100,Math.ceil(current/10)*10+10);slider.value=current;
+    $(key+'SliderVal').textContent=Number(current).toFixed(1)+' mm';
+  }
   const d=lanternDims(),T=state.T,web=Math.max(1,T/3);
   const minWidth=state.lanternSides===6?Math.max(12*T,(2*T*Math.tan(Math.PI/6)+6*T+2*web)*Math.sqrt(3)):12*T;
   for(const [key,lo,hi] of [['lanternUpperW',minWidth,d.ow-4*T-2*web],['lanternUpperD',12*T,d.od-4*T-2*web],['lanternUpperH',6*T,300]]){
@@ -12884,7 +12891,7 @@ function syncLanternUI(){
   $('inD').disabled=$('sldD').disabled=state.lanternSides===6;
   $('depthGrp').style.display=state.lanternSides===6?'none':'';
   $('lblW').textContent=(state.lanternSides===6?'Across flats':'Width')+' ('+state.unit+')';
-  $('lanternDefinition').textContent=state.lanternSides===6?'Hexagon: width is across flats.':'Rectangle: set width and depth below.';
+  $('lanternDefinition').textContent=state.lanternSides===6?'Hexagon: width is across flats.':'';
   $('jointStyle').value=state.lanternJoint;
   $('tabSlotControls').hidden=true;$('fingerLengthControls').style.display='none';
   $('boxPreviewLabel').textContent='Lantern assembly preview';
@@ -12903,7 +12910,8 @@ function generateLanternPanels(){
   if(state.lanternFit<0.1)return fail('Use at least 0.1 mm roof access clearance so the roof can lift off.');
   if(Math.min(ow,od)<12*T||oh<8*T)return fail('Increase main width/depth to at least 12 material thicknesses and height to at least 8.');
   if(Math.min(state.lanternRoof,state.lanternBase)<web+state.lanternFit/2)return fail('Increase roof and base overhangs to leave at least '+(web+state.lanternFit/2).toFixed(2)+' mm around slots.');
-  const uj=state.lanternUpperJoint==='inherit'?state.lanternJoint:state.lanternUpperJoint;
+  // Upper walls always use the main Lantern wall construction.
+  const uj=state.lanternJoint;
   if(!['finger','tab-slot','plates-only'].includes(state.lanternJoint)||!['finger','tab-slot','plates-only'].includes(uj))return fail('Choose a valid lantern joint style.');
   if(n===6&&(state.lanternJoint==='finger'||state.lanternUpper&&uj==='finger'))return fail('Six-sided vertical finger joints are not yet validated. Select Top and bottom only for both shells; this uses square-cut walls with visible V seams.');
   const doorEnabled=!!state.lanternDoor&&[4,6].includes(n),doorGap=state.lanternDoorGap,pinClearance=state.lanternDoorPinClearance;
@@ -15882,7 +15890,7 @@ function validateJitsDocument(doc) {
   if (doc.project.modifiedAt != null && (typeof doc.project.modifiedAt !== 'string' || Number.isNaN(Date.parse(doc.project.modifiedAt)))) throw new Error('The project modification date is invalid.');
   if (!doc.design || typeof doc.design !== 'object' || Array.isArray(doc.design) || !doc.design.settings || typeof doc.design.settings !== 'object' || Array.isArray(doc.design.settings)) throw new Error('The project design settings are missing.');
   const incoming = doc.design.settings;
-  const doorKeys=['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen'];
+  const doorKeys=['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen','lanternDefaultsInitialized'];
   const expectedKeys = Object.keys(state).sort(), incomingKeys = Object.keys(incoming).sort();
   if (incomingKeys.some(k=>!expectedKeys.includes(k)) || expectedKeys.some(k=>!incomingKeys.includes(k)&&!doorKeys.includes(k))) throw new Error('This project is missing settings or contains settings this version cannot safely load.');
   jitsSafeValue(incoming);
@@ -15911,6 +15919,8 @@ function migrateJitsProject(doc) {
   // Version 1 is the initial schema; future upgrades belong here.
   const settings=JSON.parse(JSON.stringify(doc.design.settings));
   for(const key of ['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen'])if(!(key in settings))settings[key]=JSON.parse(JSON.stringify(DEFAULTS[key]));
+  if(!('lanternDefaultsInitialized' in settings))settings.lanternDefaultsInitialized=settings.shape==='lantern';
+  settings.lanternUpperJoint='inherit';settings.lanternRectUpperJoint=null;
   return { name: doc.project.name.trim(), createdAt: doc.project.createdAt || new Date().toISOString(), settings };
 }
 
@@ -15977,6 +15987,7 @@ function applyLoadedProject(loaded, handle = null) {
     const previousHistory = JSON.parse(JSON.stringify(history)),previousRedo=JSON.parse(JSON.stringify(redoHistory));
   try {
     Object.keys(loaded.settings).forEach(k => { state[k] = loaded.settings[k]; });
+    if(!('lanternDefaultsInitialized' in loaded.settings))state.lanternDefaultsInitialized=loaded.settings.shape==='lantern';
     projectName = loaded.name; projectCreatedAt = loaded.createdAt; projectFileHandle = handle;
     history.length = 0;redoHistory.length=0; if (historyTimer) { clearTimeout(historyTimer); historyTimer = null; }
     materialCache = null; selectedMaterialKey = null; materialDrag = null; materialNestingRun++; materialNestingActive = false;
