@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Ver 0.9.03</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.03</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13043,13 +13043,21 @@ function generateLanternPanels(){
       const pitch=state.lanternHipPitch*Math.PI/180,topSize=state.lanternHipTop;hipRise=((Math.min(ow,od)+2*(T+web)-topSize)/2)*Math.tan(pitch);const capY=oh+hipRise;hipCap=plate('Hip roof top flat',topSize,topSize,Math.max(web,state.lanternHipCap),capY,1.8);
       // Each roof panel is a trapezoid in its own sloped plane. Tabs at both
       // ends continue the lantern's finger-joint construction onto the roof.
+      // Extrusion is inward/downward. Trim each square-cut side until the
+      // inner edges meet on the corner bisector; outer edges leave a V seam.
+      const edgeTrim=T*Math.sin(pitch)*Math.tan(Math.PI/n);
+      const roofTabs=width=>{
+        const usable=width-2*edgeTrim;
+        if(usable<2*T)throw Error('Increase the Hip top flat size to leave room for the roof joints.');
+        return lanternTabs(usable,T).map(q=>({a:q.a+edgeTrim,b:q.b+edgeTrim}));
+      };
       const trapezoid=(bottomW,topW,height)=>{
-        const inset=(bottomW-topW)/2,bottomTabs=lanternTabs(bottomW,T),topTabs=lanternTabs(topW,T),pts=[];
-        pts.push([0,0]);
+        const inset=(bottomW-topW)/2,bottomTabs=roofTabs(bottomW),topTabs=roofTabs(topW),pts=[];
+        pts.push([edgeTrim,0]);
         for(const q of bottomTabs)pts.push([q.a,0],[q.a,-T],[q.b,-T],[q.b,0]);
-        pts.push([bottomW,0],[inset+topW,height]);
+        pts.push([bottomW-edgeTrim,0],[inset+topW-edgeTrim,height]);
         for(const q of topTabs.slice().reverse())pts.push([inset+q.b,height],[inset+q.b,height+T],[inset+q.a,height+T],[inset+q.a,height]);
-        pts.push([inset,height],[0,0]);
+        pts.push([inset+edgeTrim,height],[edgeTrim,0]);
         return cleanPoly(pts);
       };
       const roofW=ow+2*(T+web),roofD=od+2*(T+web),verts=footprint(roofW,roofD),inset=(Math.min(roofW,roofD)-topSize)/2,slant=inset/Math.cos(pitch);
@@ -13058,8 +13066,8 @@ function generateLanternPanels(){
         const v=[inward[0]*Math.cos(pitch),Math.sin(pitch),-inward[1]*Math.cos(pitch)],origin=[a[0],oh,-a[1]];
         const mapFoot=(s,t)=>[a[0]+u[0]*s+inward[0]*t,a[1]+u[1]*s+inward[1]*t];
         const addSlot=(platePart,s0,s1,t0,t1)=>platePart.holes.push([mapFoot(s0,t0),mapFoot(s1,t0),mapFoot(s1,t1),mapFoot(s0,t1)]);
-        for(const q of lanternTabs(L,T))addSlot(roof,q.a,q.b,-T*1.25,0);
-        const insetOnEdge=(L-topL)/2,topTabs=lanternTabs(topL,T),topStart=insetOnEdge;
+        for(const q of roofTabs(L))addSlot(roof,q.a,q.b,-T*1.25,0);
+        const insetOnEdge=(L-topL)/2,topTabs=roofTabs(topL),topStart=insetOnEdge;
         for(const q of topTabs){
           const topInset=inset,p0=mapFoot(topStart+q.a,topInset),p1=mapFoot(topStart+q.b,topInset);
           const p2=mapFoot(topStart+q.b,topInset+T*1.25),p3=mapFoot(topStart+q.a,topInset+T*1.25);
