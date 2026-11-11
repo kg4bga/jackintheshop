@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.02</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.03</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8455,7 +8455,7 @@ and disclaimer.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.02</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.03</span>
     </div>
     <div class="tb-group">
       <div class="file-menu" id="fileMenu">
@@ -8528,6 +8528,12 @@ and disclaimer.
           <div id="lanternSettings" class="ctrl">
   <h3>Lantern Settings</h3><label class="ctrl-lbl" for="lanternSides">Lantern geometry</label>
   <select class="dim-inp" id="lanternSides" onchange="setLantern('lanternSides',Number(this.value))"><option value="4">Four sides</option><option value="6">Six sides (hexagon)</option></select>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoofStyle">Roof style</label><select class="dim-inp" id="lanternRoofStyle" onchange="setLantern('lanternRoofStyle',this.value)"><option value="flat">Flat roof</option><option value="hip">Hip roof</option></select></div>
+  <div id="lanternHipControls" hidden>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipPitch">Roof pitch <span class="ctrl-val" id="lanternHipPitchVal">45°</span></label><input type="range" id="lanternHipPitch" min="15" max="70" step="1" value="45" aria-label="Hip roof pitch" oninput="setLanternSlider('lanternHipPitch',this.value)"></div>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipTop">Top flat size <span class="ctrl-val" id="lanternHipTopVal">20 mm</span></label><input type="range" id="lanternHipTop" min="10" max="100" step="0.5" value="20" aria-label="Hip roof top flat size (mm)" oninput="setLanternSlider('lanternHipTop',this.value)"></div>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipCap">Hip top cap overhang (mm) <span class="ctrl-val" id="lanternHipCapVal">1.0 mm</span></label><input type="range" id="lanternHipCap" min="1" max="30" step="0.1" value="1" aria-label="Hip top cap overhang (mm)" oninput="setLanternSlider('lanternHipCap',this.value)"></div><p class="hint">Minimum overhang preserves a border around the roof-panel finger slots. Top flat size controls the roof opening; this slider controls only the lid border.</p>
+  </div>
   <p class="hint" id="lanternDefinition"></p>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm) <span class="ctrl-val" id="lanternRoofSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"><input type="range" id="lanternRoofSlider" min="0" max="100" step="0.1" value="10" aria-label="Roof overhang per side (mm)" oninput="setLanternSlider('lanternRoof',this.value)"></div>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm) <span class="ctrl-val" id="lanternBaseSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"><input type="range" id="lanternBaseSlider" min="0" max="100" step="0.1" value="10" aria-label="Base overhang per side (mm)" oninput="setLanternSlider('lanternBase',this.value)"></div>
@@ -9162,7 +9168,7 @@ const DEFAULTS = {
   workspaceMode:'3d', materialWidth:304.8, materialHeight:304.8, materialGap:1, materialPage:0, materialPlacements:{}, materialLayoutSignature:'',
   letter:'A', letterMinimize:true, letterNumbers:true, letterArrows:true, letterEngrave:false,
   snowmanEngraving:true,
-  lanternRing:false, lanternRingDiameter:30, lanternRingBand:5, lanternSides:4, lanternRoof:10, lanternBase:10, lanternUpper:false, lanternUpperW:60, lanternUpperD:50, lanternUpperH:35, lanternDouble:true, lanternCap:6, lanternCap2:3, lanternJoint:'finger', lanternUpperJoint:'inherit', lanternRectJoint:null, lanternRectUpperJoint:null, lanternFit:0.2, lanternDefaultsInitialized:false,
+  lanternRing:false, lanternRingDiameter:30, lanternRingBand:5, lanternSides:4, lanternRoof:10, lanternRoofStyle:'flat', lanternHipPitch:45, lanternHipTop:20, lanternHipCap:1, lanternBase:10, lanternUpper:false, lanternUpperW:60, lanternUpperD:50, lanternUpperH:35, lanternDouble:true, lanternCap:6, lanternCap2:3, lanternJoint:'finger', lanternUpperJoint:'inherit', lanternRectJoint:null, lanternRectUpperJoint:null, lanternFit:0.2, lanternDefaultsInitialized:false,
   lanternDoor:false, lanternDoorHandle:false, lanternDoorGap:0.5, lanternDoorPinClearance:0.25, lanternDoorOpen:0,
   shape: 'standard', shapedTop: true, shapedLidFit: 0.4, shapedHandle: true, shapedHandleSize: 18,
   T: 3, finger: 9, fingerLength: 100, kerf: 0.1, // mm
@@ -12824,6 +12830,14 @@ function lanternDims(){
 }
 function setLantern(key,value){
   pushHistoryNow();
+  if(key==='lanternRoofStyle'&&value==='hip'&&state.lanternUpper){
+    const web=Math.max(1,state.T/3),needed=Math.max(state.lanternUpperW,state.lanternUpperD)+4*state.T+2*web;
+    state.lanternHipTop=Math.max(state.lanternHipTop,needed);
+  }
+  if(key==='lanternUpper'&&value&&state.lanternRoofStyle==='hip'){
+    const web=Math.max(1,state.T/3),needed=Math.max(state.lanternUpperW,state.lanternUpperD)+4*state.T+2*web;
+    state.lanternHipTop=Math.max(state.lanternHipTop,needed);
+  }
   if(key==='lanternSides'&&value!==state.lanternSides){
     if(value===6){
       state.lanternRectJoint=state.lanternJoint;
@@ -12837,7 +12851,11 @@ function setLantern(key,value){
   state[key]=value;syncLanternUI();rebuild();
 }
 function setLanternSlider(key,value){
-  if(!['lanternUpperW','lanternUpperD','lanternUpperH','lanternRoof','lanternBase','lanternCap'].includes(key))return;
+  if(!['lanternUpperW','lanternUpperD','lanternUpperH','lanternRoof','lanternBase','lanternCap','lanternHipPitch','lanternHipTop','lanternHipCap'].includes(key))return;
+  if(key==='lanternHipPitch'){
+    const pitch=Number(value);if(!Number.isFinite(pitch)||pitch<15||pitch>70)return;
+    pushHistory();state.lanternHipPitch=pitch;rebuild();return;
+  }
   const size=Number(value),min=['lanternRoof','lanternBase','lanternCap'].includes(key)?0:0.1;if(!Number.isFinite(size)||size<min)return;
   pushHistory();state[key]=size;rebuild();
 }
@@ -12864,6 +12882,22 @@ function syncLanternUI(){
   $('lanternDoorOpen').value=state.lanternDoorOpen;
   $('lanternDoorOpenVal').textContent=state.lanternDoorOpen+'°';
   if(!on)return;
+  $('lanternRoofStyle').value=state.lanternRoofStyle;
+  $('lanternHipControls').hidden=state.lanternRoofStyle!=='hip';
+  $('lanternUpper').disabled=false;
+  $('lanternUpperSettings').querySelector('.hint').textContent=state.lanternRoofStyle==='hip'?'Upper box sits on the Hip roof top; its footprint must fit the top flat.':'Upper box uses the main roof as its floor.';
+  const d=lanternDims(),T=state.T,web=Math.max(1,T/3);
+  $('lanternHipPitch').value=state.lanternHipPitch;
+  $('lanternHipPitchVal').textContent=state.lanternHipPitch+'°';
+  const hipTopMax=Math.max(10,Math.min(lanternDims().ow,lanternDims().od)-4*state.T);
+  const hipTopMin=state.lanternUpper?Math.max(10,Math.max(state.lanternUpperW,state.lanternUpperD)+4*state.T+2*web):10;
+  $('lanternHipTop').min=Math.min(hipTopMin,state.lanternHipTop);
+  $('lanternHipTop').max=Math.max(10,hipTopMax,state.lanternHipTop);
+  $('lanternHipTop').value=state.lanternHipTop;
+  $('lanternHipTopVal').textContent=Number(state.lanternHipTop).toFixed(1)+' mm';
+  const hipCapOver=Math.max(web,state.lanternHipCap);
+  $('lanternHipCap').min=web; $('lanternHipCap').max=Math.max(30,hipCapOver); $('lanternHipCap').value=hipCapOver;
+  $('lanternHipCapVal').textContent=hipCapOver.toFixed(1)+' mm';
   $('lanternRing').checked=!!state.lanternRing;
   $('lanternRingSettings').hidden=!state.lanternRing;
   $('lanternRingDiameter').value=state.lanternRingDiameter;
@@ -12871,12 +12905,16 @@ function syncLanternUI(){
   for(const key of ['lanternSides','lanternRoof','lanternBase','lanternUpperW','lanternUpperD','lanternUpperH','lanternCap','lanternCap2'])$(key).value=state[key];
   for(const key of ['lanternRoof','lanternBase','lanternCap']){
     const current=state[key],slider=$(key+'Slider');
-    slider.min=0;slider.max=Math.max(100,Math.ceil(current/10)*10+10);slider.value=current;
+    const margin=Math.max(1,state.T/3);
+    const minimum=key==='lanternRoof'?(state.lanternRoofStyle==='hip'?2.25*state.T+1.5*margin+0.01:margin+state.lanternFit/2):key==='lanternBase'?margin+state.lanternFit/2:margin;
+    slider.min=Math.ceil(minimum*10)/10;$(key).min=slider.min;
+    slider.max=Math.max(100,Math.ceil(current/10)*10+10);slider.value=current;
     $(key+'SliderVal').textContent=Number(current).toFixed(1)+' mm';
   }
-  const d=lanternDims(),T=state.T,web=Math.max(1,T/3);
   const minWidth=state.lanternSides===6?Math.max(12*T,(2*T*Math.tan(Math.PI/6)+6*T+2*web)*Math.sqrt(3)):12*T;
-  for(const [key,lo,hi] of [['lanternUpperW',minWidth,d.ow-4*T-2*web],['lanternUpperD',12*T,d.od-4*T-2*web],['lanternUpperH',6*T,300]]){
+  const upperMaxW=state.lanternRoofStyle==='hip'?state.lanternHipTop-4*T-2*web:d.ow-4*T-2*web;
+  const upperMaxD=state.lanternRoofStyle==='hip'?state.lanternHipTop-4*T-2*web:d.od-4*T-2*web;
+  for(const [key,lo,hi] of [['lanternUpperW',minWidth,upperMaxW],['lanternUpperD',12*T,upperMaxD],['lanternUpperH',6*T,300]]){
     const slider=$(key+'Slider'),current=Number.isFinite(state[key])?state[key]:lo;
     // Keep typed values visible without silently changing dimensions; existing
     // geometry validation still explains out-of-range entries.
@@ -12903,13 +12941,16 @@ function generateLanternPanels(){
   const d=lanternDims(),{T,ow,od,oh}=d,n=state.lanternSides,k=state.kerf,web=Math.max(1,T/3),parts=[];
   const fail=message=>({panels:[],dims:{...d,tabSlotError:message}});
   const positive=[T,ow,od,oh,state.finger];
-  const nonnegative=[k,state.lanternRoof,state.lanternBase,state.lanternCap,state.lanternCap2,state.lanternFit];
+  const nonnegative=[state.lanternHipCap,k,state.lanternRoof,state.lanternBase,state.lanternCap,state.lanternCap2,state.lanternFit];
   if(positive.some(v=>!Number.isFinite(v)||v<=0)||nonnegative.some(v=>!Number.isFinite(v)||v<0))return fail('Dimensions must be positive; kerf, clearance and overhangs must be finite and nonnegative.');
   if(![4,6].includes(n))return fail('Choose four or six lantern sides.');
+  if(!['flat','hip'].includes(state.lanternRoofStyle)||!Number.isFinite(state.lanternHipPitch)||state.lanternHipPitch<15||state.lanternHipPitch>70||!Number.isFinite(state.lanternHipTop)||state.lanternHipTop<10)return fail('Choose a valid lantern roof style, pitch, and top flat size.');
+  if(state.lanternRoofStyle==='hip'&&state.lanternHipTop>Math.min(ow,od)-4*T)return fail('Reduce the hip roof top flat size to leave at least two material thicknesses per side.');
   if(k>=T/3||state.lanternFit>T/2)return fail('Kerf must be below one third of material thickness; access clearance must not exceed half the thickness.');
   if(state.lanternFit<0.1)return fail('Use at least 0.1 mm roof access clearance so the roof can lift off.');
   if(Math.min(ow,od)<12*T||oh<8*T)return fail('Increase main width/depth to at least 12 material thicknesses and height to at least 8.');
   if(Math.min(state.lanternRoof,state.lanternBase)<web+state.lanternFit/2)return fail('Increase roof and base overhangs to leave at least '+(web+state.lanternFit/2).toFixed(2)+' mm around slots.');
+  if(state.lanternRoofStyle==='hip'&&state.lanternRoof<1.25*T+web/2)return fail('Increase roof overhang to at least '+(1.25*T+web/2).toFixed(2)+' mm to fit the Hip panel tabs.');
   // Upper walls always use the main Lantern wall construction.
   const uj=state.lanternJoint;
   if(!['finger','tab-slot','plates-only'].includes(state.lanternJoint)||!['finger','tab-slot','plates-only'].includes(uj))return fail('Choose a valid lantern joint style.');
@@ -12926,7 +12967,8 @@ function generateLanternPanels(){
   if(state.lanternUpper){
     if([state.lanternUpperW,state.lanternUpperD,state.lanternUpperH].some(v=>!Number.isFinite(v)||v<=0))return fail('Upper box dimensions must be positive.');
     if(Math.min(state.lanternUpperW,n===6?state.lanternUpperW:state.lanternUpperD)<12*T||state.lanternUpperH<6*T)return fail('Upper width/depth must be at least 12 thicknesses and wall height at least 6.');
-    if(state.lanternUpperW>ow-4*T-2*web||(n===4&&state.lanternUpperD>od-4*T-2*web))return fail('Reduce the upper footprint: leave two thicknesses plus a structural web per side inside the main walls.');
+    const upperSupport=state.lanternRoofStyle==='hip'?state.lanternHipTop:ow;
+    if(state.lanternUpperW>upperSupport-4*T-2*web||(n===4&&state.lanternUpperD>(state.lanternRoofStyle==='hip'?state.lanternHipTop:od)-4*T-2*web))return fail(state.lanternRoofStyle==='hip'?'Reduce the upper box footprint or increase the Hip roof top flat size to leave a structural margin.':'Reduce the upper footprint: leave two thicknesses plus a structural web per side inside the main walls.');
     if(state.lanternCap<web)return fail('Increase the primary cap overhang to at least '+web.toFixed(2)+' mm.');
   }
   // A single footprint drives wall placement and the slots in both end plates.
@@ -12994,8 +13036,39 @@ function generateLanternPanels(){
       }
     }
   }
+  let hipCap=null,hipRise=0;
   try{
     shell('Main',ow,od,oh,0,base,roof,state.lanternJoint,true);
+    if(state.lanternRoofStyle==='hip'){
+      const pitch=state.lanternHipPitch*Math.PI/180,topSize=state.lanternHipTop;hipRise=((Math.min(ow,od)+2*(T+web)-topSize)/2)*Math.tan(pitch);const capY=oh+hipRise;hipCap=plate('Hip roof top flat',topSize,topSize,Math.max(web,state.lanternHipCap),capY,1.8);
+      // Each roof panel is a trapezoid in its own sloped plane. Tabs at both
+      // ends continue the lantern's finger-joint construction onto the roof.
+      const trapezoid=(bottomW,topW,height)=>{
+        const inset=(bottomW-topW)/2,bottomTabs=lanternTabs(bottomW,T),topTabs=lanternTabs(topW,T),pts=[];
+        pts.push([0,0]);
+        for(const q of bottomTabs)pts.push([q.a,0],[q.a,-T],[q.b,-T],[q.b,0]);
+        pts.push([bottomW,0],[inset+topW,height]);
+        for(const q of topTabs.slice().reverse())pts.push([inset+q.b,height],[inset+q.b,height+T],[inset+q.a,height+T],[inset+q.a,height]);
+        pts.push([inset,height],[0,0]);
+        return cleanPoly(pts);
+      };
+      const roofW=ow+2*(T+web),roofD=od+2*(T+web),verts=footprint(roofW,roofD),inset=(Math.min(roofW,roofD)-topSize)/2,slant=inset/Math.cos(pitch);
+      for(let i=0;i<n;i++){
+        const a=verts[i],b=verts[(i+1)%n],L=Math.hypot(b[0]-a[0],b[1]-a[1]),u=[(b[0]-a[0])/L,(b[1]-a[1])/L],inward=[-u[1],u[0]],ratio=topSize/Math.min(roofW,roofD),topL=L*ratio;
+        const v=[inward[0]*Math.cos(pitch),Math.sin(pitch),-inward[1]*Math.cos(pitch)],origin=[a[0],oh,-a[1]];
+        const mapFoot=(s,t)=>[a[0]+u[0]*s+inward[0]*t,a[1]+u[1]*s+inward[1]*t];
+        const addSlot=(platePart,s0,s1,t0,t1)=>platePart.holes.push([mapFoot(s0,t0),mapFoot(s1,t0),mapFoot(s1,t1),mapFoot(s0,t1)]);
+        for(const q of lanternTabs(L,T))addSlot(roof,q.a,q.b,-T*1.25,0);
+        const insetOnEdge=(L-topL)/2,topTabs=lanternTabs(topL,T),topStart=insetOnEdge;
+        for(const q of topTabs){
+          const topInset=inset,p0=mapFoot(topStart+q.a,topInset),p1=mapFoot(topStart+q.b,topInset);
+          const p2=mapFoot(topStart+q.b,topInset+T*1.25),p3=mapFoot(topStart+q.a,topInset+T*1.25);
+          hipCap.holes.push([p0,p1,p2,p3]);
+        }
+        parts.push({name:'Hip roof panel '+(i+1),outline:trapezoid(L,topL,slant),holes:[],explode:[-inward[0]*1.5,0,inward[1]*1.5],edgeIndex:i,chestPlacement:{o:origin,u:[u[0],0,-u[1]],v,n:[inward[0]*Math.sin(pitch),-Math.cos(pitch),-inward[1]*Math.sin(pitch)]}});
+      }
+      parts.push(hipCap);
+    }
     if(doorEnabled){
       const rimWidth=2*T,rimClearance=0.15;
       const outerFlat=n===6?ow-2*T-2*rimClearance:null;
@@ -13031,12 +13104,12 @@ function generateLanternPanels(){
       }
       parts.push({name:'Lantern hinged front door',outline:doorOutline,holes:doorHoles,explode:[0,0,0],chestPlacement:doorPlacement});
     }
-    let totalH=oh,ringPlates=[roof];
+    let totalH=oh+hipRise,ringPlates=state.lanternRoofStyle==='hip'?[hipCap]:[roof];
     if(state.lanternUpper){
-      const w=state.lanternUpperW,h=n===6?w:state.lanternUpperD,wallH=state.lanternUpperH,capY=oh+wallH;
+      const w=state.lanternUpperW,h=n===6?w:state.lanternUpperD,wallH=state.lanternUpperH,upperFloorY=oh+hipRise,capY=upperFloorY+wallH;
       const cap=plate('Upper primary cap',w,h,state.lanternCap,capY,1.8);parts.push(cap);
       ringPlates=[cap];
-      shell('Upper',w,h,wallH+2*T,oh-T,roof,cap,uj,false);totalH=capY+T;
+      shell('Upper',w,h,wallH+2*T,upperFloorY-T,state.lanternRoofStyle==='hip'?hipCap:roof,cap,uj,false);totalH=capY+T;
       if(state.lanternDouble){const second=plate('Upper second cap (center and glue)',w,h,state.lanternCap2,capY+T,2.3);parts.push(second);ringPlates.push(second);totalH+=T;}
     }
     if(state.lanternRing){
@@ -15722,7 +15795,28 @@ function updateHUD(d, panels) {
 }
 
 // ---------- Actions ----------
+let lastValidGeometryState=null,geometryGuardSync=false;
+function protectGeometryEdit(){
+  const copy=()=>JSON.parse(JSON.stringify(state));
+  const check=()=>{try{const r=generatePanels();return r.panels.length>0&&!r.dims.tabSlotError&&!r.dims.frontDrawerError&&!r.dims.drawerInsertError;}catch(e){return false;}};
+  if(check()){lastValidGeometryState=copy();return '';}
+  if(!lastValidGeometryState)return '';
+  const requested=copy(),previous=lastValidGeometryState;
+  const changed=Object.keys(requested).filter(k=>JSON.stringify(requested[k])!==JSON.stringify(previous[k]));
+  Object.assign(state,JSON.parse(JSON.stringify(previous)));
+  if(changed.length===1&&typeof requested[changed[0]]==='number'&&Number.isFinite(requested[changed[0]])){
+    const key=changed[0],start=previous[key],end=requested[key];let lo=0,hi=1;
+    for(let i=0;i<16;i++){const mid=(lo+hi)/2;state[key]=start+(end-start)*mid;if(check())lo=mid;else hi=mid;}
+    state[key]=start+(end-start)*lo;
+    if(!check())Object.assign(state,JSON.parse(JSON.stringify(previous)));
+  }
+  lastValidGeometryState=copy();
+  geometryGuardSync=true;try{syncInputs();}finally{geometryGuardSync=false;}
+  return 'Limit reached: this adjustment would remove a joint or create invalid parts. The last valid dimensions are shown.';
+}
 function rebuild() {
+  if(geometryGuardSync)return;
+  const geometryLimitMessage=protectGeometryEdit();
   syncLanternUI();
   if(materialNestingActive)cancelMaterialNesting();
   syncRaiseUI();
@@ -15730,6 +15824,7 @@ function rebuild() {
   if(state.workspaceMode==='material')refreshMaterialView();
   if ($('svgModal').classList.contains('show')) refreshSVGPreview();
   updateProjectDirty();
+  if(geometryLimitMessage){$('warnBox').textContent=geometryLimitMessage;$('warnBox').classList.add('show');}
 }
 
 function setView(name, btn) {
@@ -15825,7 +15920,7 @@ function downloadDXF() { if(lanternActive()||openRimActive()||tabSlotActive()||s
 
 const JITS_FORMAT = 'JITS-BoxMaker';
 const JITS_FORMAT_VERSION = 1;
-const JITS_GENERATOR_VERSION = '0.9.02';
+const JITS_GENERATOR_VERSION = '0.9.03';
 const JITS_MAX_BYTES = 10 * 1024 * 1024;
 let projectName = 'Untitled';
 let projectCreatedAt = new Date().toISOString();
@@ -15890,7 +15985,7 @@ function validateJitsDocument(doc) {
   if (doc.project.modifiedAt != null && (typeof doc.project.modifiedAt !== 'string' || Number.isNaN(Date.parse(doc.project.modifiedAt)))) throw new Error('The project modification date is invalid.');
   if (!doc.design || typeof doc.design !== 'object' || Array.isArray(doc.design) || !doc.design.settings || typeof doc.design.settings !== 'object' || Array.isArray(doc.design.settings)) throw new Error('The project design settings are missing.');
   const incoming = doc.design.settings;
-  const doorKeys=['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen','lanternDefaultsInitialized'];
+  const doorKeys=['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen','lanternDefaultsInitialized','lanternRoofStyle','lanternHipPitch','lanternHipTop','lanternHipCap'];
   const expectedKeys = Object.keys(state).sort(), incomingKeys = Object.keys(incoming).sort();
   if (incomingKeys.some(k=>!expectedKeys.includes(k)) || expectedKeys.some(k=>!incomingKeys.includes(k)&&!doorKeys.includes(k))) throw new Error('This project is missing settings or contains settings this version cannot safely load.');
   jitsSafeValue(incoming);
@@ -15901,7 +15996,7 @@ function validateJitsDocument(doc) {
   }
   if (doc.design.shape !== incoming.shape || !$('boxShape').options || !Array.from($('boxShape').options).some(option => option.value === incoming.shape)) throw new Error('The project shape is missing or unsupported.');
   if (!['box','frame'].includes(incoming.generator) || !['mm','in'].includes(incoming.unit)) throw new Error('The project generator mode or units are invalid.');
-  const enums = { mode:['inside','outside'], wallStyle:['panels','living'], livingDesign:['straight','wave','zigzag','diamond','oval','ladder','chevron','meander','brick'], jointStyle:['finger','tab-slot','plates-only'], frameJoint:['face','under'], lid:['none','flat','slip','slide','hinge','pull'], slideDir:['front','back','left','right'], drawerMode:['lift','front'], drawerOpen:['front','back','left','right'], drawerHoleShape:['round','slot','cutaway'], notePreset:['none','open','covered','popup'], hingeSide:['front','back','left','right'], workspaceMode:['3d','material'], lanternJoint:['finger','tab-slot','plates-only'], lanternRectJoint:['finger','tab-slot','plates-only','inherit'], lanternRectUpperJoint:['finger','tab-slot','plates-only','inherit'], lanternUpperJoint:['inherit','finger','plates-only'] };
+  const enums = { mode:['inside','outside'], wallStyle:['panels','living'], livingDesign:['straight','wave','zigzag','diamond','oval','ladder','chevron','meander','brick'], jointStyle:['finger','tab-slot','plates-only'], frameJoint:['face','under'], lid:['none','flat','slip','slide','hinge','pull'], slideDir:['front','back','left','right'], drawerMode:['lift','front'], drawerOpen:['front','back','left','right'], drawerHoleShape:['round','slot','cutaway'], notePreset:['none','open','covered','popup'], hingeSide:['front','back','left','right'], workspaceMode:['3d','material'], lanternJoint:['finger','tab-slot','plates-only'], lanternRoofStyle:['flat','hip'], lanternRectJoint:['finger','tab-slot','plates-only','inherit'], lanternRectUpperJoint:['finger','tab-slot','plates-only','inherit'], lanternUpperJoint:['inherit','finger','plates-only'] };
   if ('lanternSides' in incoming && ![4,6].includes(incoming.lanternSides)) throw new Error('The project lantern side count is invalid.');
   if ('lanternJoint' in incoming && !['finger','tab-slot','plates-only'].includes(incoming.lanternJoint)) throw new Error('The project lantern joint is invalid.');
   if ('lanternUpperJoint' in incoming && !['inherit','finger','plates-only'].includes(incoming.lanternUpperJoint)) throw new Error('The project upper lantern joint is invalid.');
@@ -15918,7 +16013,7 @@ function migrateJitsProject(doc) {
   validateJitsDocument(doc);
   // Version 1 is the initial schema; future upgrades belong here.
   const settings=JSON.parse(JSON.stringify(doc.design.settings));
-  for(const key of ['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen'])if(!(key in settings))settings[key]=JSON.parse(JSON.stringify(DEFAULTS[key]));
+  for(const key of ['lanternDoor','lanternDoorHandle','lanternDoorGap','lanternDoorPinClearance','lanternDoorOpen','lanternRoofStyle','lanternHipPitch','lanternHipTop','lanternHipCap'])if(!(key in settings))settings[key]=JSON.parse(JSON.stringify(DEFAULTS[key]));
   if(!('lanternDefaultsInitialized' in settings))settings.lanternDefaultsInitialized=settings.shape==='lantern';
   settings.lanternUpperJoint='inherit';settings.lanternRectUpperJoint=null;
   return { name: doc.project.name.trim(), createdAt: doc.project.createdAt || new Date().toISOString(), settings };
