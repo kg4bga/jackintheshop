@@ -8543,7 +8543,7 @@ and disclaimer.
   <div class="ctrl"><label><input type="checkbox" id="lanternDoorHandle" onchange="setLantern('lanternDoorHandle',this.checked)"> Add small door handle</label></div>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorOpen">Preview door opening <span class="ctrl-val" id="lanternDoorOpenVal">0°</span></label><input type="range" id="lanternDoorOpen" min="0" max="110" step="1" value="0" oninput="setLanternDoorOpen(this.value)"></div></div></div>
   <h4>Upper Lantern Box</h4><div class="ctrl"><label><input type="checkbox" id="lanternUpper" onchange="setLantern('lanternUpper',this.checked)"> Add Upper Box</label></div>
-  <div id="lanternUpperSettings" hidden><p class="hint">Upper box uses the main roof as its floor.</p>
+  <div id="lanternUpperSettings" hidden><p class="hint">Upper box sits on an open support rim so light can pass up from the main box.</p>
   <div class="ctrl"><label class="ctrl-lbl" for="lanternUpperW">Upper width / across flats (mm)</label><input class="dim-inp" id="lanternUpperW" type="number" step="0.1" min="1" value="60" onchange="setLantern('lanternUpperW',Number(this.value))"><input type="range" id="lanternUpperWSlider" aria-label="Upper width / across flats (mm)" min="1" max="300" step="0.1" value="60" oninput="setLanternSlider('lanternUpperW',this.value)"></div><div id="lanternUpperDepthRow"><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperD">Upper depth (mm)</label><input class="dim-inp" id="lanternUpperD" type="number" step="0.1" min="1" value="50" onchange="setLantern('lanternUpperD',Number(this.value))"><input type="range" id="lanternUpperDSlider" aria-label="Upper depth (mm)" min="1" max="300" step="0.1" value="50" oninput="setLanternSlider('lanternUpperD',this.value)"></div></div><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperH">Upper wall height (mm)</label><input class="dim-inp" id="lanternUpperH" type="number" step="0.1" min="1" value="35" onchange="setLantern('lanternUpperH',Number(this.value))"><input type="range" id="lanternUpperHSlider" aria-label="Upper wall height (mm)" min="1" max="300" step="0.1" value="35" oninput="setLanternSlider('lanternUpperH',this.value)"></div>
   <h4>Upper Cap</h4><div class="ctrl"><label class="ctrl-lbl" for="lanternCap">Primary cap overhang (mm) <span class="ctrl-val" id="lanternCapSliderVal">6.0 mm</span></label><input class="dim-inp" id="lanternCap" type="number" step="0.1" min="0" value="6" onchange="setLantern('lanternCap',Number(this.value))"><input type="range" id="lanternCapSlider" min="0" max="100" step="0.1" value="6" aria-label="Primary cap overhang (mm)" oninput="setLanternSlider('lanternCap',this.value)"></div><div class="ctrl"><label><input type="checkbox" id="lanternDouble" onchange="setLantern('lanternDouble',this.checked)"> Two-Layer Upper Lid</label></div><div id="lanternCap2Row"><div class="ctrl"><label class="ctrl-lbl" for="lanternCap2">Secondary cap overhang (mm)</label><input class="dim-inp" id="lanternCap2" type="number" step="0.1" min="0" value="3" onchange="setLantern('lanternCap2',Number(this.value))"></div></div></div>
   <h4>Hanging Ring</h4><div class="ctrl"><label><input type="checkbox" id="lanternRing" onchange="setLantern('lanternRing',this.checked)"> Add Hanging Ring</label></div>
@@ -12885,7 +12885,7 @@ function syncLanternUI(){
   $('lanternRoofStyle').value=state.lanternRoofStyle;
   $('lanternHipControls').hidden=state.lanternRoofStyle!=='hip';
   $('lanternUpper').disabled=false;
-  $('lanternUpperSettings').querySelector('.hint').textContent=state.lanternRoofStyle==='hip'?'Upper box sits on the Hip roof top; its footprint must fit the top flat.':'Upper box uses the main roof as its floor.';
+  $('lanternUpperSettings').querySelector('.hint').textContent=state.lanternRoofStyle==='hip'?'Upper box sits on an open rim in the Hip roof top; its footprint must fit the top flat.':'Upper box sits on an open support rim so light can pass up from the main box.';
   const d=lanternDims(),T=state.T,web=Math.max(1,T/3);
   $('lanternHipPitch').value=state.lanternHipPitch;
   $('lanternHipPitchVal').textContent=state.lanternHipPitch+'°';
@@ -13077,6 +13077,12 @@ function generateLanternPanels(){
       }
       parts.push(hipCap);
     }
+    // Preserve mounting slots and door pivots around the central light opening.
+    if(state.lanternRoofStyle==='hip'){
+      const inset=Math.max(T+state.lanternFit/2+2*web,doorEnabled?3*T+pinClearance+web:0);
+      roof.holes.push(footprint(ow-2*inset,od-2*inset));
+      roof.name='Main roof rim (removable)';
+    }
     if(doorEnabled){
       const rimWidth=2*T,rimClearance=0.15;
       const outerFlat=n===6?ow-2*T-2*rimClearance:null;
@@ -13117,6 +13123,9 @@ function generateLanternPanels(){
       const w=state.lanternUpperW,h=n===6?w:state.lanternUpperD,wallH=state.lanternUpperH,upperFloorY=oh+hipRise,capY=upperFloorY+wallH;
       const cap=plate('Upper primary cap',w,h,state.lanternCap,capY,1.8);parts.push(cap);
       ringPlates=[cap];
+      const upperSupport=state.lanternRoofStyle==='hip'?hipCap:roof,inset=T+2*web;
+      upperSupport.holes.push(footprint(w-2*inset,h-2*inset));
+      upperSupport.name=state.lanternRoofStyle==='hip'?'Hip roof top rim / upper support':'Main roof rim / upper support (removable)';
       shell('Upper',w,h,wallH+2*T,upperFloorY-T,state.lanternRoofStyle==='hip'?hipCap:roof,cap,uj,false);totalH=capY+T;
       if(state.lanternDouble){const second=plate('Upper second cap (center and glue)',w,h,state.lanternCap2,capY+T,2.3);parts.push(second);ringPlates.push(second);totalH+=T;}
     }
@@ -16214,5 +16223,3 @@ window.addEventListener('beforeunload', e => {
 </script>
 </body>
 </html>
-
-
