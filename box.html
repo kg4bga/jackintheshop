@@ -8445,8 +8445,11 @@ and disclaimer.
     .lantern-mode #lanternSettings {display:block}
     .lantern-mode #s-lid,.lantern-mode #s-div,.lantern-mode #s-drawer,.lantern-mode #s-frame,.lantern-mode #s-walls,.lantern-mode #s-feet,.lantern-mode #genFrame,.lantern-mode #wallCountControls,.lantern-mode #stackingControls {display:none!important}
     #lanternSettings input[type=number]{width:100%}
-    #lanternSettings details{margin-top:10px}
-    #lanternSettings [hidden]{display:none!important}
+    .lantern-panel{display:none}
+    .lantern-mode .lantern-panel{display:flex}
+    .lantern-panel .hint{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+    .lantern-panel input[type=number]{width:100%}
+    #lanternSettings [hidden],.lantern-panel [hidden]{display:none!important}
   </style>
 </head>
 <body>
@@ -8528,26 +8531,13 @@ and disclaimer.
           <div id="lanternSettings" class="ctrl">
   <h3>Lantern Settings</h3><label class="ctrl-lbl" for="lanternSides">Lantern geometry</label>
   <select class="dim-inp" id="lanternSides" onchange="setLantern('lanternSides',Number(this.value))"><option value="4">Four sides</option><option value="6">Six sides (hexagon)</option></select>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoofStyle">Roof style</label><select class="dim-inp" id="lanternRoofStyle" onchange="setLantern('lanternRoofStyle',this.value)"><option value="flat">Flat roof</option><option value="hip">Hip roof</option></select></div>
-  <div id="lanternHipControls" hidden>
-    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipPitch">Roof pitch <span class="ctrl-val" id="lanternHipPitchVal">45°</span></label><input type="range" id="lanternHipPitch" min="15" max="70" step="1" value="45" aria-label="Hip roof pitch" oninput="setLanternSlider('lanternHipPitch',this.value)"></div>
-    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipTop">Top flat size <span class="ctrl-val" id="lanternHipTopVal">20 mm</span></label><input type="range" id="lanternHipTop" min="10" max="100" step="0.5" value="20" aria-label="Hip roof top flat size (mm)" oninput="setLanternSlider('lanternHipTop',this.value)"></div>
-    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipCap">Hip top cap overhang (mm) <span class="ctrl-val" id="lanternHipCapVal">1.0 mm</span></label><input type="range" id="lanternHipCap" min="1" max="30" step="0.1" value="1" aria-label="Hip top cap overhang (mm)" oninput="setLanternSlider('lanternHipCap',this.value)"></div><p class="hint">Minimum overhang preserves a border around the roof-panel finger slots. Top flat size controls the roof opening; this slider controls only the lid border.</p>
-  </div>
   <p class="hint" id="lanternDefinition"></p>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm) <span class="ctrl-val" id="lanternRoofSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"><input type="range" id="lanternRoofSlider" min="0" max="100" step="0.1" value="10" aria-label="Roof overhang per side (mm)" oninput="setLanternSlider('lanternRoof',this.value)"></div>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm) <span class="ctrl-val" id="lanternBaseSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"><input type="range" id="lanternBaseSlider" min="0" max="100" step="0.1" value="10" aria-label="Base overhang per side (mm)" oninput="setLanternSlider('lanternBase',this.value)"></div>
-  <div id="lanternDoorOptions" hidden><h4>Front Door</h4><div class="ctrl"><label><input type="checkbox" id="lanternDoor" onchange="setLantern('lanternDoor',this.checked)"> Hinged front door</label></div>
-  <div id="lanternDoorControls" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternDoorGap">Door edge clearance (mm)</label><input class="dim-inp" id="lanternDoorGap" type="number" min="0.2" max="2" step="0.1" value="0.5" onchange="setLantern('lanternDoorGap',Number(this.value))"></div>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorPinClearance">Pin radial clearance (mm per side)</label><input class="dim-inp" id="lanternDoorPinClearance" type="number" min="0" max="1.5" step="0.05" value="0.25" onchange="setLantern('lanternDoorPinClearance',Number(this.value))"></div>
-  <div class="ctrl"><label><input type="checkbox" id="lanternDoorHandle" onchange="setLantern('lanternDoorHandle',this.checked)"> Add small door handle</label></div>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorOpen">Preview door opening <span class="ctrl-val" id="lanternDoorOpenVal">0°</span></label><input type="range" id="lanternDoorOpen" min="0" max="110" step="1" value="0" oninput="setLanternDoorOpen(this.value)"></div></div></div>
-  <h4>Upper Lantern Box</h4><div class="ctrl"><label><input type="checkbox" id="lanternUpper" onchange="setLantern('lanternUpper',this.checked)"> Add Upper Box</label></div>
-  <div id="lanternUpperSettings" hidden><p class="hint">Upper box sits on an open support rim so light can pass up from the main box.</p>
-  <div class="ctrl"><label class="ctrl-lbl" for="lanternUpperW">Upper width / across flats (mm)</label><input class="dim-inp" id="lanternUpperW" type="number" step="0.1" min="1" value="60" onchange="setLantern('lanternUpperW',Number(this.value))"><input type="range" id="lanternUpperWSlider" aria-label="Upper width / across flats (mm)" min="1" max="300" step="0.1" value="60" oninput="setLanternSlider('lanternUpperW',this.value)"></div><div id="lanternUpperDepthRow"><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperD">Upper depth (mm)</label><input class="dim-inp" id="lanternUpperD" type="number" step="0.1" min="1" value="50" onchange="setLantern('lanternUpperD',Number(this.value))"><input type="range" id="lanternUpperDSlider" aria-label="Upper depth (mm)" min="1" max="300" step="0.1" value="50" oninput="setLanternSlider('lanternUpperD',this.value)"></div></div><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperH">Upper wall height (mm)</label><input class="dim-inp" id="lanternUpperH" type="number" step="0.1" min="1" value="35" onchange="setLantern('lanternUpperH',Number(this.value))"><input type="range" id="lanternUpperHSlider" aria-label="Upper wall height (mm)" min="1" max="300" step="0.1" value="35" oninput="setLanternSlider('lanternUpperH',this.value)"></div>
-  <h4>Upper Cap</h4><div class="ctrl"><label class="ctrl-lbl" for="lanternCap">Primary cap overhang (mm) <span class="ctrl-val" id="lanternCapSliderVal">6.0 mm</span></label><input class="dim-inp" id="lanternCap" type="number" step="0.1" min="0" value="6" onchange="setLantern('lanternCap',Number(this.value))"><input type="range" id="lanternCapSlider" min="0" max="100" step="0.1" value="6" aria-label="Primary cap overhang (mm)" oninput="setLanternSlider('lanternCap',this.value)"></div><div class="ctrl"><label><input type="checkbox" id="lanternDouble" onchange="setLantern('lanternDouble',this.checked)"> Two-Layer Upper Lid</label></div><div id="lanternCap2Row"><div class="ctrl"><label class="ctrl-lbl" for="lanternCap2">Secondary cap overhang (mm)</label><input class="dim-inp" id="lanternCap2" type="number" step="0.1" min="0" value="3" onchange="setLantern('lanternCap2',Number(this.value))"></div></div></div>
-  <h4>Hanging Ring</h4><div class="ctrl"><label><input type="checkbox" id="lanternRing" onchange="setLantern('lanternRing',this.checked)"> Add Hanging Ring</label></div>
-  <div id="lanternRingSettings" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternRingDiameter">Ring outside diameter (mm)</label><input class="dim-inp" id="lanternRingDiameter" type="number" step="0.1" min="1" value="30" onchange="setLantern('lanternRingDiameter',Number(this.value))"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternRingBand">Ring band width (mm)</label><input class="dim-inp" id="lanternRingBand" type="number" step="0.1" min="1" value="5" onchange="setLantern('lanternRingBand',Number(this.value))"></div><p class="hint">Glue ring into cap; secure the removable roof before hanging the whole lantern.</p></div>
+
+
+
+
+
+
 </div>
           <div class="ctrl" id="notePresetControls" style="display:none">
             <label class="ctrl-lbl" for="notePreset">Sticky-note box</label>
@@ -8819,6 +8809,75 @@ and disclaimer.
       </div>
 
       
+      <div class="lb-panel lantern-panel" id="lanternRoofSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternRoofSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternRoofSection');}">
+          <span class="title">Roof</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoofStyle">Roof style</label><select class="dim-inp" id="lanternRoofStyle" onchange="setLantern('lanternRoofStyle',this.value)"><option value="flat">Flat roof</option><option value="hip">Hip roof</option></select></div>
+  <div id="lanternHipControls" hidden>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipPitch">Roof pitch <span class="ctrl-val" id="lanternHipPitchVal">45°</span></label><input type="range" id="lanternHipPitch" min="15" max="70" step="1" value="45" aria-label="Hip roof pitch" oninput="setLanternSlider('lanternHipPitch',this.value)"></div>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipTop">Top flat size <span class="ctrl-val" id="lanternHipTopVal">20 mm</span></label><input type="range" id="lanternHipTop" min="10" max="100" step="0.5" value="20" aria-label="Hip roof top flat size (mm)" oninput="setLanternSlider('lanternHipTop',this.value)"></div>
+    <div class="ctrl"><label class="ctrl-lbl" for="lanternHipCap">Hip top cap overhang (mm) <span class="ctrl-val" id="lanternHipCapVal">1.0 mm</span></label><input type="range" id="lanternHipCap" min="1" max="30" step="0.1" value="1" aria-label="Hip top cap overhang (mm)" oninput="setLanternSlider('lanternHipCap',this.value)"></div><p class="hint">Minimum overhang preserves a border around the roof-panel finger slots. Top flat size controls the roof opening; this slider controls only the lid border.</p>
+  </div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternRoof">Roof overhang per side (mm) <span class="ctrl-val" id="lanternRoofSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternRoof" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternRoof',Number(this.value))"><input type="range" id="lanternRoofSlider" min="0" max="100" step="0.1" value="10" aria-label="Roof overhang per side (mm)" oninput="setLanternSlider('lanternRoof',this.value)"></div>
+        </div>
+      </div>
+      <div class="lb-panel lantern-panel" id="lanternBaseSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternBaseSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternBaseSection');}">
+          <span class="title">Base</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternBase">Base overhang per side (mm) <span class="ctrl-val" id="lanternBaseSliderVal">10.0 mm</span></label><input class="dim-inp" id="lanternBase" type="number" step="0.1" min="0" value="10" onchange="setLantern('lanternBase',Number(this.value))"><input type="range" id="lanternBaseSlider" min="0" max="100" step="0.1" value="10" aria-label="Base overhang per side (mm)" oninput="setLanternSlider('lanternBase',this.value)"></div>
+        </div>
+      </div>
+      <div class="lb-panel lantern-panel" id="lanternDoorSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternDoorSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternDoorSection');}">
+          <span class="title">Front Door</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <div id="lanternDoorOptions" hidden><div class="ctrl"><label><input type="checkbox" id="lanternDoor" onchange="setLantern('lanternDoor',this.checked)"> Hinged front door</label></div>
+  <div id="lanternDoorControls" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternDoorGap">Door edge clearance (mm)</label><input class="dim-inp" id="lanternDoorGap" type="number" min="0.2" max="2" step="0.1" value="0.5" onchange="setLantern('lanternDoorGap',Number(this.value))"><input type="range" id="lanternDoorGapSlider" min="0.2" max="2" step="0.1" value="0.5" aria-label="Door edge clearance (mm)" oninput="setLanternSlider('lanternDoorGap',this.value)"></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorPinClearance">Pin radial clearance (mm per side)</label><input class="dim-inp" id="lanternDoorPinClearance" type="number" min="0" max="1.5" step="0.05" value="0.25" onchange="setLantern('lanternDoorPinClearance',Number(this.value))"><input type="range" id="lanternDoorPinClearanceSlider" min="0" max="1.5" step="0.05" value="0.25" aria-label="Pin radial clearance (mm per side)" oninput="setLanternSlider('lanternDoorPinClearance',this.value)"></div>
+  <div class="ctrl"><label><input type="checkbox" id="lanternDoorHandle" onchange="setLantern('lanternDoorHandle',this.checked)"> Add small door handle</label></div>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternDoorOpen">Preview door opening <span class="ctrl-val" id="lanternDoorOpenVal">0°</span></label><input type="range" id="lanternDoorOpen" min="0" max="110" step="1" value="0" oninput="setLanternDoorOpen(this.value)"></div></div></div>
+        </div>
+      </div>
+      <div class="lb-panel lantern-panel" id="lanternUpperSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternUpperSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternUpperSection');}">
+          <span class="title">Upper Box</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <div class="ctrl"><label><input type="checkbox" id="lanternUpper" onchange="setLantern('lanternUpper',this.checked)"> Add Upper Box</label></div>
+  <div id="lanternUpperSettings" hidden><p class="hint">Upper box sits on an open support rim so light can pass up from the main box.</p>
+  <div class="ctrl"><label class="ctrl-lbl" for="lanternUpperW">Upper width / across flats (mm)</label><input class="dim-inp" id="lanternUpperW" type="number" step="0.1" min="1" value="60" onchange="setLantern('lanternUpperW',Number(this.value))"><input type="range" id="lanternUpperWSlider" aria-label="Upper width / across flats (mm)" min="1" max="300" step="0.1" value="60" oninput="setLanternSlider('lanternUpperW',this.value)"></div><div id="lanternUpperDepthRow"><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperD">Upper depth (mm)</label><input class="dim-inp" id="lanternUpperD" type="number" step="0.1" min="1" value="50" onchange="setLantern('lanternUpperD',Number(this.value))"><input type="range" id="lanternUpperDSlider" aria-label="Upper depth (mm)" min="1" max="300" step="0.1" value="50" oninput="setLanternSlider('lanternUpperD',this.value)"></div></div><div class="ctrl"><label class="ctrl-lbl" for="lanternUpperH">Upper wall height (mm)</label><input class="dim-inp" id="lanternUpperH" type="number" step="0.1" min="1" value="35" onchange="setLantern('lanternUpperH',Number(this.value))"><input type="range" id="lanternUpperHSlider" aria-label="Upper wall height (mm)" min="1" max="300" step="0.1" value="35" oninput="setLanternSlider('lanternUpperH',this.value)"></div>
+  </div>
+        </div>
+      </div>
+      <div class="lb-panel lantern-panel" id="lanternCapSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternCapSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternCapSection');}">
+          <span class="title">Upper Cap</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <p class="hint" id="lanternCapHint">Enable Add Upper Box in the Upper Box section to configure its cap.</p>
+  <div id="lanternCapSettings" hidden>  <div class="ctrl"><label class="ctrl-lbl" for="lanternCap">Primary cap overhang (mm) <span class="ctrl-val" id="lanternCapSliderVal">6.0 mm</span></label><input class="dim-inp" id="lanternCap" type="number" step="0.1" min="0" value="6" onchange="setLantern('lanternCap',Number(this.value))"><input type="range" id="lanternCapSlider" min="0" max="100" step="0.1" value="6" aria-label="Primary cap overhang (mm)" oninput="setLanternSlider('lanternCap',this.value)"></div><div class="ctrl"><label><input type="checkbox" id="lanternDouble" onchange="setLantern('lanternDouble',this.checked)"> Two-Layer Upper Lid</label></div><div id="lanternCap2Row"><div class="ctrl"><label class="ctrl-lbl" for="lanternCap2">Secondary cap overhang (mm)</label><input class="dim-inp" id="lanternCap2" type="number" step="0.1" min="0" value="3" onchange="setLantern('lanternCap2',Number(this.value))"><input type="range" id="lanternCap2Slider" min="0" max="100" step="0.1" value="3" aria-label="Secondary cap overhang (mm)" oninput="setLanternSlider('lanternCap2',this.value)"></div></div></div>
+        </div>
+      </div>
+      <div class="lb-panel lantern-panel" id="lanternRingSection">
+        <div class="lb-panel-hdr" role="button" tabindex="0" onclick="toggleSec('lanternRingSection')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSec('lanternRingSection');}">
+          <span class="title">Hanging Ring</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="lb-panel-body">
+  <div class="ctrl"><label><input type="checkbox" id="lanternRing" onchange="setLantern('lanternRing',this.checked)"> Add Hanging Ring</label></div>
+  <div id="lanternRingSettings" hidden><div class="ctrl"><label class="ctrl-lbl" for="lanternRingDiameter">Ring outside diameter (mm)</label><input class="dim-inp" id="lanternRingDiameter" type="number" step="0.1" min="1" value="30" onchange="setLantern('lanternRingDiameter',Number(this.value))"><input type="range" id="lanternRingDiameterSlider" min="1" max="150" step="0.1" value="30" aria-label="Ring outside diameter (mm)" oninput="setLanternSlider('lanternRingDiameter',this.value)"></div><div class="ctrl"><label class="ctrl-lbl" for="lanternRingBand">Ring band width (mm)</label><input class="dim-inp" id="lanternRingBand" type="number" step="0.1" min="1" value="5" onchange="setLantern('lanternRingBand',Number(this.value))"><input type="range" id="lanternRingBandSlider" min="1" max="30" step="0.1" value="5" aria-label="Ring band width (mm)" oninput="setLanternSlider('lanternRingBand',this.value)"></div><p class="hint">Glue ring into cap; secure the removable roof before hanging the whole lantern.</p></div>
+        </div>
+      </div>
       <div class="lb-panel" id="s-lid">
         <div class="lb-panel-hdr" onclick="toggleSec('s-lid')">
           <span class="title">Lid</span>
@@ -10558,7 +10617,7 @@ function syncInputs() {
   updateLabels();
 }
 
-const LEFT_SECTIONS = ['s-dim', 's-walls', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer'];
+const LEFT_SECTIONS = ['lanternRoofSection', 'lanternBaseSection', 'lanternDoorSection', 'lanternUpperSection', 'lanternCapSection', 'lanternRingSection', 's-dim', 's-walls', 's-feet', 's-frame', 's-joint', 's-lid', 's-div', 's-drawer'];
 function onDrawer(on) {
   pushHistoryNow();
   state.drawer = !!on;
@@ -12850,7 +12909,13 @@ function setLantern(key,value){
   if(key==='lanternJoint'||key==='lanternSides'){state.lanternUpperJoint='inherit';state.lanternRectUpperJoint=null;}
   state[key]=value;syncLanternUI();rebuild();
 }
+const lanternExtraSliders = {"lanternDoorGap":[0.2,2,0.1],"lanternDoorPinClearance":[0,1.5,0.05],"lanternCap2":[0,100,0.1],"lanternRingDiameter":[1,150,0.1],"lanternRingBand":[1,30,0.1]};
 function setLanternSlider(key,value){
+  if(Object.prototype.hasOwnProperty.call(lanternExtraSliders,key)){
+    const number=Number(value),slider=$(key+'Slider');
+    if(!Number.isFinite(number)||number<Number(slider.min)||number>Number(slider.max))return;
+    pushHistory();state[key]=number;rebuild();return;
+  }
   if(!['lanternUpperW','lanternUpperD','lanternUpperH','lanternRoof','lanternBase','lanternCap','lanternHipPitch','lanternHipTop','lanternHipCap'].includes(key))return;
   if(key==='lanternHipPitch'){
     const pitch=Number(value);if(!Number.isFinite(pitch)||pitch<15||pitch>70)return;
@@ -12882,6 +12947,11 @@ function syncLanternUI(){
   $('lanternDoorOpen').value=state.lanternDoorOpen;
   $('lanternDoorOpenVal').textContent=state.lanternDoorOpen+'°';
   if(!on)return;
+  for(const [key,[min,max,step]] of Object.entries(lanternExtraSliders)){
+    const slider=$(key+'Slider');
+    slider.min=min;slider.max=Math.max(max,Number(state[key]));slider.step=step;slider.value=state[key];
+    $(key).value=state[key];
+  }
   $('lanternRoofStyle').value=state.lanternRoofStyle;
   $('lanternHipControls').hidden=state.lanternRoofStyle!=='hip';
   $('lanternUpper').disabled=false;
@@ -12924,6 +12994,8 @@ function syncLanternUI(){
   }
   for(const key of ['lanternUpper','lanternDouble'])$(key).checked=state[key];
   $('lanternUpperSettings').hidden=!state.lanternUpper;
+  $('lanternCapSettings').hidden=!state.lanternUpper;
+  $('lanternCapHint').hidden=!!state.lanternUpper;
   $('lanternCap2Row').hidden=!state.lanternDouble;
   $('lanternUpperDepthRow').hidden=state.lanternSides===6;
   $('inD').disabled=$('sldD').disabled=state.lanternSides===6;
@@ -12976,7 +13048,7 @@ function generateLanternPanels(){
   const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
   const plate=(name,w,h,over,y,explodeY)=>({name,explode:[0,explodeY,0],outline:footprint(w+2*over,h+2*over),holes:[],chestPlacement:{o:[0,y,0],u:[1,0,0],v:[0,0,-1],n:[0,1,0]}});
   const base=plate('Lantern base',ow,od,state.lanternBase,0,-0.5),roof=plate('Main roof / shared upper floor (removable)',ow,od,state.lanternRoof,oh-T,0.8);
-  const frontZ=-od/2,doorBottom=T+doorGap,doorTop=oh-T-doorGap,doorPlane=frontZ-doorGap;
+  const frontZ=-od/2,doorBottom=T+doorGap,doorTop=oh-T-doorGap,doorPlane=frontZ;
   const doorLeftX=n===6?-doorSpan/2+doorGap:-ow/2+T+doorGap;
   const doorHingeX=doorLeftX+T/2,doorHingeZ=doorPlane+T/2;
   const openAngle=doorEnabled?(state.lanternDoorOpen||0)*Math.PI/180:0,doorCos=Math.cos(openAngle),doorSin=Math.sin(openAngle);
@@ -12993,8 +13065,12 @@ function generateLanternPanels(){
     for(let i=0;i<n;i++){
       const a=verts[i],b=verts[(i+1)%n],L=Math.hypot(b[0]-a[0],b[1]-a[1]),u=[(b[0]-a[0])/L,(b[1]-a[1])/L],inward=[-u[1],u[0]];
       // Hexagon square-cut seams touch at the inner vertex, without solid overlaps.
-      // Rectangles with smooth seams use full front/back and inset end panels.
-      const trim=n===6?T*Math.tan(Math.PI/6):(joint==='plates-only'&&i%2===1?T:0),length=L-2*trim;
+      // Smooth rectangular seams normally inset the side walls at both ends.
+      // With a front door, extend their front ends so the door fits between them.
+      const trim=n===6?T*Math.tan(Math.PI/6):(joint==='plates-only'&&i%2===1?T:0);
+      const insetDoor=doorEnabled&&prefix==='Main'&&n===4;
+      const startTrim=insetDoor&&i===3?0:trim,endTrim=insetDoor&&i===1?0:trim;
+      const length=L-startTrim-endTrim;
       const margin=2*T+web,run=length-2*margin;
       if(run<2*T)throw Error('Increase '+prefix+' width to leave room for tabs and corner clearances.');
       let tabs;
@@ -13027,7 +13103,7 @@ function generateLanternPanels(){
         for(const p of lp.slice().reverse())pts.push([p.inset,T+p.b],[p.inset,T+p.a]);
         outline=cleanPoly(pts);
       }
-      const origin=[a[0]+u[0]*trim,a[1]+u[1]*trim];
+      const origin=[a[0]+u[0]*startTrim,a[1]+u[1]*startTrim];
       const omitWall=doorEnabled&&prefix==='Main'&&i===frontFacet;
       if(!omitWall)parts.push({name:prefix+' wall '+(i+1),explode:[-inward[0],prefix==='Upper'?1.3:0,inward[1]],outline,holes:[],tabs,edgeIndex:i,wallLength:length,chestPlacement:{o:[origin[0],y,-origin[1]],u:[u[0],0,-u[1]],v:[0,1,0],n:[inward[0],0,-inward[1]]}});
       if(!omitWall)for(const [p,clear] of [[bottom,0],[top,removable?state.lanternFit:0]])for(const q of tabs){
