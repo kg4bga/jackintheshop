@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#e8e8e8" id="themeColorMeta">
-  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.03</title>
+  <title>Jack In The Shop — Box &amp; Frame Generator Ver 0.9.04</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8458,7 +8458,7 @@ and disclaimer.
   <div class="toolbar">
     <div class="tb-group" style="gap:6px; padding-right:8px;">
       <div class="brand-mark">JS</div>
-      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.03</span>
+      <span class="brand-name" style="text-align:center">Jack's Boxes<br>Ver 0.9.04</span>
     </div>
     <div class="tb-group">
       <div class="file-menu" id="fileMenu">
@@ -12970,7 +12970,7 @@ function setLantern(key,value){
   if(key==='lanternSides'&&value!==state.lanternSides){
     if(value===6){
       state.lanternRectJoint=state.lanternJoint;
-      if(state.lanternJoint==='finger')state.lanternJoint='plates-only';
+      if(['finger','tab-slot'].includes(state.lanternJoint))state.lanternJoint='plates-only';
     }else if(value===4){
       if(state.lanternRectJoint)state.lanternJoint=state.lanternRectJoint;
       state.lanternRectJoint=null;
@@ -13003,8 +13003,8 @@ function syncLanternUI(){
   for(const id of ['jointStyle'])for(const option of $(id).options){
     if(option.value==='finger')option.disabled=on&&state.lanternSides===6;
     if(option.value==='tab-slot'){
-      option.hidden=on;
-      option.disabled=on;
+      option.hidden=false;
+      option.disabled=on&&state.lanternSides===6;
     }
   }
   const doorCompatible=on&&[4,6].includes(state.lanternSides);
@@ -13073,10 +13073,20 @@ function syncLanternUI(){
   $('lblW').textContent=(state.lanternSides===6?'Across flats':'Width')+' ('+state.unit+')';
   $('lanternDefinition').textContent=state.lanternSides===6?'Hexagon: width is across flats.':'';
   $('jointStyle').value=state.lanternJoint;
-  $('tabSlotControls').hidden=true;$('fingerLengthControls').style.display='none';
+  const slots=state.lanternJoint==='tab-slot';
+  $('tabSlotControls').hidden=!slots;$('fingerLengthControls').style.display='none';
+  $('jointInfo').hidden=slots;
+  const minInset=minimumSlotInsetPercent(T);
+  $('slotInset').min=minInset;$('slotInset').max=Math.max(300,minInset);
+  $('slotInset').value=Math.max(minInset,state.slotInsetPercent);
+  $('valSlotInset').textContent=fmtLen(cornerSlotInset(T),1,3);
+  $('tabClearance').value=state.tabClearance;
+  $('valTabClearance').textContent=fmtLen(state.tabClearance,2,4);
+  $('slotAssemblyHint').hidden=false;
+  $('tabSlotLidHint').textContent='';
   $('boxPreviewLabel').textContent='Lantern assembly preview';
   $('fingerSizeLabel').textContent='Finger / tab size (target)';
-  $('fingerSizeHint').textContent='Finger joints join rectangular wall edges. Top and bottom only uses smooth vertical seams.';
+  $('fingerSizeHint').textContent=state.lanternJoint==='tab-slot'?'Each wall corner uses one sliding half-depth slot sized to the material thickness. The upper box uses the same connectors.':'Finger joints join rectangular wall edges. Top and bottom only uses smooth vertical seams.';
   $('tabSlotStatus').textContent=state.lanternSides===6?'Six sides switches to Top and bottom only; four-sided joint choices are restored when you switch back.':'Main roof is removable. Its slots include the access clearance below.';
 }
 function generateLanternPanels(){
@@ -13096,7 +13106,7 @@ function generateLanternPanels(){
   // Upper walls always use the main Lantern wall construction.
   const uj=state.lanternJoint;
   if(!['finger','tab-slot','plates-only'].includes(state.lanternJoint)||!['finger','tab-slot','plates-only'].includes(uj))return fail('Choose a valid lantern joint style.');
-  if(n===6&&(state.lanternJoint==='finger'||state.lanternUpper&&uj==='finger'))return fail('Six-sided vertical finger joints are not yet validated. Select Top and bottom only for both shells; this uses square-cut walls with visible V seams.');
+  if(n===6&&(['finger','tab-slot'].includes(state.lanternJoint)||state.lanternUpper&&['finger','tab-slot'].includes(uj)))return fail('Six-sided vertical finger and slot joints are not supported. Select Top and bottom only for both shells; this uses square-cut walls with visible V seams.');
   const doorEnabled=!!state.lanternDoor&&[4,6].includes(n),doorGap=state.lanternDoorGap,pinClearance=state.lanternDoorPinClearance;
   if(doorEnabled&&(!Number.isFinite(doorGap)||doorGap<0.2||doorGap>2))return fail('Set door edge clearance between 0.2 and 2 mm.');
   if(doorEnabled&&(!Number.isFinite(pinClearance)||pinClearance<0||pinClearance>1.5))return fail('Set pivot pin radial clearance between 0 and 1.5 mm.');
@@ -13150,7 +13160,7 @@ function generateLanternPanels(){
         tabs=Array.from({length:count},(_,j)=>({a:margin+j*pitch+pitch/4,b:margin+j*pitch+3*pitch/4}));
       }
       let left=null,right=null;
-      if(n===4&&joint!=='plates-only'){
+      if(n===4&&joint==='finger'){
         if(joint==='finger')left=right={ownEven:i%2===0,ownCorners:i%2===0};
         else {
           const bodyH=height-2*T,spans=lanternTabs(bodyH-2*T,T).map(q=>[q.a+T,q.b+T]);
@@ -13172,6 +13182,25 @@ function generateLanternPanels(){
         for(const q of tabs.slice().reverse())pts.push([q.b,height-T],[q.b,height],[q.a,height],[q.a,height-T]);
         for(const p of lp.slice().reverse())pts.push([p.inset,T+p.b],[p.inset,T+p.a]);
         outline=cleanPoly(pts);
+      }
+      if(n===4&&joint==='tab-slot'){
+        const lip=cornerSlotInset(T),half=state.tabClearance/2;
+        const doorSide=doorEnabled&&prefix==='Main';
+        const leftLap=!(doorSide&&i===3),rightLap=!(doorSide&&i===1);
+        outline=horizontal.map(([x,y])=>[x===0&&leftLap?-lip:x===length&&rightLap?length+lip:x,y]);
+        const mid=height/2,depth=mid+half;
+        const cuts=[];
+        for(const [enabled,x] of [[leftLap,0],[rightLap,length-T]]){
+          if(enabled)cuts.push(rect(x-half,i%2===0?-1:height-depth,T+2*half,depth+1));
+        }
+        const C=window.ClipperLib,scale=10000;
+        const path=pts=>pts.map(([x,y])=>({X:Math.round(x*scale),Y:Math.round(y*scale)}));
+        const clip=new C.Clipper(),result=[];
+        clip.AddPaths([path(outline)],C.PolyType.ptSubject,true);
+        clip.AddPaths(cuts.map(path),C.PolyType.ptClip,true);
+        clip.Execute(C.ClipType.ctDifference,result,C.PolyFillType.pftNonZero,C.PolyFillType.pftNonZero);
+        if(result.length!==1)throw Error('Increase lantern wall size or reduce slot clearance to keep the sliding joints connected.');
+        outline=cleanPoly(result[0].map(q=>[q.X/scale,q.Y/scale]));
       }
       const origin=[a[0]+u[0]*startTrim,a[1]+u[1]*startTrim];
       const omitWall=doorEnabled&&prefix==='Main'&&i===frontFacet;
@@ -16084,7 +16113,7 @@ function downloadDXF() { if(lanternActive()||openRimActive()||tabSlotActive()||s
 
 const JITS_FORMAT = 'JITS-BoxMaker';
 const JITS_FORMAT_VERSION = 1;
-const JITS_GENERATOR_VERSION = '0.9.03';
+const JITS_GENERATOR_VERSION = '0.9.04';
 const JITS_MAX_BYTES = 10 * 1024 * 1024;
 let projectName = 'Untitled';
 let projectCreatedAt = new Date().toISOString();
