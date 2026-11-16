@@ -9732,7 +9732,7 @@ function generateLetterPanels(d) {
       if(width<=Math.max(0.5,2*state.kerf)){d.letterWarn='Letter too small for its sharp-corner wall sections. Increase letter size or reduce material thickness.';continue;}
       const localPath={total:width+seam,at:x=>path.at(start+x),segments:[]},tabs=[],openCuts=[];
       const tabCount=Math.max(2,Math.floor(width/24)),tabWidth=Math.min(6,Math.max(3,1.5*T));
-      const endInset=Math.max(T/2,state.kerf+0.6);
+      const endInset=0;
       const addTab=(mid,w,curved=false,atEnd=false)=>{
         const a=mid-w/2,b=mid+w/2,margin=atEnd?endInset-1e-8:Math.min(6,Math.max(T,width*0.15));
         if(a<margin||b>width-margin||tabs.some(t=>a<t.b+3&&b>t.a-3))return false;
@@ -9747,8 +9747,7 @@ function generateLetterPanels(d) {
         if(!slot.every(p=>letterInside(p,solid)&&letterInside(p,rim)))return false;
         tabs.push({a,b});slots.push(slot);return true;
       };
-      // Reserve both end anchors before distributing intermediate fingers.
-      // Opposing slots across a seam retain at least one material thickness of plate.
+      // Extend both terminal fingers flush to the square-cut wall ends.
       for(const right of [false,true]){
         let anchored=false;
         for(const w of [...new Set([tabWidth,Math.min(3,T),Math.min(2,T)])]){
@@ -12389,10 +12388,22 @@ function livingHeartGeometry(d) {
   bezier([-0.5,-0.45],[-0.2,-0.55],[0,-0.2]);
   const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),lo=Math.min(...ys),hi=Math.max(...ys),left=Math.min(...xs),right=Math.max(...xs);
   const outer=pts.map(([x,y])=>[(x-(left+right)/2)*ow/(right-left),(y-(lo+hi)/2)*od/(hi-lo)]);
-  return livingPathForOutline(outer,120,T);
+  // Keep sharp joins at the original notch and point. Remove the inward
+  // offset's tiny reversal at the point before mirroring the second side.
+  const inset=offsetPoly(outer,-1.5*T,8),half=[inset[0]];
+  for(let i=1;i<=120;i++) {
+    const p=inset[i],prev=inset[i-1];
+    if(p[0]<=0&&prev[0]>0) {
+      const t=prev[0]/(prev[0]-p[0]);
+      half.push([0,prev[1]+t*(p[1]-prev[1])]);break;
+    }
+    half.push(p);
+  }
+  const neutral=[...half,...half.slice(1,-1).reverse().map(([x,y])=>[-x,y])];
+  return livingPathForOutline(outer,half.length-1,T,neutral);
 }
-function livingPathForOutline(outer,splitIndex,T) {
-  const neutral=offsetPoly(outer,-1.5*T,8);
+function livingPathForOutline(outer,splitIndex,T,neutralOverride=null) {
+  const neutral=neutralOverride||offsetPoly(outer,-1.5*T,8);
   const segments=[];let total=0;
   const normals=neutral.map((q,i)=>{
     const a=neutral[(i+neutral.length-1)%neutral.length],b=neutral[(i+1)%neutral.length];
@@ -12450,6 +12461,43 @@ function livingHingeCut(x,a,b,pitch,T,column=0) {
   return Object.assign(points,{baseX:x,pitch,column});
 }
 
+// Separate the square end fingers, including the compensated plate-slot outlines.
+function heartEndPoint(path,start,end,distance) {
+  const length=Math.min(4.5,(end-start)/3),x=Math.max(start,Math.min(end,distance));
+  const anchor=x<start+length?start+length:x>end-length?end-length:null;
+  if(anchor==null)return path.at(x);
+  const q=path.at(anchor),a=path.at(anchor-0.001),b=path.at(anchor+0.001),L=Math.hypot(b.x-a.x,b.z-a.z);
+  const ux=(b.x-a.x)/L,uz=(b.z-a.z)/L;
+  return {x:q.x+(x-anchor)*ux,z:q.z+(x-anchor)*uz,nx:uz,nz:-ux};
+}
+function heartButtRanges(path,split,T,kerf) {
+  const ranges=[[0,split],[split,path.total]],S=10000,C=window.ClipperLib;
+  const band=(start,end,lo,hi)=>{
+    const a=[],b=[],n=Math.max(2,Math.ceil((hi-lo)/0.25));
+    for(let i=0;i<=n;i++){const q=heartEndPoint(path,start,end,lo+(hi-lo)*i/n),h=(T+Math.max(0,kerf))/2;
+      a.push({X:Math.round((q.x+q.nx*h)*S),Y:Math.round((q.z+q.nz*h)*S)});
+      b.push({X:Math.round((q.x-q.nx*h)*S),Y:Math.round((q.z-q.nz*h)*S)});
+    }
+    return [...a,...b.reverse()];
+  };
+  for(const beginning of [true,false]){
+    const reach=Math.min(split/2,Math.max(20,8*T));
+    const fixed=beginning?band(0,split,split-reach,split):band(0,split,0,reach);
+    const collides=trim=>{
+      const start=beginning?split+trim:ranges[1][0],end=beginning?ranges[1][1]:path.total-trim;
+      const moving=beginning?band(start,end,start,Math.min(end,start+reach)):band(start,end,Math.max(start,end-reach),end);
+      const clip=new C.Clipper(),out=[];clip.AddPath(fixed,C.PolyType.ptSubject,true);clip.AddPath(moving,C.PolyType.ptClip,true);
+      clip.Execute(C.ClipType.ctIntersection,out,C.PolyFillType.pftNonZero,C.PolyFillType.pftNonZero);
+      return out.some(p=>Math.abs(C.Clipper.Area(p))>1);
+    };
+    let lo=0,hi=0,limit=(path.total-split)/3;
+    while(hi<limit&&collides(hi)){lo=hi;hi=Math.min(limit,hi+0.25);}
+    for(let i=0;i<24;i++){const mid=(lo+hi)/2;if(collides(mid))lo=mid;else hi=mid;}
+    if(beginning)ranges[1][0]+=hi+0.01;else ranges[1][1]-=hi+0.01;
+  }
+  return ranges;
+}
+
 function generateLivingPanels(d) {
   const {ow,od,oh,T}=d;
   const maxRadius=Math.min(ow,od)/2-T-0.5;
@@ -12457,10 +12505,18 @@ function generateLivingPanels(d) {
   const snowman=state.shape==='snowman',heart=state.shape==='heart'||snowman;
   const snow=snowman?snowmanContour(d):null;
   const heartGeometry=heart?(snowman?livingPathForOutline(snow.outer,snow.splitIndex,T):livingHeartGeometry(d)):null;
-  const path=heart?heartGeometry.path:livingPerimeter(ow-3*T,od-3*T,Math.max(0.2,radius-1.5*T));
+  let path=heart?heartGeometry.path:livingPerimeter(ow-3*T,od-3*T,Math.max(0.2,radius-1.5*T));
   const seam=heart?0:0.4, width=path.total-seam, tabs=[],holes=[],openCuts=[];
   const bodySplit=snowman?(heartGeometry.split+path.total)/2:null;
-  const wallRanges=livingWallRanges(width,heart?(snowman?[heartGeometry.split,bodySplit]:[heartGeometry.split]):[]);
+  const wallRanges=heart&&!snowman?heartButtRanges(path,heartGeometry.split,T,state.kerf):livingWallRanges(width,snowman?[heartGeometry.split,bodySplit]:[]);
+  if(heart&&!snowman){
+    const originalPath=path;
+    path={...originalPath,at:distance=>{
+      const x=Math.abs(distance-originalPath.total)<1e-8?originalPath.total:((distance%originalPath.total)+originalPath.total)%originalPath.total;
+      const range=wallRanges.find(([a,b])=>x>=a-1e-8&&x<=b+1e-8);
+      return range?heartEndPoint(originalPath,range[0],range[1],x):originalPath.at(x);
+    }};
+  }
   const seams=wallRanges.slice(0,-1).map(r=>r[1]);
   for(const seg of path.segments)if(seg.type==='line') {
     const margin=Math.min(2*T,seg.length*0.2),span=seg.length-2*margin;
@@ -12476,10 +12532,12 @@ function generateLivingPanels(d) {
     const count=Math.max(10,Math.ceil(width/24)),tabWidth=Math.min(6,Math.max(3,T*1.5));
     for(let i=0;i<count;i++){
       const mid=(i+0.5)*width/count,a=mid-tabWidth/2,b=mid+tabWidth/2;
-      if(a<6||b>width-6||seams.some(x=>a<x+6&&b>x-6))continue;
+      if(!wallRanges.some(([start,end])=>a>=start+6&&b<=end-6))continue;
       tabs.push({a,b});holes.push(rectangularWallSlot(path,a,b,T,seam));
     }
   }
+  for(const [a,b] of wallRanges){const w=Math.min(4.5,(b-a)/3);for(const t of [{a,b:a+w},{a:b-w,b}]){tabs.push(t);holes.push(rectangularWallSlot(path,t.a,t.b,T,seam));}}
+  tabs.sort((a,b)=>a.a-b.a);
   const hingeZones=snowman?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:bodySplit-heartGeometry.split-12},{start:bodySplit+6,length:width-bodySplit-12}]:heart?[{start:6,length:heartGeometry.split-12},{start:heartGeometry.split+6,length:width-heartGeometry.split-12}]:path.segments.filter(s=>s.type==='arc');
   for(const seg of hingeZones) {
     if(seg.length<=0)continue;
@@ -12522,7 +12580,18 @@ function generateLivingPanels(d) {
     for(const [start,end,label,side] of ranges) {
       const localTabs=tabs.filter(t=>t.a>=start&&t.b<=end).map(t=>({a:t.a-start,b:t.b-start}));
       const localCuts=openCuts.filter(line=>line[0][0]>start&&line[0][0]<end).map(line=>Object.assign(line.map(([x,y])=>[x-start,y]),{baseX:line.baseX-start,pitch:line.pitch,column:line.column}));
-      const partPath={total:end-start,at:x=>path.at(start+Math.max(0,Math.min(end-start,x))),segments:[]};
+      const partPath={total:end-start,at:x=>{
+        const distance=start+Math.max(0,Math.min(end-start,x)),q=path.at(distance);
+        if(heart&&!snowman) {
+          // Derive thickness from this wall alone. Averaging across the shared
+          // corner turns a square laser-cut end into a false miter in the preview.
+          const a=path.at(Math.max(start,distance-0.001));
+          const b=path.at(Math.min(end,distance+0.001));
+          const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz);
+          if(L>1e-9)return {...q,nx:dz/L,nz:-dx/L};
+        }
+        return q;
+      },segments:[]};
       defs.unshift({name:(snowman?'Snowman ':heart?'Heart ':'Living wall ')+label+' living-hinge wall'+(snowman?' (join at neck / bottom center)':' (join at notch and tip)'),role:'living-wrap',outline:tabbedWallOutline(end-start,oh,T,null,null,localTabs,localTabs),openCuts:localCuts,flex:{path:partPath,seam:0,tabs:localTabs,width:end-start,heartHalf:side,snowmanHalf:snowman?(end<=heartGeometry.split+0.01?-1:1):0,seamZ:snowman?path.at(0).z:0}});
     }
   }
@@ -12532,7 +12601,7 @@ function generateLivingPanels(d) {
   const panels=defs.map(def=>{
     const outline=def.outline,cut=heart&&def.poly?heartCutOutline(outline,state.kerf):offsetPoly(outline,state.kerf/2),xs=cut.map(p=>p[0]),ys=cut.map(p=>p[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    return {...def,svgYDown:!!def.poly&&(snowman),cut,holes:(def.holes||[]).map(h=>h===opening?h:offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
+    return {...def,nominalHoles:def.holes||[],svgYDown:!!def.poly&&(snowman),cut,holes:(def.holes||[]).map(h=>h===opening?h:offsetPoly(signedPolyArea(h)>0?h:h.slice().reverse(),state.kerf/2)),slots:[],minX,minY,maxY,bboxW:maxX-minX,bboxH:maxY-minY,area:polyArea(outline)};
   });
   if(snowman) {
     const wallPanels=panels.filter(p=>p.flex),longest=Math.max(...wallPanels.map(p=>Math.max(p.bboxW,p.bboxH)));
@@ -12547,7 +12616,7 @@ function livingWallGeometry(p,d) {
   const stations=new Set([0,width,...tabs.flatMap(t=>[t.a,t.b])]);
   for(let x=0;x<width;x+=1)stations.add(x);
   const samples=[...stations].sort((a,b)=>a-b);
-  const point=(x,y,side)=>{const q=path.at(x+seam/2);const wx=q.x+q.nx*side*T/2;return [p.flex.heartHalf>0?Math.max(0,wx):p.flex.heartHalf<0?Math.min(0,wx):wx,y,p.flex.snowmanHalf<0?Math.min(p.flex.seamZ,q.z+q.nz*side*T/2):p.flex.snowmanHalf>0?Math.max(p.flex.seamZ,q.z+q.nz*side*T/2):q.z+q.nz*side*T/2];};
+  const point=(x,y,side)=>{const q=path.at(x+seam/2);return [q.x+q.nx*side*T/2,y,q.z+q.nz*side*T/2];};
   const quad=(a,b,c,e)=>positions.push(...a,...b,...c,...a,...c,...e);
   for(let i=0;i<samples.length-1;i++) {
     const a=samples[i],b=samples[i+1],hasTab=tabs.some(t=>(a+b)/2>=t.a&&(a+b)/2<=t.b),lo=Math.max(hasTab?0:T,p.flex.yMin??0),hi=Math.min(hasTab?H:H-T,p.flex.yMax??H);
@@ -12563,6 +12632,7 @@ function livingWallGeometry(p,d) {
 // Generate in the existing back-hinge orientation, then rotate the full assembly.
 // Swapping plan dimensions first preserves the user's width and depth on side hinges.
 function splitTallLivingWalls(result) {
+  if(state.shape==='heart'&&result.dims.living)return result;
   const {dims:d}=result,T=d.T,output=[];
   for(const p of result.panels){
     if(!p.flex||p.bboxH<=Math.min(state.materialWidth,state.materialHeight)-2*SVG_SHEET_MARGIN){output.push(p);continue;}
@@ -15721,6 +15791,7 @@ function rebuild3D() {
       mesh.add(new THREE.LineSegments(detailGeo,new THREE.LineBasicMaterial({color:0x234877})));
     }
     let dir = p.explode ? p.explode : p.role==='stack-locator'?[0,-0.5,0]:p.role==='stack-rim'?[0,1,0]:EXPLODE_DIR[p.role] || [0, 0.5, 0];
+    if(p.flex){const q=p.flex.path.at(p.flex.width/2),r=Math.hypot(q.x,q.z)||1;dir=[q.x/r,0,q.z/r];}
     if (d.slotLap) {
       const rise = (d.oh + d.T) / amount;
       const skirt = p.role.startsWith('lid-');
