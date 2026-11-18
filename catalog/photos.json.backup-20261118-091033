@@ -1,0 +1,498 @@
+{
+  "version": 1,
+  "updated": "2026-11-18",
+  "photoBase": "",
+  "products": [
+    {
+      "id": "ball-cap",
+      "title": "Ball Caps",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Engraved and patched caps — lineman and shop designs made to be worn, not shelved.",
+      "folder": "Ball Cap",
+      "note": "3 photos",
+      "photos": [
+        "assets/ball-cap-1.jpg",
+        "assets/ball-cap-2.jpg",
+        "assets/ball-cap-3.jpg"
+      ]
+    },
+    {
+      "id": "belt-buckle",
+      "title": "Belt Buckles",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Custom buckles with engraved detail, made as keepsakes and everyday wear.",
+      "folder": "Belt Buckle",
+      "note": "3 photos",
+      "photos": [
+        "assets/belt-buckle-1.jpg",
+        "assets/belt-buckle-2.jpg",
+        "assets/belt-buckle-3.jpg"
+      ]
+    },
+    {
+      "id": "bible",
+      "title": "Bible Covers & Faith Pieces",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Carved and engraved Bible covers and faith pieces, made to be handed down.",
+      "folder": "Bible",
+      "note": "3 photos",
+      "photos": [
+        "assets/bible-1.jpg",
+        "assets/bible-2.jpg",
+        "assets/bible-3.jpg"
+      ]
+    },
+    {
+      "id": "brothers-keeper",
+      "title": "Brother's Keeper",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Brotherhood-themed carved pieces, a recurring favorite in the shop.",
+      "folder": "Brothers Keeper",
+      "note": "2 photos",
+      "photos": [
+        "assets/brothers-keeper-1.jpg",
+        "assets/brothers-keeper-2.jpg"
+      ]
+    },
+    {
+      "id": "cactus",
+      "title": "Cactus Decor",
+      "category": "home",
+      "label": "Home Decor",
+      "description": "Small carved cactus pieces — simple, cheerful shop-made decor.",
+      "folder": "Cactus",
+      "note": "3 photos",
+      "photos": [
+        "assets/cactus-1.jpg",
+        "assets/cactus-2.jpg",
+        "assets/cactus-3.jpg"
+      ]
+    },
+    {
+      "id": "carve",
+      "title": "Relief Carves",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "CNC and hand-finished relief carves, from trays to detailed 3D scenes.",
+      "folder": "Carve",
+      "note": "2 photos",
+      "photos": [
+        "assets/carve-1.jpg",
+        "assets/carve-3.jpg"
+      ]
+    },
+    {
+      "id": "christmas",
+      "title": "Christmas",
+      "category": "home",
+      "label": "Seasonal",
+      "description": "Ornaments and seasonal pieces for trees, mantels, and gifts.",
+      "folder": "Christmas",
+      "note": "3 photos",
+      "photos": [
+        "assets/christmas-1.jpg",
+        "assets/christmas-2.jpg",
+        "assets/christmas-3.jpg"
+      ]
+    },
+    {
+      "id": "coaster",
+      "title": "Coasters",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Laser-engraved wood coasters, including Jack's signature lineman set of four.",
+      "folder": "Coaster",
+      "note": "3 photos",
+      "photos": [
+        "assets/coaster-1.jpg",
+        "assets/coaster-2.jpg",
+        "assets/coaster-3.jpg"
+      ]
+    },
+    {
+      "id": "coin",
+      "title": "Custom Coins",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Custom coins and coin-style keepsakes with engraved faces.",
+      "folder": "Coin",
+      "note": "1 photo",
+      "photos": [
+        "assets/coin-2.jpg"
+      ]
+    },
+    {
+      "id": "cutting-board",
+      "title": "Cutting Boards",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Solid wood boards, finished smooth and ready for the kitchen counter.",
+      "folder": "Cutting Board",
+      "note": "2 photos",
+      "photos": [
+        "assets/cutting-board-2.jpg",
+        "assets/cutting-board-3.jpg"
+      ]
+    },
+    {
+      "id": "father-son",
+      "title": "Father & Son",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Father-and-son themed carves — personal pieces about time in the shop together.",
+      "folder": "Father&Son",
+      "note": "2 photos",
+      "photos": [
+        "assets/father-son-1.jpg",
+        "assets/father-son-2.jpg"
+      ]
+    },
+    {
+      "id": "flags",
+      "title": "Wood Flags",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Wood American flags, including lineman silhouette editions, built and finished by hand.",
+      "folder": "Flags",
+      "note": "3 photos",
+      "photos": [
+        "assets/flags-1.jpg",
+        "assets/flags-2.jpg",
+        "assets/flags-3.jpg"
+      ]
+    },
+    {
+      "id": "fridge-magnet",
+      "title": "Fridge Magnets",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Small engraved magnets — an easy way to carry a custom design into the kitchen.",
+      "folder": "Fridge Magnet",
+      "note": "3 photos",
+      "photos": [
+        "assets/fridge-magnet-1.jpg",
+        "assets/fridge-magnet-2.jpg",
+        "assets/fridge-magnet-3.jpg"
+      ]
+    },
+    {
+      "id": "gun-rack",
+      "title": "Gun Racks",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Wall racks built to hold and display — sturdy, simple, and shop-made.",
+      "folder": "Gun Rack",
+      "note": "3 photos",
+      "photos": [
+        "assets/gun-rack-1.jpg",
+        "assets/gun-rack-2.jpg",
+        "assets/gun-rack-3.jpg"
+      ]
+    },
+    {
+      "id": "halloween",
+      "title": "Halloween",
+      "category": "home",
+      "label": "Seasonal",
+      "description": "Spooky-season carves and decor, made well before the porch lights go on.",
+      "folder": "Halloween",
+      "note": "3 photos",
+      "photos": [
+        "assets/halloween-1.jpg",
+        "assets/halloween-2.jpg",
+        "assets/halloween-3.jpg"
+      ]
+    },
+    {
+      "id": "key-chaines",
+      "title": "Keychains",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Engraved keychains — small, personal, and made in batches for gifts and crews.",
+      "folder": "Key Chaines",
+      "note": "3 photos",
+      "photos": [
+        "assets/key-chaines-1.jpg",
+        "assets/key-chaines-2.jpg",
+        "assets/key-chaines-3.jpg"
+      ]
+    },
+    {
+      "id": "knife",
+      "title": "Knives",
+      "category": "laser",
+      "label": "Personalized Gifts",
+      "description": "Engraved and custom-handled knives, photographed on the stump outside the shop.",
+      "folder": "Knife",
+      "note": "3 photos",
+      "photos": [
+        "assets/knife-1.jpg",
+        "assets/knife-2.jpg",
+        "assets/knife-3.jpg"
+      ]
+    },
+    {
+      "id": "led-puck",
+      "title": "LED Puck Displays",
+      "category": "lighting",
+      "label": "Lighting",
+      "description": "Light-up puck displays that make an engraved photo or design glow.",
+      "folder": "LED Puck",
+      "note": "3 photos",
+      "photos": [
+        "assets/led-puck-1.jpg",
+        "assets/led-puck-2.jpg",
+        "assets/led-puck-3.jpg"
+      ]
+    },
+    {
+      "id": "lamp",
+      "title": "Lamps",
+      "category": "lighting",
+      "label": "Lighting",
+      "description": "Shop-built lamps that turn salvaged and vintage parts into warm light.",
+      "folder": "Lamp",
+      "note": "3 photos",
+      "photos": [
+        "assets/lamp-1.jpg",
+        "assets/lamp-2.jpg",
+        "assets/lamp-3.jpg"
+      ]
+    },
+    {
+      "id": "layered",
+      "title": "Layered Art",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Multi-layer laser-cut art — depth built up one sheet at a time.",
+      "folder": "Layered",
+      "note": "3 photos",
+      "photos": [
+        "assets/layered-1.jpg",
+        "assets/layered-2.jpg",
+        "assets/layered-3.jpg"
+      ]
+    },
+    {
+      "id": "lightbox-pictures",
+      "title": "Lightbox Pictures",
+      "category": "lighting",
+      "label": "Lighting",
+      "description": "Backlit photo boxes that turn a picture into a glowing display.",
+      "folder": "LightBox Pictures",
+      "note": "3 photos",
+      "photos": [
+        "assets/lightbox-pictures-1.jpg",
+        "assets/lightbox-pictures-2.jpg",
+        "assets/lightbox-pictures-3.jpg"
+      ]
+    },
+    {
+      "id": "lithophane",
+      "title": "Lithophane Lamps",
+      "category": "lighting",
+      "label": "Lighting",
+      "description": "Your photo, made as a lithophane and framed in wood — it lights up from behind.",
+      "folder": "Lithophane",
+      "note": "3 photos",
+      "photos": [
+        "assets/lithophane-1.jpg",
+        "assets/lithophane-2.jpg",
+        "assets/lithophane-3.jpg"
+      ]
+    },
+    {
+      "id": "meter-lamp",
+      "title": "Meter Lamps",
+      "category": "lighting",
+      "label": "Lighting",
+      "description": "Jack's signature build: vintage electric meters reworked into lamps on wood bases.",
+      "folder": "Meter Lamp",
+      "note": "3 photos",
+      "photos": [
+        "assets/meter-lamp-1.jpg",
+        "assets/meter-lamp-2.jpg",
+        "assets/meter-lamp-3.jpg"
+      ]
+    },
+    {
+      "id": "milwaukee-airpod-case",
+      "title": "Milwaukee AirPod Cases",
+      "category": "metal",
+      "label": "Shop Gear",
+      "description": "Tough, shop-styled AirPod cases for the Milwaukee fan in the crew.",
+      "folder": "Milwaukee Airpod Case",
+      "note": "3 photos",
+      "photos": [
+        "assets/milwaukee-airpod-case-1.jpg",
+        "assets/milwaukee-airpod-case-2.jpg",
+        "assets/milwaukee-airpod-case-3.jpg"
+      ]
+    },
+    {
+      "id": "mugs",
+      "title": "Mugs",
+      "category": "laser",
+      "label": "Laser Engraving",
+      "description": "Engraved mugs and drinkware for coffee at the bench.",
+      "folder": "Mugs",
+      "note": "3 photos",
+      "photos": [
+        "assets/mugs-1.jpg",
+        "assets/mugs-2.jpg",
+        "assets/mugs-3.jpg"
+      ]
+    },
+    {
+      "id": "pie-dish",
+      "title": "Pie Dish Holders",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Pie dish holders and carriers, turned out in wood for bakers and potlucks.",
+      "folder": "Pie Dish",
+      "note": "3 photos",
+      "photos": [
+        "assets/pie-dish-1.jpg",
+        "assets/pie-dish-2.jpg",
+        "assets/pie-dish-3.jpg"
+      ]
+    },
+    {
+      "id": "plaque",
+      "title": "Plaques",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Engraved plaques and award-style pieces for walls, desks, and retirements.",
+      "folder": "Plaque",
+      "note": "2 photos",
+      "photos": [
+        "assets/plaque-1.jpg",
+        "assets/plaque-3.jpg"
+      ]
+    },
+    {
+      "id": "plasma",
+      "title": "Plasma-Cut Metal",
+      "category": "metal",
+      "label": "Metalwork",
+      "description": "Plasma-cut metal signs and wall pieces — clean cuts, rustic finish.",
+      "folder": "Plasma",
+      "note": "2 photos",
+      "photos": [
+        "assets/plasma-1.jpg",
+        "assets/plasma-2.jpg"
+      ]
+    },
+    {
+      "id": "rocks",
+      "title": "Engraved Rocks",
+      "category": "laser",
+      "label": "Laser Engraving",
+      "description": "Engraved stones and rock pieces — names, designs, and memorials that last outdoors.",
+      "folder": "Rocks",
+      "note": "1 photo",
+      "photos": [
+        "assets/rocks-3.jpg"
+      ]
+    },
+    {
+      "id": "saws",
+      "title": "Saw Blade Art",
+      "category": "woodwork",
+      "label": "Wall Art",
+      "description": "Saw-blade art and saw-themed wall pieces, a natural fit for a wood shop.",
+      "folder": "Saws",
+      "note": "3 photos",
+      "photos": [
+        "assets/saws-1.jpg",
+        "assets/saws-2.jpg",
+        "assets/saws-3.jpg"
+      ]
+    },
+    {
+      "id": "spoon-holder",
+      "title": "Spoon Holders",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Countertop spoon holders, carved to keep the stove tidy.",
+      "folder": "Spoon Holder",
+      "note": "3 photos",
+      "photos": [
+        "assets/spoon-holder-1.jpg",
+        "assets/spoon-holder-2.jpg",
+        "assets/spoon-holder-3.jpg"
+      ]
+    },
+    {
+      "id": "stove-cover",
+      "title": "Stove Covers",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Wood stove-top covers that add counter space and room for a custom engraving.",
+      "folder": "Stove Cover",
+      "note": "2 photos",
+      "photos": [
+        "assets/stove-cover-1.jpg",
+        "assets/stove-cover-2.jpg"
+      ]
+    },
+    {
+      "id": "tater-bin",
+      "title": "Tater Bins",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Classic wood tater bins — the old-country storage box, built new.",
+      "folder": "Tater Bin",
+      "note": "3 photos",
+      "photos": [
+        "assets/tater-bin-1.jpg",
+        "assets/tater-bin-2.jpg",
+        "assets/tater-bin-3.jpg"
+      ]
+    },
+    {
+      "id": "trailer-hitch",
+      "title": "Trailer Hitch Covers",
+      "category": "metal",
+      "label": "Metalwork",
+      "description": "Custom trailer hitch covers with engraved and cut designs.",
+      "folder": "Trailer Hitch",
+      "note": "3 photos",
+      "photos": [
+        "assets/trailer-hitch-1.jpg",
+        "assets/trailer-hitch-2.jpg",
+        "assets/trailer-hitch-3.jpg"
+      ]
+    },
+    {
+      "id": "tray",
+      "title": "Trays & Catchalls",
+      "category": "woodwork",
+      "label": "Woodwork",
+      "description": "Catchall trays, serving trays, and insulator nightlight trays — the shop's workhorse gift.",
+      "folder": "Tray",
+      "note": "3 photos",
+      "photos": [
+        "assets/tray-1.jpg",
+        "assets/tray-2.jpg",
+        "assets/tray-3.jpg"
+      ]
+    },
+    {
+      "id": "tumbler",
+      "title": "Tumblers",
+      "category": "laser",
+      "label": "Laser Engraving",
+      "description": "Laser-engraved tumblers, including lodge, crew, and custom-logo designs.",
+      "folder": "Tumbler",
+      "note": "1 photo",
+      "photos": [
+        "assets/tumbler-3.jpg"
+      ]
+    }
+  ]
+}
