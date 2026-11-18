@@ -292,48 +292,6 @@
       ]
     },
     {
-      "id": "lithophane",
-      "title": "Lithophane Lamps",
-      "category": "lighting",
-      "label": "Lighting",
-      "description": "Your photo, made as a lithophane and framed in wood — it lights up from behind.",
-      "folder": "Lithophane",
-      "note": "3 photos",
-      "photos": [
-        "assets/lithophane-1.jpg",
-        "assets/lithophane-2.jpg",
-        "assets/lithophane-3.jpg"
-      ]
-    },
-    {
-      "id": "meter-lamp",
-      "title": "Meter Lamps",
-      "category": "lighting",
-      "label": "Lighting",
-      "description": "Jack's signature build: vintage electric meters reworked into lamps on wood bases.",
-      "folder": "Meter Lamp",
-      "note": "3 photos",
-      "photos": [
-        "assets/meter-lamp-1.jpg",
-        "assets/meter-lamp-2.jpg",
-        "assets/meter-lamp-3.jpg"
-      ]
-    },
-    {
-      "id": "milwaukee-airpod-case",
-      "title": "Milwaukee AirPod Cases",
-      "category": "metal",
-      "label": "Shop Gear",
-      "description": "Tough, shop-styled AirPod cases for the Milwaukee fan in the crew.",
-      "folder": "Milwaukee Airpod Case",
-      "note": "3 photos",
-      "photos": [
-        "assets/milwaukee-airpod-case-1.jpg",
-        "assets/milwaukee-airpod-case-2.jpg",
-        "assets/milwaukee-airpod-case-3.jpg"
-      ]
-    },
-    {
       "id": "mugs",
       "title": "Mugs",
       "category": "laser",
